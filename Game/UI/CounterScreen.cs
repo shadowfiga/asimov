@@ -1,46 +1,34 @@
-using Gum.Forms.Controls;
-using Graphite.Engine.UI.Gum;
+using Graphite.Engine.UI;
+using Graphite.Engine.UI.Controls;
 
 namespace Graphite.Game.UI;
 
-public sealed class CounterScreen : GumScreen
+public sealed class CounterScreen : UIScreen
 {
     private int _count;
-    private Label _label = null!;
 
-    protected override void Build(StackPanel root)
+    [UIElement] private Text _counterText = null!;
+    [UIElement] private Button _incrementButton = null!;
+    [UIElement] private Button _decrementButton = null!;
+
+    protected override void Awake()
     {
-        root.X = 305;
-        root.Y = 135;
-        root.Width = 350;
-
-        var title = new Label { Text = "Graphite Counter" };
-        _label = new Label { Text = "Count: 0" };
-
-        var increment = new Button
-        {
-            Text = "+ Increment",
-            Width = 350
-        };
-
-        var decrement = new Button
-        {
-            Text = "- Decrement",
-            Width = 350
-        };
-
-        increment.Click += (_, _) => SetCount(_count + 1);
-        decrement.Click += (_, _) => SetCount(_count - 1);
-
-        root.AddChild(title);
-        root.AddChild(_label);
-        root.AddChild(increment);
-        root.AddChild(decrement);
+        _incrementButton.Clicked += Increment;
+        _decrementButton.Clicked += Decrement;
     }
+
+    protected override void OnDestroy()
+    {
+        _incrementButton.Clicked -= Increment;
+        _decrementButton.Clicked -= Decrement;
+    }
+
+    private void Increment() => SetCount(_count + 1);
+    private void Decrement() => SetCount(_count - 1);
 
     private void SetCount(int value)
     {
         _count = value;
-        _label.Text = $"Count: {_count}";
+        _counterText.Value = $"Count: {_count}";
     }
 }

@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScreenSave xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <Name>CounterScreen</Name>
+  <State>
+    <Name>Default</Name>
+    <Variable Type="float" Name="RootPanel.Width" SetsValue="true">
+      <Value xsi:type="xsd:float">350</Value>
+    </Variable>
+    <Variable Type="float" Name="RootPanel.X" SetsValue="true">
+      <Value xsi:type="xsd:float">305</Value>
+    </Variable>
+    <Variable Type="float" Name="RootPanel.Y" SetsValue="true">
+      <Value xsi:type="xsd:float">135</Value>
+    </Variable>
+    <Variable Type="float" Name="RootPanel.StackSpacing" SetsValue="true">
+      <Value xsi:type="xsd:float">8</Value>
+    </Variable>
+    <Variable Type="string" Name="TitleText.Parent" SetsValue="true">
+      <Value xsi:type="xsd:string">RootPanel</Value>
+    </Variable>
+    <Variable Type="string" Name="TitleText.Text" SetsValue="true">
+      <Value xsi:type="xsd:string">Graphite Counter</Value>
+    </Variable>
+    <Variable Type="string" Name="CounterText.Parent" SetsValue="true">
+      <Value xsi:type="xsd:string">RootPanel</Value>
+    </Variable>
+    <Variable Type="string" Name="CounterText.Text" SetsValue="true">
+      <Value xsi:type="xsd:string">Count: 0</Value>
+    </Variable>
+    <Variable Type="string" Name="IncrementButton.Parent" SetsValue="true">
+      <Value xsi:type="xsd:string">RootPanel</Value>
+    </Variable>
+    <Variable Type="string" Name="IncrementButton.Text" SetsValue="true">
+      <Value xsi:type="xsd:string">+ Increment</Value>
+    </Variable>
+    <Variable Type="float" Name="IncrementButton.Width" SetsValue="true">
+      <Value xsi:type="xsd:float">350</Value>
+    </Variable>
+    <Variable Type="string" Name="DecrementButton.Parent" SetsValue="true">
+      <Value xsi:type="xsd:string">RootPanel</Value>
+    </Variable>
+    <Variable Type="string" Name="DecrementButton.Text" SetsValue="true">
+      <Value xsi:type="xsd:string">- Decrement</Value>
+    </Variable>
+    <Variable Type="float" Name="DecrementButton.Width" SetsValue="true">
+      <Value xsi:type="xsd:float">350</Value>
+    </Variable>
+  </State>
+  <Instance Name="RootPanel" BaseType="Controls/StackPanel" />
+  <Instance Name="TitleText" BaseType="Controls/Label" />
+  <Instance Name="CounterText" BaseType="Controls/Label" />
+  <Instance Name="IncrementButton" BaseType="Controls/ButtonStandard" />
+  <Instance Name="DecrementButton" BaseType="Controls/ButtonStandard" />
+  <Behaviors />
+</ScreenSave>

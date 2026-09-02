@@ -45,7 +45,7 @@ public sealed class GameHost : Microsoft.Xna.Framework.Game
         if (iconPath is not null)
             WindowIcon.Apply(Window, GraphicsDevice, iconPath);
 
-        GumService.Default.Initialize(this, Gum.Forms.DefaultVisualsVersion.V3);
+        GumService.Default.Initialize(this, _settings.UI.Project);
         Graphite.Engine.UI.UI.Initialize();
         SceneManager.Initialize();
         SceneManager.Load<CounterScene>();

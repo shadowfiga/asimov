@@ -5,7 +5,7 @@ A small code-first 2D engine and game starter built on **MonoGame DesktopGL + Gu
 Pinned dependencies:
 
 - MonoGame.Framework.DesktopGL **3.8.5.1**
-- Gum.MonoGame **2026.8.3.1**
+- Gum.MonoGame **2026.9.2.1**
 - .NET **8** target
 
 ## Instant setup
@@ -75,6 +75,9 @@ Edit `settings.json` to configure the game without changing engine code:
   },
   "content": {
     "rootDirectory": "Content"
+  },
+  "ui": {
+    "project": "GumProject/Graphite.gumx"
   }
 }
 ```
@@ -89,7 +92,7 @@ Engine/
     GraphiteSettings.cs
   Core/
     GameHost.cs
-    Entity.cs
+    Thing.cs
     Component.cs
     Behaviour.cs
     Transform.cs
@@ -100,11 +103,16 @@ Engine/
     SceneManager.cs
     SceneLoadMode.cs
   UI/
+    Controls/
+      Button.cs
+      Text.cs
+    UIElementAttribute.cs
+    UIElementBinder.cs
     UI.cs
     UIScope.cs
     UIScreen.cs
     Gum/
-      GumScreen.cs
+      GumScreenInstance.cs
   Platform/
     WindowIcon.cs
 
@@ -115,13 +123,15 @@ Game/
     CounterScreen.cs
 
 Content/
-  GumProject/        <- put the Gum visual-editor project here
+  GumProject/
+    Graphite.gumx
+    Screens/CounterScreen.gusx
 ```
 
 The intended vocabulary is:
 
 ```text
-Scene -> Entity -> Component -> Behaviour
+Scene -> Thing -> Component -> Behaviour
 SceneManager.Load<T>()
 Scene.UI.Open<TScreen>()
 ```
@@ -137,7 +147,7 @@ SceneManager.Reload();
 SceneManager.Unload<PauseScene>();
 ```
 
-A scene creates entities like this:
+A `Thing` is Graphite's equivalent of Unity's `GameObject`. A scene creates one like this:
 
 ```csharp
 var player = Create("Player");
@@ -159,29 +169,38 @@ public sealed class PlayerController : Behaviour
 
 ## Gum visual editor
 
-The starter UI is intentionally created through **Gum Forms in code**, because that makes the zip immediately runnable without separately installing the editor.
+The official Gum editor is installed locally under `.tools/Gum` and is intentionally excluded from Git. Open the Graphite UI project by double-clicking `gum.cmd` or running:
 
-Gum itself supports a WYSIWYG project workflow. To switch the demo to visual authoring:
-
-1. Install/open the Gum UI editor.
-2. Create a project under `Content/GumProject/`, e.g. `GameUI.gumx`.
-3. In Gum choose **Content -> Add Forms Components**.
-4. Create your screens/components visually.
-5. Change `GameHost` initialization from:
-
-```csharp
-GumService.Default.Initialize(this, Gum.Forms.DefaultVisualsVersion.V3);
+```powershell
+.\Scripts\open-gum.ps1
 ```
 
-to:
+If the local tool is missing on another machine, install the pinned editor release with:
 
-```csharp
-GumService.Default.Initialize(this, "GumProject/GameUI.gumx");
+```powershell
+.\Scripts\install-gum.ps1
 ```
 
-6. Load the visual screen from the engine's Gum adapter. Gum also supports code generation for strongly-typed screen/component classes, which is the eventual recommended direction for this scaffold.
+`Content/GumProject/Graphite.gumx` includes Gum's Standard Forms components and the editable `CounterScreen`. Save changes in Gum and run Graphite again to copy the updated visual files beside the executable.
 
-Because the rest of the game only sees `UIScreen`, `UIScope`, scenes, and game classes, the Gum-specific details stay confined to `Engine/UI/Gum`.
+Game screens use Graphite's Unity-like binding API rather than Gum types:
+
+```csharp
+public sealed class CounterScreen : UIScreen
+{
+    [UIElement] private Text _counterText = null!;
+    [UIElement] private Button _incrementButton = null!;
+    [UIElement] private Button _decrementButton = null!;
+
+    protected override void Awake()
+    {
+        _incrementButton.Clicked += Increment;
+        _decrementButton.Clicked += Decrement;
+    }
+}
+```
+
+The binder converts `_incrementButton` to the Gum instance name `IncrementButton`. Use `[UIElement("OtherName")]` when the field and visual names differ. Missing screens, missing controls, and incompatible control types fail immediately with a specific binding error. Gum remains confined to `Engine/UI/Gum` and the Graphite control adapters.
 
 ## Where shaders go
 

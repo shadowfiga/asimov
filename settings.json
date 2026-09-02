@@ -22,5 +22,8 @@
   },
   "content": {
     "rootDirectory": "Content"
+  },
+  "ui": {
+    "project": "GumProject/Graphite.gumx"
   }
 }

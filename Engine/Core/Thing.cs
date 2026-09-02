@@ -2,11 +2,11 @@ using Graphite.Engine.Scenes;
 
 namespace Graphite.Engine.Core;
 
-public sealed class Entity
+public sealed class Thing
 {
     private readonly List<Component> _components = [];
 
-    internal Entity(string name, Scene scene)
+    internal Thing(string name, Scene scene)
     {
         Name = name;
         Scene = scene;
@@ -20,7 +20,7 @@ public sealed class Entity
 
     public T Add<T>() where T : Component, new()
     {
-        var component = new T { Entity = this };
+        var component = new T { Thing = this };
         _components.Add(component);
         if (component is Behaviour behaviour)
             behaviour.Awake();

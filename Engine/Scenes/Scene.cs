@@ -6,31 +6,31 @@ namespace Graphite.Engine.Scenes;
 
 public abstract class Scene
 {
-    private readonly List<Entity> _entities = [];
+    private readonly List<Thing> _things = [];
 
-    public IReadOnlyList<Entity> Entities => _entities;
+    public IReadOnlyList<Thing> Things => _things;
     public UIScope UI { get; } = new();
 
     protected internal virtual void OnLoad() { }
     protected internal virtual void OnUnload() { }
     protected internal virtual void Draw(GameTime gameTime) { }
 
-    public Entity Create(string name = "Entity")
+    public Thing Create(string name = "Thing")
     {
-        var entity = new Entity(name, this);
-        _entities.Add(entity);
-        return entity;
+        var thing = new Thing(name, this);
+        _things.Add(thing);
+        return thing;
     }
 
     internal void UpdateInternal(float dt)
     {
-        foreach (var behaviour in _entities.SelectMany(e => e.Behaviours).Where(b => b.Enabled))
+        foreach (var behaviour in _things.SelectMany(thing => thing.Behaviours).Where(behaviour => behaviour.Enabled))
         {
             behaviour.EnsureStarted();
             behaviour.Update(dt);
         }
 
-        foreach (var behaviour in _entities.SelectMany(e => e.Behaviours).Where(b => b.Enabled))
+        foreach (var behaviour in _things.SelectMany(thing => thing.Behaviours).Where(behaviour => behaviour.Enabled))
             behaviour.LateUpdate(dt);
     }
 
@@ -38,8 +38,8 @@ public abstract class Scene
     {
         OnUnload();
         UI.CloseAll();
-        foreach (var entity in _entities)
-            entity.Destroy();
-        _entities.Clear();
+        foreach (var thing in _things)
+            thing.Destroy();
+        _things.Clear();
     }
 }

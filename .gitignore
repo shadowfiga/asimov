@@ -4,6 +4,7 @@ obj/
 .vscode/
 .idea/
 .dotnet/
+.tools/
 *.user
 *.suo
 .DS_Store
