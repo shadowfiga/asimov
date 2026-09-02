@@ -12,7 +12,11 @@ public abstract class Behaviour : Component
 
     internal void EnsureStarted()
     {
-        if (_started) return;
+        if (_started)
+        {
+            return;
+        }
+
         _started = true;
         Start();
     }

@@ -23,7 +23,10 @@ public sealed class Thing
         var component = new T { Thing = this };
         _components.Add(component);
         if (component is Behaviour behaviour)
+        {
             behaviour.Awake();
+        }
+
         return component;
     }
 
@@ -36,7 +39,10 @@ public sealed class Thing
     internal void Destroy()
     {
         foreach (var behaviour in Behaviours)
+        {
             behaviour.OnDestroy();
+        }
+
         _components.Clear();
     }
 }

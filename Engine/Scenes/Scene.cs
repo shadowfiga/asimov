@@ -31,7 +31,9 @@ public abstract class Scene
         }
 
         foreach (var behaviour in _things.SelectMany(thing => thing.Behaviours).Where(behaviour => behaviour.Enabled))
+        {
             behaviour.LateUpdate(dt);
+        }
     }
 
     internal void UnloadInternal()
@@ -39,7 +41,10 @@ public abstract class Scene
         OnUnload();
         UI.CloseAll();
         foreach (var thing in _things)
+        {
             thing.Destroy();
+        }
+
         _things.Clear();
     }
 }

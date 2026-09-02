@@ -57,7 +57,9 @@ public sealed class GameHost : Microsoft.Xna.Framework.Game
     protected override void Update(GameTime gameTime)
     {
         if (Input.ShouldExit() || Application.IsQuitRequested)
+        {
             Exit();
+        }
 
         Time.Update(gameTime);
         GumService.Default.Update(gameTime);

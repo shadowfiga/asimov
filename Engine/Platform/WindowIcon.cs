@@ -9,7 +9,9 @@ internal static class WindowIcon
     public static void Apply(GameWindow window, GraphicsDevice graphicsDevice, string path)
     {
         if (!File.Exists(path))
+        {
             throw new FileNotFoundException("The game.icon file configured in settings.json was not found.", path);
+        }
 
         using var stream = File.OpenRead(path);
         using var texture = Texture2D.FromStream(graphicsDevice, stream);
@@ -46,7 +48,9 @@ internal static class WindowIcon
                 alphaMask);
 
             if (surface == IntPtr.Zero)
+            {
                 throw new InvalidOperationException($"SDL could not create the window icon surface: {GetSdlError()}");
+            }
 
             try
             {

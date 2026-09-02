@@ -207,6 +207,29 @@ public sealed class CounterScreen : UIScreen
 
 The binder converts `_incrementButton` to the Gum instance name `IncrementButton`. Use `[UIElement("OtherName")]` when the field and visual names differ. Missing screens, missing controls, and incompatible control types fail immediately with a specific binding error. Gum remains confined to `Engine/UI/Gum` and the Graphite control adapters.
 
+## Code quality
+
+The repository uses [pre-commit](https://pre-commit.com/) to reject malformed configuration, invalid XML, formatting violations, compiler warnings, build errors, and C# control-flow statements without braces.
+
+Install the pinned development dependency and Git hook on a new checkout:
+
+```powershell
+python -m pip install --user -r requirements-dev.txt
+python -m pre_commit install --install-hooks
+```
+
+Run the complete suite manually with:
+
+```powershell
+python -m pre_commit run --all-files
+```
+
+If `dotnet format` reports a violation, apply safe automatic fixes with:
+
+```powershell
+dotnet format Graphite.csproj --no-restore --severity warn
+```
+
 ## Where shaders go
 
 The next rendering layer can live under:

@@ -12,7 +12,9 @@ public abstract class UIScreen : IDisposable
     internal void OpenInternal()
     {
         if (IsOpen)
+        {
             return;
+        }
 
         try
         {
@@ -33,7 +35,9 @@ public abstract class UIScreen : IDisposable
     internal void CloseInternal()
     {
         if (!IsOpen)
+        {
             return;
+        }
 
         try
         {

@@ -20,7 +20,10 @@ public sealed class UIScope
     internal void CloseAll()
     {
         foreach (var screen in _screens.ToArray())
+        {
             UI.Close(screen);
+        }
+
         _screens.Clear();
     }
 }

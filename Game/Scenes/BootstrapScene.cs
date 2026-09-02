@@ -1,4 +1,4 @@
-﻿using Graphite.Engine.Scenes;
+using Graphite.Engine.Scenes;
 
 namespace Graphite.Game.Scenes;
 

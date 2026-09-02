@@ -28,7 +28,11 @@ public static class SceneManager
     public static void Reload()
     {
         var type = ActiveScene?.GetType();
-        if (type is null) return;
+        if (type is null)
+        {
+            return;
+        }
+
         Pending.Enqueue(() => LoadNow((Scene)Activator.CreateInstance(type)!, SceneLoadMode.Single));
     }
 
@@ -37,7 +41,11 @@ public static class SceneManager
         Pending.Enqueue(() =>
         {
             var scene = LoadedScenes.FirstOrDefault(s => s is T);
-            if (scene is null) return;
+            if (scene is null)
+            {
+                return;
+            }
+
             scene.UnloadInternal();
             LoadedScenes.Remove(scene);
             ActiveScene = LoadedScenes.LastOrDefault();
@@ -49,7 +57,10 @@ public static class SceneManager
         if (mode == SceneLoadMode.Single)
         {
             foreach (var loaded in LoadedScenes)
+            {
                 loaded.UnloadInternal();
+            }
+
             LoadedScenes.Clear();
         }
 
@@ -62,7 +73,9 @@ public static class SceneManager
     {
         var classPath = gameRelativeClass.Trim();
         if (classPath.EndsWith(".cs", StringComparison.OrdinalIgnoreCase))
+        {
             classPath = classPath[..^3];
+        }
 
         var className = classPath
             .Replace('\\', '.')
@@ -81,11 +94,16 @@ public static class SceneManager
                 $"Startup scene '{gameRelativeClass}' was not found. Expected class '{fullName}'.");
 
         if (!typeof(Scene).IsAssignableFrom(sceneType) || sceneType.IsAbstract)
+        {
             throw new InvalidDataException(
                 $"Startup scene '{fullName}' must be a concrete {nameof(Scene)} class.");
+        }
+
         if (sceneType.GetConstructor(Type.EmptyTypes) is null)
+        {
             throw new InvalidDataException(
                 $"Startup scene '{fullName}' must have a public parameterless constructor.");
+        }
 
         return sceneType;
     }
@@ -97,18 +115,24 @@ public static class SceneManager
     internal static void Update(float dt)
     {
         foreach (var scene in LoadedScenes.ToArray())
+        {
             scene.UpdateInternal(dt);
+        }
     }
 
     internal static void Draw(GameTime gameTime)
     {
         foreach (var scene in LoadedScenes)
+        {
             scene.Draw(gameTime);
+        }
     }
 
     internal static void CommitPendingChanges()
     {
         while (Pending.TryDequeue(out var action))
+        {
             action();
+        }
     }
 }

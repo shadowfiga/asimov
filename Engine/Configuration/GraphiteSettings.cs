@@ -28,7 +28,9 @@ public sealed class GraphiteSettings
     {
         var sourcePath = Path.GetFullPath(path ?? Path.Combine(AppContext.BaseDirectory, "settings.json"));
         if (!File.Exists(sourcePath))
+        {
             throw new FileNotFoundException("Graphite requires a settings.json file beside the executable.", sourcePath);
+        }
 
         try
         {
@@ -51,7 +53,9 @@ public sealed class GraphiteSettings
     public string? ResolveIconPath()
     {
         if (Game.Icon is null)
+        {
             return null;
+        }
 
         var settingsDirectory = Path.GetDirectoryName(SourcePath)
             ?? throw new InvalidOperationException($"Settings path has no parent directory: {SourcePath}");
@@ -61,21 +65,44 @@ public sealed class GraphiteSettings
     private void Validate()
     {
         if (Game is null || Window is null || Graphics is null || Runtime is null || Content is null || UI is null)
+        {
             throw new InvalidDataException("Graphite settings sections cannot be null.");
+        }
+
         if (string.IsNullOrWhiteSpace(Game.Name))
+        {
             throw new InvalidDataException("game.name must not be empty.");
+        }
+
         if (string.IsNullOrWhiteSpace(Game.StartupScene))
+        {
             throw new InvalidDataException("game.startupScene must not be empty.");
+        }
+
         if (Game.Icon is not null && string.IsNullOrWhiteSpace(Game.Icon))
+        {
             throw new InvalidDataException("game.icon must be null or a non-empty path.");
+        }
+
         if (Window.Width is < 1 or > 16384 || Window.Height is < 1 or > 16384)
+        {
             throw new InvalidDataException("window.width and window.height must be between 1 and 16384.");
+        }
+
         if (Runtime.TargetFramesPerSecond is < 1 or > 1000)
+        {
             throw new InvalidDataException("runtime.targetFramesPerSecond must be between 1 and 1000.");
+        }
+
         if (string.IsNullOrWhiteSpace(Content.RootDirectory))
+        {
             throw new InvalidDataException("content.rootDirectory must not be empty.");
+        }
+
         if (string.IsNullOrWhiteSpace(UI.Project))
+        {
             throw new InvalidDataException("ui.project must not be empty.");
+        }
 
         Graphics.ParseClearColor();
     }
@@ -106,13 +133,20 @@ public sealed class GraphicsSettings
     public Color ParseClearColor()
     {
         if (string.IsNullOrWhiteSpace(ClearColor))
+        {
             throw new InvalidDataException("graphics.clearColor must not be empty.");
+        }
 
         var value = ClearColor.Trim();
         if (value.StartsWith('#'))
+        {
             value = value[1..];
+        }
+
         if (value.Length is not (6 or 8))
+        {
             throw new InvalidDataException("graphics.clearColor must use #RRGGBB or #RRGGBBAA.");
+        }
 
         try
         {

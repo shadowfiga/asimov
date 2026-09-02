@@ -1,0 +1,33 @@
+minimum_pre_commit_version: "4.4.0"
+
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v6.0.0
+    hooks:
+      - id: check-added-large-files
+        args: ["--maxkb=1024"]
+      - id: check-case-conflict
+      - id: check-illegal-windows-names
+      - id: check-json
+      - id: check-merge-conflict
+      - id: check-xml
+      - id: check-yaml
+      - id: end-of-file-fixer
+        exclude: ^(?:Content/GumProject/|\.dotnet-install\.ps1$)
+      - id: trailing-whitespace
+        exclude: ^(?:Content/GumProject/|\.dotnet-install\.ps1$)
+
+  - repo: local
+    hooks:
+      - id: dotnet-format
+        name: dotnet format
+        entry: dotnet format Graphite.csproj --verify-no-changes --no-restore --severity warn
+        language: unsupported
+        pass_filenames: false
+        files: ^.*\.(cs|csproj|props|targets)$|^\.editorconfig$
+      - id: dotnet-build
+        name: dotnet build (warnings are errors)
+        entry: dotnet build Graphite.csproj --no-restore --configuration Debug --warnaserror
+        language: unsupported
+        pass_filenames: false
+        files: ^.*\.(cs|csproj|props|targets|json|gumx|gusx|gucx|gutx|behx)$
