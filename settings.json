@@ -1,0 +1,26 @@
+{
+  "game": {
+    "name": "Graphite",
+    "icon": null
+  },
+  "window": {
+    "width": 960,
+    "height": 540,
+    "fullscreen": false,
+    "borderless": false,
+    "resizable": true
+  },
+  "graphics": {
+    "clearColor": "#16181F",
+    "vsync": true,
+    "preferMultiSampling": false
+  },
+  "runtime": {
+    "mouseVisible": true,
+    "fixedTimeStep": true,
+    "targetFramesPerSecond": 60
+  },
+  "content": {
+    "rootDirectory": "Content"
+  }
+}
