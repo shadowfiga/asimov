@@ -54,7 +54,8 @@ Edit `settings.json` to configure the game without changing engine code:
 {
   "game": {
     "name": "My Game",
-    "icon": "Content/icon.png"
+    "icon": "Content/icon.png",
+    "startupScene": "Scenes/BootstrapScene"
   },
   "window": {
     "width": 1280,
@@ -82,7 +83,7 @@ Edit `settings.json` to configure the game without changing engine code:
 }
 ```
 
-`game.icon` accepts an image path relative to `settings.json`; PNG is recommended. Set it to `null` to use the platform default. Invalid or missing settings fail at startup with a specific error instead of silently falling back. Run the project again after changing settings so the file is copied beside the executable.
+`game.icon` accepts an image path relative to `settings.json`; PNG is recommended. Set it to `null` to use the platform default. `game.startupScene` is a class path relative to the game's namespace, so `Scenes/BootstrapScene` resolves to `Graphite.Game.Scenes.BootstrapScene`. Forward slashes, backslashes, and dots are accepted. Invalid or missing settings fail at startup with a specific error instead of silently falling back. Run the project again after changing settings so the file is copied beside the executable.
 
 ## Architecture
 
@@ -118,13 +119,17 @@ Engine/
 
 Game/
   Scenes/
+    BootstrapScene.cs
+    MainMenuScene.cs
     CounterScene.cs
   UI/
+    MainMenuScreen.cs
     CounterScreen.cs
 
 Content/
   GumProject/
     Graphite.gumx
+    Screens/MainMenuScreen.gusx
     Screens/CounterScreen.gusx
 ```
 

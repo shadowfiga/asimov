@@ -3,7 +3,6 @@ using Graphite.Engine.Configuration;
 using Graphite.Engine.Platform;
 using Graphite.Engine.Scenes;
 using Graphite.Engine.UI;
-using Graphite.Game.Scenes;
 using Microsoft.Xna.Framework;
 
 namespace Graphite.Engine.Core;
@@ -43,18 +42,21 @@ public sealed class GameHost : Microsoft.Xna.Framework.Game
 
         var iconPath = _settings.ResolveIconPath();
         if (iconPath is not null)
+        {
             WindowIcon.Apply(Window, GraphicsDevice, iconPath);
+        }
 
         GumService.Default.Initialize(this, _settings.UI.Project);
         Graphite.Engine.UI.UI.Initialize();
+        Application.Reset();
         SceneManager.Initialize();
-        SceneManager.Load<CounterScene>();
+        SceneManager.Load(_settings.Game.StartupScene);
         SceneManager.CommitPendingChanges();
     }
 
     protected override void Update(GameTime gameTime)
     {
-        if (Input.ShouldExit())
+        if (Input.ShouldExit() || Application.IsQuitRequested)
             Exit();
 
         Time.Update(gameTime);

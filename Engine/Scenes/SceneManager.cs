@@ -1,3 +1,4 @@
+using System.Reflection;
 using Microsoft.Xna.Framework;
 
 namespace Graphite.Engine.Scenes;
@@ -16,6 +17,12 @@ public static class SceneManager
         where T : Scene, new()
     {
         Pending.Enqueue(() => LoadNow(new T(), mode));
+    }
+
+    public static void Load(string gameRelativeClass, SceneLoadMode mode = SceneLoadMode.Single)
+    {
+        var sceneType = ResolveGameSceneType(gameRelativeClass);
+        Pending.Enqueue(() => LoadNow(CreateScene(sceneType), mode));
     }
 
     public static void Reload()
@@ -50,6 +57,42 @@ public static class SceneManager
         ActiveScene = scene;
         scene.OnLoad();
     }
+
+    private static Type ResolveGameSceneType(string gameRelativeClass)
+    {
+        var classPath = gameRelativeClass.Trim();
+        if (classPath.EndsWith(".cs", StringComparison.OrdinalIgnoreCase))
+            classPath = classPath[..^3];
+
+        var className = classPath
+            .Replace('\\', '.')
+            .Replace('/', '.')
+            .Trim('.');
+
+        var assembly = Assembly.GetEntryAssembly() ?? typeof(SceneManager).Assembly;
+        var assemblyName = assembly.GetName().Name
+            ?? throw new InvalidOperationException("The game assembly has no name.");
+
+        var fullName = className.StartsWith($"{assemblyName}.", StringComparison.Ordinal)
+            ? className
+            : $"{assemblyName}.Game.{className}";
+        var sceneType = assembly.GetType(fullName, throwOnError: false, ignoreCase: false)
+            ?? throw new InvalidDataException(
+                $"Startup scene '{gameRelativeClass}' was not found. Expected class '{fullName}'.");
+
+        if (!typeof(Scene).IsAssignableFrom(sceneType) || sceneType.IsAbstract)
+            throw new InvalidDataException(
+                $"Startup scene '{fullName}' must be a concrete {nameof(Scene)} class.");
+        if (sceneType.GetConstructor(Type.EmptyTypes) is null)
+            throw new InvalidDataException(
+                $"Startup scene '{fullName}' must have a public parameterless constructor.");
+
+        return sceneType;
+    }
+
+    private static Scene CreateScene(Type sceneType)
+        => (Scene)(Activator.CreateInstance(sceneType)
+            ?? throw new InvalidOperationException($"Could not create scene '{sceneType.FullName}'."));
 
     internal static void Update(float dt)
     {

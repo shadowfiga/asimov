@@ -64,6 +64,8 @@ public sealed class GraphiteSettings
             throw new InvalidDataException("Graphite settings sections cannot be null.");
         if (string.IsNullOrWhiteSpace(Game.Name))
             throw new InvalidDataException("game.name must not be empty.");
+        if (string.IsNullOrWhiteSpace(Game.StartupScene))
+            throw new InvalidDataException("game.startupScene must not be empty.");
         if (Game.Icon is not null && string.IsNullOrWhiteSpace(Game.Icon))
             throw new InvalidDataException("game.icon must be null or a non-empty path.");
         if (Window.Width is < 1 or > 16384 || Window.Height is < 1 or > 16384)
@@ -83,6 +85,7 @@ public sealed class GameIdentitySettings
 {
     public string Name { get; init; } = "Graphite";
     public string? Icon { get; init; }
+    public string StartupScene { get; init; } = "Scenes/BootstrapScene";
 }
 
 public sealed class WindowSettings

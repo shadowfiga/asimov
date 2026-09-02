@@ -1,7 +1,8 @@
 {
   "game": {
     "name": "Graphite",
-    "icon": null
+    "icon": null,
+    "startupScene": "Scenes/BootstrapScene"
   },
   "window": {
     "width": 960,
