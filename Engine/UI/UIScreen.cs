@@ -1,10 +1,12 @@
 using Graphite.Engine.UI.Gum;
+using Graphite.Engine.UI.Controls;
 
 namespace Graphite.Engine.UI;
 
 public abstract class UIScreen : IDisposable
 {
     private GumScreenInstance? _visual;
+    private IReadOnlyList<UIControl> _controls = [];
 
     public bool IsOpen { get; private set; }
     protected virtual string LayoutName => GetType().Name;
@@ -19,15 +21,14 @@ public abstract class UIScreen : IDisposable
         try
         {
             _visual = GumScreenInstance.Open(LayoutName);
-            UIElementBinder.Bind(this, _visual);
+            _controls = UIElementBinder.Bind(this, _visual);
             IsOpen = true;
             Awake();
         }
         catch
         {
             IsOpen = false;
-            _visual?.Dispose();
-            _visual = null;
+            ReleaseVisual();
             throw;
         }
     }
@@ -45,8 +46,7 @@ public abstract class UIScreen : IDisposable
         }
         finally
         {
-            _visual?.Dispose();
-            _visual = null;
+            ReleaseVisual();
             IsOpen = false;
         }
     }
@@ -55,4 +55,16 @@ public abstract class UIScreen : IDisposable
     protected virtual void OnDestroy() { }
 
     public void Dispose() => CloseInternal();
+
+    private void ReleaseVisual()
+    {
+        for (var index = _controls.Count - 1; index >= 0; index--)
+        {
+            _controls[index].Dispose();
+        }
+
+        _controls = [];
+        _visual?.Dispose();
+        _visual = null;
+    }
 }

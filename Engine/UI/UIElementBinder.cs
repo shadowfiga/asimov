@@ -6,32 +6,45 @@ namespace Graphite.Engine.UI;
 
 internal static class UIElementBinder
 {
-    public static void Bind(UIScreen screen, GumScreenInstance visual)
+    public static IReadOnlyList<UIControl> Bind(UIScreen screen, GumScreenInstance visual)
     {
-        for (var type = screen.GetType(); type is not null && type != typeof(UIScreen); type = type.BaseType)
+        var controls = new List<UIControl>();
+
+        try
         {
-            var fields = type.GetFields(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.DeclaredOnly);
-            foreach (var field in fields)
+            for (var type = screen.GetType(); type is not null && type != typeof(UIScreen); type = type.BaseType)
             {
-                var attribute = field.GetCustomAttribute<UIElementAttribute>();
-                if (attribute is null)
+                var fields = type.GetFields(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.DeclaredOnly);
+                foreach (var field in fields)
                 {
-                    continue;
-                }
+                    var attribute = field.GetCustomAttribute<UIElementAttribute>();
+                    if (attribute is null)
+                    {
+                        continue;
+                    }
 
-                if (field.IsInitOnly)
-                {
-                    throw new InvalidOperationException($"[UIElement] field {type.FullName}.{field.Name} cannot be readonly.");
-                }
+                    if (field.IsInitOnly)
+                    {
+                        throw new InvalidOperationException($"[UIElement] field {type.FullName}.{field.Name} cannot be readonly.");
+                    }
 
-                var elementName = attribute.Name ?? InferElementName(field.Name);
-                var control = CreateControl(field.FieldType, visual, elementName);
-                field.SetValue(screen, control);
+                    var elementName = attribute.Name ?? InferElementName(field.Name);
+                    var control = CreateControl(field.FieldType, visual, elementName);
+                    controls.Add(control);
+                    field.SetValue(screen, control);
+                }
             }
+
+            return controls;
+        }
+        catch
+        {
+            DisposeControls(controls);
+            throw;
         }
     }
 
-    private static object CreateControl(Type fieldType, GumScreenInstance visual, string elementName)
+    private static UIControl CreateControl(Type fieldType, GumScreenInstance visual, string elementName)
     {
         if (fieldType == typeof(Text))
         {
@@ -56,5 +69,13 @@ internal static class UIElementBinder
         }
 
         return char.ToUpperInvariant(name[0]) + name[1..];
+    }
+
+    private static void DisposeControls(List<UIControl> controls)
+    {
+        for (var index = controls.Count - 1; index >= 0; index--)
+        {
+            controls[index].Dispose();
+        }
     }
 }

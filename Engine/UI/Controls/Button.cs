@@ -24,4 +24,10 @@ public sealed class Button : UIControl
     {
         Clicked?.Invoke();
     }
+
+    protected override void DisposeCore()
+    {
+        _control.Click -= HandleClick;
+        Clicked = null;
+    }
 }

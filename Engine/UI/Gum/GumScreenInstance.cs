@@ -8,7 +8,7 @@ namespace Graphite.Engine.UI.Gum;
 
 internal sealed class GumScreenInstance : IDisposable
 {
-    private readonly GraphicalUiElement _root;
+    private GraphicalUiElement? _root;
 
     private GumScreenInstance(GraphicalUiElement root)
     {
@@ -26,21 +26,31 @@ internal sealed class GumScreenInstance : IDisposable
 
     public T Get<T>(string elementName) where T : FrameworkElement
     {
+        var root = _root
+            ?? throw new ObjectDisposedException(nameof(GumScreenInstance));
+
         try
         {
-            return _root.FindFormsControl<T>(elementName)
+            return root.FindFormsControl<T>(elementName)
                 ?? throw new InvalidOperationException($"No matching Gum Forms control was found.");
         }
         catch (Exception exception)
         {
             throw new InvalidOperationException(
-                $"Gum element '{elementName}' on screen '{_root.Name}' could not bind to {typeof(T).Name}.",
+                $"Gum element '{elementName}' on screen '{root.Name}' could not bind to {typeof(T).Name}.",
                 exception);
         }
     }
 
     public void Dispose()
     {
-        _root.RemoveFromManagers();
+        var root = _root;
+        if (root is null)
+        {
+            return;
+        }
+
+        _root = null;
+        root.RemoveFromRoot();
     }
 }

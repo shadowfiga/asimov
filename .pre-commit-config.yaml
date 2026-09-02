@@ -27,7 +27,7 @@ repos:
         files: ^.*\.(cs|csproj|props|targets)$|^\.editorconfig$
       - id: dotnet-build
         name: dotnet build (warnings are errors)
-        entry: dotnet build Graphite.csproj --no-restore --configuration Debug --warnaserror
+        entry: dotnet build Graphite.csproj --no-restore --configuration Debug --warnaserror --output .artifacts/pre-commit
         language: unsupported
         pass_filenames: false
         files: ^.*\.(cs|csproj|props|targets|json|gumx|gusx|gucx|gutx|behx)$
