@@ -166,8 +166,6 @@ public sealed class CounterScreen : UIScreen
 
 Myra supplies stack panels, grids, windows, dialogs, lists, inputs, menus, tabs, sliders, a property grid, stylesheets, and optional MML markup. Graphite deliberately uses the direct C# widget API so UI stays code-first.
 
-The former Gum project and helper scripts are retained under `Legacy/` only as recoverable reference material. They are outside `Content`, are not packaged, and have no runtime dependency.
-
 ## Scene ergonomics
 
 ```csharp

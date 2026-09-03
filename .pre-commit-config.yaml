@@ -13,9 +13,9 @@ repos:
       - id: check-xml
       - id: check-yaml
       - id: end-of-file-fixer
-        exclude: ^(?:Legacy/GumProject/|\.dotnet-install\.ps1$)
+        exclude: ^\.dotnet-install\.ps1$
       - id: trailing-whitespace
-        exclude: ^(?:Legacy/GumProject/|\.dotnet-install\.ps1$)
+        exclude: ^\.dotnet-install\.ps1$
 
   - repo: local
     hooks:
