@@ -19,7 +19,6 @@ public sealed class GraphiteSettings
     public GraphicsSettings Graphics { get; init; } = new();
     public RuntimeSettings Runtime { get; init; } = new();
     public ContentSettings Content { get; init; } = new();
-    public UISettings UI { get; init; } = new();
 
     [JsonIgnore]
     public string SourcePath { get; private set; } = string.Empty;
@@ -64,7 +63,7 @@ public sealed class GraphiteSettings
 
     private void Validate()
     {
-        if (Game is null || Window is null || Graphics is null || Runtime is null || Content is null || UI is null)
+        if (Game is null || Window is null || Graphics is null || Runtime is null || Content is null)
         {
             throw new InvalidDataException("Graphite settings sections cannot be null.");
         }
@@ -97,11 +96,6 @@ public sealed class GraphiteSettings
         if (string.IsNullOrWhiteSpace(Content.RootDirectory))
         {
             throw new InvalidDataException("content.rootDirectory must not be empty.");
-        }
-
-        if (string.IsNullOrWhiteSpace(UI.Project))
-        {
-            throw new InvalidDataException("ui.project must not be empty.");
         }
 
         Graphics.ParseClearColor();
@@ -176,9 +170,4 @@ public sealed class RuntimeSettings
 public sealed class ContentSettings
 {
     public string RootDirectory { get; init; } = "Content";
-}
-
-public sealed class UISettings
-{
-    public string Project { get; init; } = "GumProject/Graphite.gumx";
 }

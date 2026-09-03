@@ -1,4 +1,3 @@
-using Gum;
 using Graphite.Engine.Configuration;
 using Graphite.Engine.Platform;
 using Graphite.Engine.Scenes;
@@ -46,8 +45,7 @@ public sealed class GameHost : Microsoft.Xna.Framework.Game
             WindowIcon.Apply(Window, GraphicsDevice, iconPath);
         }
 
-        GumService.Default.Initialize(this, _settings.UI.Project);
-        Graphite.Engine.UI.UI.Initialize();
+        Graphite.Engine.UI.UI.Initialize(this);
         Application.Reset();
         SceneManager.Initialize();
         SceneManager.Load(_settings.Game.StartupScene);
@@ -62,7 +60,6 @@ public sealed class GameHost : Microsoft.Xna.Framework.Game
         }
 
         Time.Update(gameTime);
-        GumService.Default.Update(gameTime);
         SceneManager.Update(Time.DeltaTime);
         SceneManager.CommitPendingChanges();
 
@@ -74,8 +71,18 @@ public sealed class GameHost : Microsoft.Xna.Framework.Game
         GraphicsDevice.Clear(_clearColor);
 
         SceneManager.Draw(gameTime);
-        GumService.Default.Draw();
+        Graphite.Engine.UI.UI.Draw();
 
         base.Draw(gameTime);
+    }
+
+    protected override void Dispose(bool disposing)
+    {
+        if (disposing)
+        {
+            Graphite.Engine.UI.UI.Shutdown();
+        }
+
+        base.Dispose(disposing);
     }
 }

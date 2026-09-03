@@ -1,34 +1,54 @@
 using Graphite.Engine.Core;
 using Graphite.Engine.Scenes;
 using Graphite.Engine.UI;
-using Graphite.Engine.UI.Controls;
 using Graphite.Game.Scenes;
+using Myra.Events;
+using Myra.Graphics2D.UI;
 
 namespace Graphite.Game.UI;
 
 public sealed class MainMenuScreen : UIScreen
 {
-    [UIElement] private Button _playButton = null!;
-    [UIElement] private Button _quitButton = null!;
+    private Button _playButton = null!;
+    private Button _quitButton = null!;
+
+    protected override Widget Build()
+    {
+        _playButton = Button.CreateTextButton("Play Game");
+        _playButton.Width = 350;
+        _quitButton = Button.CreateTextButton("Quit");
+        _quitButton.Width = 350;
+
+        var content = new VerticalStackPanel
+        {
+            HorizontalAlignment = HorizontalAlignment.Center,
+            VerticalAlignment = VerticalAlignment.Center,
+            Spacing = 8
+        };
+        content.Widgets.Add(new Label { Text = "Graphite" });
+        content.Widgets.Add(_playButton);
+        content.Widgets.Add(_quitButton);
+        return content;
+    }
 
     protected override void Awake()
     {
-        _playButton.Clicked += PlayGame;
-        _quitButton.Clicked += Quit;
+        _playButton.Click += PlayGame;
+        _quitButton.Click += Quit;
     }
 
     protected override void OnDestroy()
     {
-        _playButton.Clicked -= PlayGame;
-        _quitButton.Clicked -= Quit;
+        _playButton.Click -= PlayGame;
+        _quitButton.Click -= Quit;
     }
 
-    private static void PlayGame()
+    private static void PlayGame(object sender, MyraEventArgs args)
     {
         SceneManager.Load<CounterScene>();
     }
 
-    private static void Quit()
+    private static void Quit(object sender, MyraEventArgs args)
     {
         Application.Quit();
     }

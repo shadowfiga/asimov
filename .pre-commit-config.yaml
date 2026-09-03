@@ -13,9 +13,9 @@ repos:
       - id: check-xml
       - id: check-yaml
       - id: end-of-file-fixer
-        exclude: ^(?:Content/GumProject/|\.dotnet-install\.ps1$)
+        exclude: ^(?:Legacy/GumProject/|\.dotnet-install\.ps1$)
       - id: trailing-whitespace
-        exclude: ^(?:Content/GumProject/|\.dotnet-install\.ps1$)
+        exclude: ^(?:Legacy/GumProject/|\.dotnet-install\.ps1$)
 
   - repo: local
     hooks:
@@ -30,4 +30,4 @@ repos:
         entry: dotnet build Graphite.csproj --no-restore --configuration Debug --warnaserror --output .artifacts/pre-commit
         language: unsupported
         pass_filenames: false
-        files: ^.*\.(cs|csproj|props|targets|json|gumx|gusx|gucx|gutx|behx)$
+        files: ^.*\.(cs|csproj|props|targets|json)$|^\.editorconfig$

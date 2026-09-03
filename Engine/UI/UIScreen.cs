@@ -1,15 +1,14 @@
-using Graphite.Engine.UI.Gum;
-using Graphite.Engine.UI.Controls;
+using Myra.Graphics2D.UI;
 
 namespace Graphite.Engine.UI;
 
 public abstract class UIScreen : IDisposable
 {
-    private GumScreenInstance? _visual;
-    private IReadOnlyList<UIControl> _controls = [];
+    private Widget? _root;
 
     public bool IsOpen { get; private set; }
-    protected virtual string LayoutName => GetType().Name;
+
+    protected abstract Widget Build();
 
     internal void OpenInternal()
     {
@@ -20,15 +19,16 @@ public abstract class UIScreen : IDisposable
 
         try
         {
-            _visual = GumScreenInstance.Open(LayoutName);
-            _controls = UIElementBinder.Bind(this, _visual);
+            _root = Build()
+                ?? throw new InvalidOperationException($"{GetType().FullName}.{nameof(Build)}() returned null.");
+            UI.Attach(_root);
             IsOpen = true;
             Awake();
         }
         catch
         {
             IsOpen = false;
-            ReleaseVisual();
+            ReleaseRoot();
             throw;
         }
     }
@@ -46,7 +46,7 @@ public abstract class UIScreen : IDisposable
         }
         finally
         {
-            ReleaseVisual();
+            ReleaseRoot();
             IsOpen = false;
         }
     }
@@ -56,15 +56,14 @@ public abstract class UIScreen : IDisposable
 
     public void Dispose() => CloseInternal();
 
-    private void ReleaseVisual()
+    private void ReleaseRoot()
     {
-        for (var index = _controls.Count - 1; index >= 0; index--)
+        if (_root is null)
         {
-            _controls[index].Dispose();
+            return;
         }
 
-        _controls = [];
-        _visual?.Dispose();
-        _visual = null;
+        UI.Detach(_root);
+        _root = null;
     }
 }
