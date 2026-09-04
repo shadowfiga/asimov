@@ -1,6 +1,6 @@
 {
   "game": {
-    "name": "Graphite",
+    "name": "Black Company!",
     "icon": null,
     "startupScene": "Scenes/BootstrapScene"
   },
@@ -12,7 +12,7 @@
     "resizable": true
   },
   "graphics": {
-    "clearColor": "#16181F",
+    "clearColor": "#111111",
     "vsync": true,
     "preferMultiSampling": false
   },

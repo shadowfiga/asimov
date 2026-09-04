@@ -1,0 +1,337 @@
+{
+  "schemaVersion": 1,
+  "table": {
+    "id": "management_cards",
+    "lastChangeAt": "2026-09-03T17:55:46.300Z",
+    "version": 1,
+    "name": "Management Cards",
+    "description": "Management Cards played onto accepted contracts.",
+    "columns": [
+      {
+        "id": "EqADbYRVnWZuCsSP6OPzI",
+        "type": "string",
+        "name": "display_name",
+        "defaultValue": "Card",
+        "required": true,
+        "unique": false
+      },
+      {
+        "id": "Bz34EfK_dd6_-Qpd4u2wI",
+        "type": "text",
+        "name": "description",
+        "defaultValue": "",
+        "required": true,
+        "unique": false
+      },
+      {
+        "id": "oFhKrnyvvr3aO1mR9hABY",
+        "type": "enum",
+        "name": "effect",
+        "defaultValue": "SPEED_MULTIPLIER",
+        "possibleValues": [
+          "SPEED_MULTIPLIER",
+          "TEMP_WORKERS",
+          "REMAINING_PROGRESS",
+          "QUALITY_CONTROL",
+          "SHIP_IT"
+        ],
+        "required": true,
+        "unique": false
+      },
+      {
+        "id": "CFtk6ANFGY7yCl3sTp_3O",
+        "type": "decimal",
+        "name": "magnitude",
+        "defaultValue": 0,
+        "min": 0,
+        "required": true,
+        "unique": false
+      },
+      {
+        "id": "d4kgbZLLXumSQ1Tdd28Ui",
+        "type": "decimal",
+        "name": "duration_seconds",
+        "defaultValue": 0,
+        "min": 0,
+        "required": true,
+        "unique": false
+      },
+      {
+        "id": "3-Kzydj7tZmp65e9Lj6H_",
+        "type": "decimal",
+        "name": "bankruptcy_delta",
+        "defaultValue": 0,
+        "required": true,
+        "unique": false
+      },
+      {
+        "id": "SdUpiS7jGFNb3s8tAmPtN",
+        "type": "enumArray",
+        "name": "compatible_tags",
+        "defaultValue": [],
+        "possibleValues": [
+          "CONSUMER",
+          "INDUSTRIAL",
+          "MEDICAL",
+          "GOVERNMENT",
+          "MILITARY",
+          "TECH",
+          "FINANCIAL",
+          "SHADY"
+        ],
+        "required": false,
+        "unique": false
+      }
+    ],
+    "rows": [
+      {
+        "id": "za9W4XFQzbn239CyigGOd",
+        "slug": "OVERTIME",
+        "values": [
+          {
+            "columnId": "EqADbYRVnWZuCsSP6OPzI",
+            "type": "string",
+            "value": "Overtime"
+          },
+          {
+            "columnId": "Bz34EfK_dd6_-Qpd4u2wI",
+            "type": "text",
+            "value": "+75% work speed for 6 seconds. Risk increases."
+          },
+          {
+            "columnId": "oFhKrnyvvr3aO1mR9hABY",
+            "type": "enum",
+            "value": "SPEED_MULTIPLIER"
+          },
+          {
+            "columnId": "CFtk6ANFGY7yCl3sTp_3O",
+            "type": "decimal",
+            "value": 1.75
+          },
+          {
+            "columnId": "d4kgbZLLXumSQ1Tdd28Ui",
+            "type": "decimal",
+            "value": 6
+          },
+          {
+            "columnId": "3-Kzydj7tZmp65e9Lj6H_",
+            "type": "decimal",
+            "value": 2
+          },
+          {
+            "columnId": "SdUpiS7jGFNb3s8tAmPtN",
+            "type": "enumArray",
+            "value": []
+          }
+        ]
+      },
+      {
+        "id": "s4r9IkP81lgt8P9CHR_3G",
+        "slug": "TEMP_WORKERS",
+        "values": [
+          {
+            "columnId": "EqADbYRVnWZuCsSP6OPzI",
+            "type": "string",
+            "value": "Temp Workers"
+          },
+          {
+            "columnId": "Bz34EfK_dd6_-Qpd4u2wI",
+            "type": "text",
+            "value": "+5 virtual workers for 8 seconds."
+          },
+          {
+            "columnId": "oFhKrnyvvr3aO1mR9hABY",
+            "type": "enum",
+            "value": "TEMP_WORKERS"
+          },
+          {
+            "columnId": "CFtk6ANFGY7yCl3sTp_3O",
+            "type": "decimal",
+            "value": 5
+          },
+          {
+            "columnId": "d4kgbZLLXumSQ1Tdd28Ui",
+            "type": "decimal",
+            "value": 8
+          },
+          {
+            "columnId": "3-Kzydj7tZmp65e9Lj6H_",
+            "type": "decimal",
+            "value": 0
+          },
+          {
+            "columnId": "SdUpiS7jGFNb3s8tAmPtN",
+            "type": "enumArray",
+            "value": []
+          }
+        ]
+      },
+      {
+        "id": "cY9fR2p7DHzMJmu5bDN7F",
+        "slug": "CRUNCH_TIME",
+        "values": [
+          {
+            "columnId": "EqADbYRVnWZuCsSP6OPzI",
+            "type": "string",
+            "value": "Crunch Time"
+          },
+          {
+            "columnId": "Bz34EfK_dd6_-Qpd4u2wI",
+            "type": "text",
+            "value": "Double work speed for 5 seconds. Bankruptcy +4%."
+          },
+          {
+            "columnId": "oFhKrnyvvr3aO1mR9hABY",
+            "type": "enum",
+            "value": "SPEED_MULTIPLIER"
+          },
+          {
+            "columnId": "CFtk6ANFGY7yCl3sTp_3O",
+            "type": "decimal",
+            "value": 2
+          },
+          {
+            "columnId": "d4kgbZLLXumSQ1Tdd28Ui",
+            "type": "decimal",
+            "value": 5
+          },
+          {
+            "columnId": "3-Kzydj7tZmp65e9Lj6H_",
+            "type": "decimal",
+            "value": 4
+          },
+          {
+            "columnId": "SdUpiS7jGFNb3s8tAmPtN",
+            "type": "enumArray",
+            "value": []
+          }
+        ]
+      },
+      {
+        "id": "CLoSWavyMGyAkunWGwzRZ",
+        "slug": "CUT_CORNERS",
+        "values": [
+          {
+            "columnId": "EqADbYRVnWZuCsSP6OPzI",
+            "type": "string",
+            "value": "Cut Corners"
+          },
+          {
+            "columnId": "Bz34EfK_dd6_-Qpd4u2wI",
+            "type": "text",
+            "value": "Immediately complete 20% of remaining work."
+          },
+          {
+            "columnId": "oFhKrnyvvr3aO1mR9hABY",
+            "type": "enum",
+            "value": "REMAINING_PROGRESS"
+          },
+          {
+            "columnId": "CFtk6ANFGY7yCl3sTp_3O",
+            "type": "decimal",
+            "value": 0.2
+          },
+          {
+            "columnId": "d4kgbZLLXumSQ1Tdd28Ui",
+            "type": "decimal",
+            "value": 0
+          },
+          {
+            "columnId": "3-Kzydj7tZmp65e9Lj6H_",
+            "type": "decimal",
+            "value": 3
+          },
+          {
+            "columnId": "SdUpiS7jGFNb3s8tAmPtN",
+            "type": "enumArray",
+            "value": []
+          }
+        ]
+      },
+      {
+        "id": "WcG3iDprOcOEAsd6162aJ",
+        "slug": "QUALITY_CONTROL",
+        "values": [
+          {
+            "columnId": "EqADbYRVnWZuCsSP6OPzI",
+            "type": "string",
+            "value": "Quality Control"
+          },
+          {
+            "columnId": "Bz34EfK_dd6_-Qpd4u2wI",
+            "type": "text",
+            "value": "Lose 10% progress and reduce Bankruptcy by 4%."
+          },
+          {
+            "columnId": "oFhKrnyvvr3aO1mR9hABY",
+            "type": "enum",
+            "value": "QUALITY_CONTROL"
+          },
+          {
+            "columnId": "CFtk6ANFGY7yCl3sTp_3O",
+            "type": "decimal",
+            "value": 0.1
+          },
+          {
+            "columnId": "d4kgbZLLXumSQ1Tdd28Ui",
+            "type": "decimal",
+            "value": 0
+          },
+          {
+            "columnId": "3-Kzydj7tZmp65e9Lj6H_",
+            "type": "decimal",
+            "value": -4
+          },
+          {
+            "columnId": "SdUpiS7jGFNb3s8tAmPtN",
+            "type": "enumArray",
+            "value": []
+          }
+        ]
+      },
+      {
+        "id": "ch_538QQNbfCCZAGZ-lac",
+        "slug": "SHIP_IT",
+        "values": [
+          {
+            "columnId": "EqADbYRVnWZuCsSP6OPzI",
+            "type": "string",
+            "value": "Ship It"
+          },
+          {
+            "columnId": "Bz34EfK_dd6_-Qpd4u2wI",
+            "type": "text",
+            "value": "At 80% progress, complete immediately. Bankruptcy +5%."
+          },
+          {
+            "columnId": "oFhKrnyvvr3aO1mR9hABY",
+            "type": "enum",
+            "value": "SHIP_IT"
+          },
+          {
+            "columnId": "CFtk6ANFGY7yCl3sTp_3O",
+            "type": "decimal",
+            "value": 0.8
+          },
+          {
+            "columnId": "d4kgbZLLXumSQ1Tdd28Ui",
+            "type": "decimal",
+            "value": 0
+          },
+          {
+            "columnId": "3-Kzydj7tZmp65e9Lj6H_",
+            "type": "decimal",
+            "value": 5
+          },
+          {
+            "columnId": "SdUpiS7jGFNb3s8tAmPtN",
+            "type": "enumArray",
+            "value": []
+          }
+        ]
+      }
+    ],
+    "kind": "user",
+    "isSystemTable": false
+  }
+}

@@ -2,6 +2,7 @@ using Graphite.Engine.Core;
 using Graphite.Engine.Scenes;
 using Graphite.Engine.UI;
 using Graphite.Game.Scenes;
+using Graphite.Game.Scripts;
 using Myra.Events;
 using Myra.Graphics2D.UI;
 
@@ -14,18 +15,20 @@ public sealed class MainMenuScreen : UIScreen
 
     protected override Widget Build()
     {
-        _playButton = Button.CreateTextButton("Play Game");
+        _playButton = Button.CreateTextButton("START PROTOTYPE");
         _playButton.Width = 350;
-        _quitButton = Button.CreateTextButton("Quit");
+        _quitButton = Button.CreateTextButton("QUIT");
         _quitButton.Width = 350;
 
         var content = new VerticalStackPanel
         {
             HorizontalAlignment = HorizontalAlignment.Center,
             VerticalAlignment = VerticalAlignment.Center,
-            Spacing = 8
+            Spacing = 10
         };
-        content.Widgets.Add(new Label { Text = "Graphite" });
+        content.Widgets.Add(new Label { Text = "BLACK! COMPANY" });
+        content.Widgets.Add(new Label { Text = "Take the contract. Throw employees at it. Let Legal deal with the consequences." });
+        content.Widgets.Add(new Label { Text = "Prototype slot - progress is not saved" });
         content.Widgets.Add(_playButton);
         content.Widgets.Add(_quitButton);
         return content;
@@ -45,7 +48,8 @@ public sealed class MainMenuScreen : UIScreen
 
     private static void PlayGame(object sender, MyraEventArgs args)
     {
-        SceneManager.Load<CounterScene>();
+        GameManager.Instance.StartPrototypeSession();
+        SceneManager.Load<ContractBoardScene>();
     }
 
     private static void Quit(object sender, MyraEventArgs args)

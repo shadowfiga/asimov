@@ -1,6 +1,20 @@
-# Graphite
+# Black Company!
 
-A small Unity-like, code-first 2D engine and game starter built on MonoGame DesktopGL and Myra.
+A barebones playable prototype of the corporate incremental game from the design document, built on the Graphite Unity-like, code-first 2D engine with MonoGame DesktopGL and Myra.
+
+The current prototype contains one 60-second contract-board quarter:
+
+- Evaluate and accept opportunities across three Contract Slots.
+- Allocate 12 workers between active contracts, HR, and Legal.
+- Complete contracts to reach a $50,000 Profit Target.
+- Toggle BLACK! independently on each contract for 2.5x work speed at escalating risk.
+- Select one of four Management Cards and play it onto a compatible active contract.
+- Continue earning excess Profit after reaching the target, or lose immediately at 100% Bankruptcy.
+- Retry after the fiscal timer expires or the company goes Bankrupt.
+
+`GameManager.CurrentSession` is the in-memory data for the prototype slot. There is intentionally no saving or loading implementation yet; closing the game discards the session.
+
+Immutable rules, contracts, cards, and semantic input bindings are authored in the `.chisel` project and exported by Chisel's MonoGame target. Mutable contracts, hands, worker assignments, timers, Profit, and Bankruptcy remain runtime session state.
 
 Pinned dependencies:
 
@@ -35,7 +49,7 @@ Edit `settings.json` to configure the game without changing engine code:
 ```json
 {
   "game": {
-    "name": "My Game",
+    "name": "Black Company!",
     "icon": "Content/icon.png",
     "startupScene": "Scenes/BootstrapScene"
   },
@@ -47,7 +61,7 @@ Edit `settings.json` to configure the game without changing engine code:
     "resizable": true
   },
   "graphics": {
-    "clearColor": "#16181F",
+    "clearColor": "#111111",
     "vsync": true,
     "preferMultiSampling": false
   },
@@ -71,6 +85,7 @@ Engine/
   Configuration/GraphiteSettings.cs
   Core/
     GameHost.cs
+    Singleton.cs
     Thing.cs
     Component.cs
     Behaviour.cs
@@ -88,13 +103,34 @@ Engine/
   Platform/WindowIcon.cs
 
 Game/
+  Content/
+    PrototypeRules.cs
+    ContractDefinition.cs
+    ManagementCardDefinition.cs
   Scenes/
     BootstrapScene.cs
     MainMenuScene.cs
-    CounterScene.cs
+    ContractBoardScene.cs
+  Scripts/
+    GameManager.cs
+    Session.cs
+    ContractSlot.cs
+    QuarterController.cs
   UI/
     MainMenuScreen.cs
-    CounterScreen.cs
+    ContractBoardScreen.cs
+
+.chisel/
+  chisel.json
+  tables/user/
+  tables/system/input_bindings.json
+
+GameData/Generated/
+  ChiselManifest.g.cs
+  ChiselContracts.g.cs
+  ChiselManagementCards.g.cs
+  ChiselGameRules.g.cs
+  ChiselInput.g.cs
 ```
 
 The intended vocabulary is:
@@ -126,50 +162,33 @@ using Graphite.Engine.UI;
 using Myra.Events;
 using Myra.Graphics2D.UI;
 
-public sealed class CounterScreen : UIScreen
+public sealed class StatusScreen : UIScreen
 {
-    private Label _counterText = null!;
-    private Button _incrementButton = null!;
+    private Label _status = null!;
 
     protected override Widget Build()
     {
-        _counterText = new Label { Text = "Count: 0" };
-        _incrementButton = Button.CreateTextButton("+ Increment");
-
-        var content = new VerticalStackPanel
+        _status = new Label
         {
-            HorizontalAlignment = HorizontalAlignment.Center,
-            VerticalAlignment = VerticalAlignment.Center,
-            Spacing = 8
+            Text = "Quarter ready"
         };
-        content.Widgets.Add(_counterText);
-        content.Widgets.Add(_incrementButton);
-        return content;
-    }
-
-    protected override void Awake()
-    {
-        _incrementButton.Click += Increment;
-    }
-
-    protected override void OnDestroy()
-    {
-        _incrementButton.Click -= Increment;
-    }
-
-    private void Increment(object sender, MyraEventArgs args)
-    {
-        _counterText.Text = "Clicked";
+        return _status;
     }
 }
 ```
 
 Myra supplies stack panels, grids, windows, dialogs, lists, inputs, menus, tabs, sliders, a property grid, stylesheets, and optional MML markup. Graphite deliberately uses the direct C# widget API so UI stays code-first.
 
+## Chisel-authored game data
+
+Open the Graphite project directory in Chisel. Edit the `Game Rules`, `Contracts`, `Management Cards`, or `Input Bindings` tables, commit the source state inside Chisel, then choose the MonoGame export target. The generated C# under `GameData/Generated` compiles automatically and must not be edited by hand.
+
+The runtime validates required Chisel rows and supported enum values as they are loaded. Missing or unsupported authored data fails immediately instead of silently falling back to hardcoded content.
+
 ## Scene ergonomics
 
 ```csharp
-SceneManager.Load<CounterScene>();
+SceneManager.Load<ContractBoardScene>();
 SceneManager.Load<PauseScene>(SceneLoadMode.Additive);
 SceneManager.Reload();
 SceneManager.Unload<PauseScene>();
