@@ -1,12 +1,12 @@
 {
   "game": {
-    "name": "Black Company!",
+    "name": "AFTERGREEN",
     "icon": null,
-    "startupScene": "Scenes/BootstrapScene"
+    "startupScene": "Scenes/AftergreenScene"
   },
   "window": {
-    "width": 960,
-    "height": 540,
+    "width": 1280,
+    "height": 720,
     "fullscreen": false,
     "borderless": false,
     "resizable": true

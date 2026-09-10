@@ -1,239 +1,56 @@
-# Black Company!
+# AFTERGREEN
 
-A barebones playable prototype of the corporate incremental game from the design document, built on the Graphite Unity-like, code-first 2D engine with MonoGame DesktopGL and Myra.
+A native, top-down restoration game prototype built with the existing Graphite / MonoGame DesktopGL engine. The startup scene now runs the AFTERGREEN vertical slice.
 
-The current prototype contains one 60-second contract-board quarter:
+## Play
 
-- Evaluate and accept opportunities across three Contract Slots.
-- Allocate 12 workers between active contracts, HR, and Legal.
-- Complete contracts to reach a $50,000 Profit Target.
-- Toggle BLACK! independently on each contract for 2.5x work speed at escalating risk.
-- Select one of four Management Cards and play it onto a compatible active contract.
-- Continue earning excess Profit after reaching the target, or lose immediately at 100% Bankruptcy.
-- Retry after the fiscal timer expires or the company goes Bankrupt.
+On macOS, double-click `Play AFTERGREEN.command`. You can also run `./run.sh` (macOS/Linux) or `run.cmd` (Windows). For first-time installation, use `./setup.sh` or `setup.cmd`.
 
-`GameManager.CurrentSession` is the in-memory data for the prototype slot. There is intentionally no saving or loading implementation yet; closing the game discards the session.
+- **Enter** begins or resumes the expedition.
+- **WASD / arrows** move; **mouse** aims.
+- Hold **left mouse / Space** to vacuum loose debris.
+- Aim at a buried object marked with a gold dot; hold **right mouse / Left Shift** and **move away** to pull it free.
+- Press **E** near the Ark to recycle; press E with an empty hopper to open its workshop.
+- Workshop: **1–3** buy upgrades, **4** builds the Collector Bot, **B** enters the biodome after one tonne.
+- **Esc** closes panels or pauses. **M** toggles sound.
+- All workshop and ecology choices also have clickable buttons.
 
-Immutable rules, contracts, cards, and semantic input bindings are authored in the `.chisel` project and exported by Chisel's MonoGame target. Mutable contracts, hands, worker assignments, timers, Profit, and Bankruptcy remain runtime session state.
+The pause menu offers a new expedition with a second-click confirmation before replacing progress.
 
-Pinned dependencies:
+## The playable loop
 
-- MonoGame.Framework.DesktopGL **3.8.5.1**
-- Myra **1.6.5**
-- .NET **8** target
+Site A contains 1,300 kg: 220 kg loose litter, 240 kg medium debris, 270 kg buried heavy objects, and six 95 kg heaps. The Ark is central and the survey map shows remaining litter, the player and the collector.
 
-## Instant setup
+Recycle to earn Scrap and Components. Fit the wider intake, bigger hopper and stronger motor. Excavating the Tire Anchor releases electronics. Pull both anchors from the southeastern Relic Heap to discover the permanent Municipal Routing Chip. It unlocks a Collector Bot built on the Ark's deployment pad. The bot independently finds debris and brings it home. Free PARKR-7 at the northeastern vehicle heap.
 
-### Windows
+At 1,000 recycled kg, the Ark produces a Bio-Core. Enter the biodome and choose Paper Finch Habitat or Scrub Grass. Confirm departure after reviewing what stays and what travels. Site B demonstrates the chosen perk: finches physically gather paper, or grass improves collection speed. Collect 18 kg to see the slice completion screen.
 
-Double-click `setup.cmd`, or from PowerShell:
+## Saving and tuning
 
-```powershell
-.\Scripts\setup.ps1
+Progress autosaves every ten seconds, on selected transitions, on pause and on normal close. The save and local `playtest.json` are stored in `Environment.SpecialFolder.LocalApplicationData/Aftergreen` (normally `~/.local/share/Aftergreen` on macOS/Linux). Saves separate permanent discoveries/ecology from temporary field equipment and currency. Departure leaves field upgrades and the Collector Bot behind and preserves the relic and habitat.
+
+Edit `Content/slice.json` to tune movement, suction, mass target, hopper capacities, costs, bot speed/capacity and trash counts. `settings.json` controls the window. No content compiler is needed: the presentation uses native rendered shapes, Myra's bundled font and synthesized sounds.
+
+## Verification
+
+```sh
+dotnet build --no-restore --warnaserror
+dotnet run -- --self-test
+dotnet format Graphite.csproj --verify-no-changes --no-restore --severity warn
 ```
 
-### macOS / Linux
+To capture all screens using an isolated test expedition, run `dotnet run -- --render-check /tmp/aftergreen-screens`. This requires native graphics access and never reads or writes your save.
 
-```bash
-./setup.sh
-```
+The headless gameplay checks cover suction, capacity, recycling, upgrade gates, physical excavation, cascades, relic/NPC discovery, autonomous bot delivery, Bio-Core gating, ecology purchase, save/load and departure reset. They do not require a graphics device.
 
-The setup script uses the project-local .NET 8 SDK or a compatible system installation, restores MonoGame and Myra, builds the game, and launches it. If necessary, it installs .NET 8 locally under `.dotnet` without requiring administrator access.
+This is a first playable implementation, with procedural placeholder art and synthesized audio. The GDD's 20–30 minute pacing and enjoyment criteria require human playtesting; the build does not claim those gates are met. See `docs/NEXT_STEPS.md` for the playtest checklist and remaining polish.
 
-After the first setup, use `run.cmd` or `./run.sh`.
+## Code
 
-## Project settings
+- `Game/Aftergreen/SliceState.cs`: world, vacuum, excavation, recycler, economy, bot AI, ecology and persistence.
+- `Game/Aftergreen/SliceRenderer.cs`: top-down world, particles, HUD and menus.
+- `Game/Aftergreen/SliceAudio.cs`: native synthesized feedback.
+- `Game/Scenes/AftergreenScene.cs`: input and engine integration.
+- `Game/Aftergreen/SliceSelfTest.cs`: executable gameplay regression checks.
 
-Edit `settings.json` to configure the game without changing engine code:
-
-```json
-{
-  "game": {
-    "name": "Black Company!",
-    "icon": "Content/icon.png",
-    "startupScene": "Scenes/BootstrapScene"
-  },
-  "window": {
-    "width": 1280,
-    "height": 720,
-    "fullscreen": false,
-    "borderless": false,
-    "resizable": true
-  },
-  "graphics": {
-    "clearColor": "#111111",
-    "vsync": true,
-    "preferMultiSampling": false
-  },
-  "runtime": {
-    "mouseVisible": true,
-    "fixedTimeStep": true,
-    "targetFramesPerSecond": 60
-  },
-  "content": {
-    "rootDirectory": "Content"
-  }
-}
-```
-
-`game.icon` accepts an image path relative to `settings.json`; PNG is recommended. Set it to `null` to use the platform default. `game.startupScene` is a class path relative to the game's namespace, so `Scenes/BootstrapScene` resolves to `Graphite.Game.Scenes.BootstrapScene`. Forward slashes, backslashes, and dots are accepted. Invalid or missing settings fail at startup with a specific error.
-
-## Architecture
-
-```text
-Engine/
-  Configuration/GraphiteSettings.cs
-  Core/
-    GameHost.cs
-    Singleton.cs
-    Thing.cs
-    Component.cs
-    Behaviour.cs
-    Transform.cs
-    Time.cs
-    Input.cs
-  Scenes/
-    Scene.cs
-    SceneManager.cs
-    SceneLoadMode.cs
-  UI/
-    UI.cs
-    UIScope.cs
-    UIScreen.cs
-  Platform/WindowIcon.cs
-
-Game/
-  Content/
-    PrototypeRules.cs
-    ContractDefinition.cs
-    ManagementCardDefinition.cs
-  Scenes/
-    BootstrapScene.cs
-    MainMenuScene.cs
-    ContractBoardScene.cs
-  Scripts/
-    GameManager.cs
-    Session.cs
-    ContractSlot.cs
-    QuarterController.cs
-  UI/
-    MainMenuScreen.cs
-    ContractBoardScreen.cs
-
-.chisel/
-  chisel.json
-  tables/user/
-  tables/system/input_bindings.json
-
-GameData/Generated/
-  ChiselManifest.g.cs
-  ChiselContracts.g.cs
-  ChiselManagementCards.g.cs
-  ChiselGameRules.g.cs
-  ChiselInput.g.cs
-```
-
-The intended vocabulary is:
-
-```text
-Scene -> Thing -> Component -> Behaviour
-SceneManager.Load<T>()
-Scene.UI.Open<TScreen>()
-```
-
-A `Thing` is Graphite's equivalent of Unity's `GameObject`:
-
-```csharp
-var player = Create("Player");
-player.Transform.Position = new(200, 100);
-player.Add<PlayerController>();
-```
-
-Scene transitions are queued and committed after update, so loading a scene from inside a behaviour does not invalidate the current update traversal.
-
-## Code-first Myra UI
-
-Graphite owns one Myra `Desktop`. Each `UIScreen` builds a Myra widget tree and Graphite attaches it when the screen opens. Scene unload closes every screen in its `UIScope`, detaches its widget tree, calls `OnDestroy`, and releases the screen automatically.
-
-There is no XML layout, reflection binder, generated UI code, or `[UIElement]` field. Use Myra controls directly:
-
-```csharp
-using Graphite.Engine.UI;
-using Myra.Events;
-using Myra.Graphics2D.UI;
-
-public sealed class StatusScreen : UIScreen
-{
-    private Label _status = null!;
-
-    protected override Widget Build()
-    {
-        _status = new Label
-        {
-            Text = "Quarter ready"
-        };
-        return _status;
-    }
-}
-```
-
-Myra supplies stack panels, grids, windows, dialogs, lists, inputs, menus, tabs, sliders, a property grid, stylesheets, and optional MML markup. Graphite deliberately uses the direct C# widget API so UI stays code-first.
-
-## Chisel-authored game data
-
-Open the Graphite project directory in Chisel. Edit the `Game Rules`, `Contracts`, `Management Cards`, or `Input Bindings` tables, commit the source state inside Chisel, then choose the MonoGame export target. The generated C# under `GameData/Generated` compiles automatically and must not be edited by hand.
-
-The runtime validates required Chisel rows and supported enum values as they are loaded. Missing or unsupported authored data fails immediately instead of silently falling back to hardcoded content.
-
-## Scene ergonomics
-
-```csharp
-SceneManager.Load<ContractBoardScene>();
-SceneManager.Load<PauseScene>(SceneLoadMode.Additive);
-SceneManager.Reload();
-SceneManager.Unload<PauseScene>();
-```
-
-A behaviour looks like:
-
-```csharp
-public sealed class PlayerController : Behaviour
-{
-    protected internal override void Update(float dt)
-    {
-        Transform.Position += Vector2.UnitX * 100 * dt;
-    }
-}
-```
-
-## Code quality
-
-The repository uses pre-commit to reject malformed configuration, formatting violations, compiler warnings, build errors, and C# control-flow statements without braces.
-
-```powershell
-python -m pip install --user -r requirements-dev.txt
-python -m pre_commit install --install-hooks
-python -m pre_commit run --all-files
-```
-
-If `dotnet format` reports a violation, apply safe automatic fixes with:
-
-```powershell
-dotnet format Graphite.csproj --no-restore --severity warn
-```
-
-## Rendering and content
-
-The next rendering layer can live under:
-
-```text
-Engine/Rendering/
-  Material.cs
-  Shader.cs
-  SpriteRenderer.cs
-  Camera.cs
-
-Content/Shaders/
-```
-
-This starter does not yet use the MonoGame Content Pipeline for authored game assets. When adding `.fx` shaders, fonts, spritesheets, or other processed assets, add `MonoGame.Content.Builder.Task` and an `.mgcb` file or use the preferred raw-content pipeline.
+The earlier Black Company prototype and its Chisel-generated tables remain in the repository but are not loaded by AFTERGREEN. Engine dependencies remain MonoGame DesktopGL 3.8.5.1, Myra 1.6.5 and .NET 8 (compatible newer runtime supported).

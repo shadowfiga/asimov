@@ -13,6 +13,17 @@ public static class SceneManager
 
     internal static void Initialize() { }
 
+    internal static void Shutdown()
+    {
+        Pending.Clear();
+        foreach (var scene in LoadedScenes)
+        {
+            scene.UnloadInternal();
+        }
+        LoadedScenes.Clear();
+        ActiveScene = null;
+    }
+
     public static void Load<T>(SceneLoadMode mode = SceneLoadMode.Single)
         where T : Scene, new()
     {

@@ -80,6 +80,7 @@ public sealed class GameHost : Microsoft.Xna.Framework.Game
     {
         if (disposing)
         {
+            SceneManager.Shutdown();
             Graphite.Engine.UI.UI.Shutdown();
         }
 
