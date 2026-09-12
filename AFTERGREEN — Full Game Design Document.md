@@ -1,13 +1,15 @@
 # AFTERGREEN
 ## Full Game Design Document
 
-**Working title:** AFTERGREEN  
-**Genre:** Cozy incremental cleanup / automation / ecological restoration game  
-**Perspective:** 2D top-down, orthographic  
-**Primary mode:** Single-player  
-**Business model:** Premium game; no gameplay-affecting microtransactions  
-**Status:** Pre-production / concept  
-**Document purpose:** Define the intended full-game experience while leaving numerical balance and content volume flexible until the vertical slice proves the core loop.
+**Working title:** AFTERGREEN
+**Genre:** Cozy incremental cleanup / automation / ecological restoration game
+**Perspective:** 2D top-down, orthographic
+**Primary mode:** Single-player
+**Business model:** Premium game, $2.99 USD; no microtransactions\
+**Status:** Pre-production / concept
+**Document purpose:** Define the intended full-game experience within the hard scope in Appendix A. Numerical balance remains subject to validation.
+
+**Scope authority:** [Appendix A: v1.0 Scope Lock](#appendix-a-v10-scope-lock) defines the hard scope for the full game and overrides conflicting content in this document and the vertical slice GDD. Earlier ideas do not authorize additional features or content. Scope changes require explicit approval from the project owner.
 
 ---
 
@@ -260,10 +262,10 @@ The player initially understands only:
 
 Later recovered systems reveal additional directives:
 
-> RESTORE SOIL.  
-> RESTORE FLORA.  
-> RESTORE WATER.  
-> RESTORE FAUNA.  
+> RESTORE SOIL.
+> RESTORE FLORA.
+> RESTORE WATER.
+> RESTORE FAUNA.
 > ESTABLISH SELF-SUSTAINING BIOSPHERE.
 
 The long-term story is not about resurrecting humanity.
@@ -446,12 +448,12 @@ One deliberate action has created several rewards.
 
 Conceptual PC controls:
 
-**Movement:** WASD  
-**Aim:** Mouse or right stick  
-**Vacuum:** Hold primary action  
-**Excavate / latch / interact:** Secondary action  
-**Context interaction:** E / face button  
-**Machine placement:** Build input  
+**Movement:** WASD
+**Aim:** Mouse or right stick
+**Vacuum:** Hold primary action
+**Excavate / latch / interact:** Secondary action
+**Context interaction:** E / face button
+**Machine placement:** Build input
 **Return / cancel:** Esc / controller equivalent
 
 Avoid excessive tool swapping.
@@ -1946,19 +1948,11 @@ Pure procedural generation is not required for the initial game.
 
 ---
 
-# 57. Content Scope Target
+# 57. Hard Full-Game Scope
 
-A potential full-game target after validation:
+[Appendix A: v1.0 Scope Lock](#appendix-a-v10-scope-lock) is the authoritative full-game scope: four biomes, eight restoration sites, and one short finale, targeting a 3–5 hour first completion.
 
-- 6–8 major biomes,
-- 20–30 restoration sites,
-- 20+ relics,
-- 10–15 machine types/upgrades,
-- 20+ ecological unlocks,
-- 8–12 major NPC robots,
-- dozens of comedic junk discoveries.
-
-This is a directional production target, not a commitment.
+All content caps, progression limits, and exclusions in the appendix are binding. The earlier larger production targets are superseded. Removing other content does not authorize exceeding a cap or adding an excluded system.
 
 ---
 
@@ -2009,7 +2003,7 @@ When global restoration reaches completion:
 
 The player's original directive changes state.
 
-> BIOSPHERE: SELF-SUSTAINING  
+> BIOSPHERE: SELF-SUSTAINING
 > ACTIVE RESTORATION REQUIREMENT: NONE
 
 The game may allow continued free play afterward.
@@ -2149,3 +2143,779 @@ If the answer to any of these is consistently "no," solve that before expanding 
 ↓
 
 **DO IT BETTER, BIGGER AND WEIRDER**
+
+---
+
+# Appendix A: v1.0 Scope Lock
+
+**Document type:** Production scope appendix\
+**Target price:** $2.99 USD\
+**Purpose:** Lock the content and progression scope for the full AFTERGREEN game. These limits and exclusions are binding and override conflicting earlier design content.
+
+---
+
+## A.1 Scope Principle
+
+AFTERGREEN should feel like a **small, complete premium game**, not a prototype stretched with grind.
+
+The target is a compact incremental restoration game with:
+
+- a satisfying cleanup loop,
+- visible incremental acceleration,
+- a meaningful prestige/departure cycle,
+- a cozy permanent biodome,
+- enough biome variety to feel like a journey,
+- and a clear ending.
+
+All implementation must stay within the systems, content caps, and exclusions below. Do not add features beyond this scope. Equivalent-scope substitutions do not authorize exceeding caps or introducing excluded systems. Only an explicit scope revision approved by the project owner can change these limits.
+
+---
+
+## A.2 Target Playtime
+
+| Player Type | Target |
+|---|---:|
+| First completion | **3–5 hours** |
+| Completionist | **5–7 hours** |
+| Vertical slice/demo | **20–30 minutes** |
+
+The game should not rely on excessive grind to reach these targets.
+
+---
+
+## A.3 Full Game Content Cap
+
+| System | v1.0 Scope |
+|---|---:|
+| Biomes | **4** |
+| Restoration sites | **8 total** |
+| Sites per biome | **2** |
+| Finale | **1 short ending sequence** |
+| Vacuum models | **4** |
+| Chassis models | **4** |
+| Local upgrade categories | **3** |
+| Upgrade tracks per category | **3** |
+| Ranks per local upgrade track | **5** |
+| Cleanup machine types | **5** |
+| Unique relics | **8** |
+| Biodome branches | **4** |
+| Biodome upgrades per branch | **4** |
+| Total biodome upgrades | **16** |
+| Ark visual tiers | **4 total** |
+| Major robot NPCs | **6** |
+| Recruitable Ark residents | **4–5** |
+| Lifetime milestones | **12** |
+| Spendable currencies | **3 maximum** |
+| Main gameplay screens | **4 maximum** |
+
+These are **hard production caps** for v1.0.
+
+---
+
+# A.4 Core Progression Structure
+
+The player progresses at four different scales.
+
+## Moment-to-Moment
+
+**Find trash → vacuum/excavate → collect**
+
+This must feel satisfying without relying on progression rewards.
+
+---
+
+## Incremental Loop
+
+**Fill capacity → return to Ark → recycle → buy upgrades → go back out stronger**
+
+The game does not need a separate formal "run" system.
+
+A normal outing is naturally limited by robot carrying capacity and the player's decision to return.
+
+---
+
+## Regional Loop
+
+**Upgrade → automate → discover → reach restoration threshold → restore → depart**
+
+One restoration site is effectively the game's larger run.
+
+Departure is the prestige/reset event.
+
+---
+
+## Meta Loop
+
+**Grow Biodome → improve Ark → unlock routes → restore Earth**
+
+This progression persists permanently.
+
+---
+
+# A.5 Local Upgrade Scope
+
+Each restoration site contains three primary upgrade groups.
+
+## Vacuum
+
+Answers:
+
+> How quickly and effectively can I collect trash?
+
+Scope:
+
+- **3 upgrade tracks**
+- **5 ranks per track**
+- **15 total Vacuum ranks available per site**
+
+Possible future track themes include:
+
+- suction,
+- intake width,
+- heavy-object capability.
+
+Exact upgrade effects are not locked by this appendix.
+
+---
+
+## Chassis
+
+Answers:
+
+> How much work can my robot perform before returning?
+
+Scope:
+
+- **3 upgrade tracks**
+- **5 ranks per track**
+- **15 total Chassis ranks available per site**
+
+Possible future track themes include:
+
+- carrying capacity,
+- mobility,
+- terrain capability.
+
+---
+
+## Operation / Recycling
+
+Answers:
+
+> How productive is the entire cleanup operation?
+
+Scope:
+
+- **3 upgrade tracks**
+- **5 ranks per track**
+- **15 total Operation ranks available per site**
+
+Possible future track themes include:
+
+- resource recovery,
+- fabrication efficiency,
+- automation capacity.
+
+---
+
+## Local Upgrade Total
+
+Each site can therefore expose up to:
+
+**45 local upgrade ranks**
+
+The player is **not expected to max every rank** before departing.
+
+A normal restoration site should result in approximately:
+
+**15–25 purchased local upgrades**
+
+This keeps the pace active without requiring full completion of every branch.
+
+---
+
+# A.6 Major Equipment Progression
+
+Local upgrade ranks provide frequent incremental purchases.
+
+Major equipment provides larger milestone moments.
+
+## Vacuum Models
+
+Hard cap:
+
+**4 total vacuum models**
+
+Structure:
+
+```text
+Vacuum I
+↓
+Vacuum II
+↓
+Vacuum III
+↓
+Vacuum IV
+```
+
+A new model should:
+
+- create a clear visual upgrade,
+- meaningfully change cleanup capability,
+- feel more significant than ordinary tuning ranks.
+
+Do not create large inventories of sidegrade vacuums for v1.0.
+
+---
+
+## Chassis Models
+
+Hard cap:
+
+**4 total chassis models**
+
+Structure:
+
+```text
+Chassis I
+↓
+Chassis II
+↓
+Chassis III
+↓
+Chassis IV
+```
+
+A chassis model should visibly evolve the player's robot and provide a meaningful capability milestone.
+
+Do not turn chassis progression into an equipment-loot system.
+
+---
+
+# A.7 Cleanup Machines
+
+Hard cap:
+
+**5 machine types**
+
+Each machine must have a clearly different job.
+
+Machines should provide increasing automation without turning the game into a factory-management simulator.
+
+Desired complexity:
+
+```text
+Collector
+↓
+Processor / Specialist
+↓
+Recycler / Ark
+```
+
+Avoid:
+
+- conveyor-belt networks,
+- ratio optimization,
+- large machine tech trees,
+- dozens of machine variants.
+
+Machine scaling should mostly come from the shared Operation progression and relic unlocks.
+
+---
+
+# A.8 Relics
+
+Hard cap:
+
+**8 unique relics**
+
+Target distribution:
+
+**2 per biome**
+
+Relics are permanent discoveries.
+
+Each relic should ideally unlock or substantially alter something, such as:
+
+- a machine category,
+- vacuum capability,
+- Ark system,
+- automation behavior,
+- technology branch,
+- route or traversal capability.
+
+Relics should **not** primarily be minor percentage bonuses.
+
+Finding one should feel important.
+
+---
+
+# A.9 Biodome Progression
+
+The Biodome is the main permanent ecological progression system.
+
+Hard cap:
+
+**4 branches × 4 upgrades = 16 upgrades**
+
+Current branch structure:
+
+- **Flora**
+- **Soil**
+- **Water**
+- **Fauna**
+
+Each upgrade should:
+
+- visibly change the Biodome,
+- provide a meaningful permanent benefit,
+- ideally affect future cleanup or restoration.
+
+The Biodome is not a separate gardening simulation.
+
+Do not add:
+
+- crop timers,
+- freeform farming,
+- large inventories of plant species,
+- maintenance chores.
+
+The Biodome should remain a **visualized permanent skill tree**.
+
+---
+
+# A.10 Ark Progression
+
+The Ark should evolve visually without becoming another giant upgrade system.
+
+Hard cap:
+
+**4 visual tiers total**
+
+Suggested structural pacing:
+
+```text
+Tier 1 — Broken restoration vehicle
+Tier 2 — Functional mobile recycler
+Tier 3 — Established travelling biodome
+Tier 4 — Endgame ecological Ark
+```
+
+Ark functionality should primarily be unlocked by:
+
+- relics,
+- Biodome progress,
+- major milestones.
+
+Do not add a second large Ark-only upgrade tree in v1.0.
+
+---
+
+# A.11 Biome Scope
+
+Hard cap:
+
+**4 biomes**
+
+Each biome contains:
+
+- **2 restoration sites**
+- **1 primary gameplay/environmental twist**
+- **2 relics**
+- **1 strong visual identity**
+- **1 restoration identity**
+
+Total:
+
+**8 restoration sites**
+
+Recommended structure:
+
+```text
+Biome 1
+├─ Site 1
+└─ Site 2
+
+Biome 2
+├─ Site 3
+└─ Site 4
+
+Biome 3
+├─ Site 5
+└─ Site 6
+
+Biome 4
+├─ Site 7
+└─ Site 8
+
+Finale
+```
+
+Biome variety should modify the existing game rather than rebuild it.
+
+A useful production target is:
+
+**70–80% shared systems/assets**
+
+with
+
+**20–30% biome-specific content**
+
+per biome.
+
+---
+
+# A.12 Restoration Site Duration
+
+Target site duration:
+
+**20–30 minutes**
+
+The first site may be closer to:
+
+**25–30 minutes**
+
+Later sites should remain similar or slightly faster despite containing harder content, because permanent progression should increase player efficiency.
+
+With 8 sites, this gives approximately:
+
+**3–4 hours of exterior gameplay**
+
+before adding:
+
+- Biodome time,
+- Ark interactions,
+- upgrade decisions,
+- robot dialogue,
+- relic discovery,
+- departure sequences,
+- finale.
+
+This supports the target **3–5 hour first completion**.
+
+---
+
+# A.13 Robot NPC Scope
+
+Hard cap:
+
+**6 major robot NPCs**
+
+Each major NPC should have:
+
+- one strong visual identity,
+- one clear personality hook,
+- several dialogue states,
+- a mechanical or world connection.
+
+Approximately:
+
+**4–5** may eventually live aboard or around the Ark.
+
+Do not build a large RPG cast.
+
+Quality and memorability matter more than quantity.
+
+---
+
+# A.14 Milestones
+
+Hard cap:
+
+**12 lifetime milestones**
+
+Milestones may track:
+
+- total recovered mass,
+- restored regions,
+- relic discoveries,
+- Biodome progress,
+- machines built,
+- NPCs rescued.
+
+Rewards should mostly include:
+
+- cosmetics,
+- Ark decorations,
+- small quality-of-life benefits,
+- achievements.
+
+Avoid introducing another large progression currency solely for milestones.
+
+---
+
+# A.15 Economy Scope
+
+Maximum:
+
+**3 spendable currencies**
+
+Suggested structure:
+
+## Scrap
+
+Common local progression resource.
+
+Used for:
+
+- local upgrades,
+- common fabrication,
+- basic machinery.
+
+---
+
+## Components
+
+Rarer technological resource.
+
+Used for:
+
+- equipment milestones,
+- advanced machinery,
+- technology-related upgrades.
+
+---
+
+## Bio-Core / Restoration Resource
+
+Permanent ecological progression resource.
+
+Used for:
+
+- Biodome development,
+- major restoration choices.
+
+---
+
+## Tonnage Is Not Currency
+
+Recovered kilograms/tonnes are progression.
+
+Example:
+
+```text
+742 / 1,000 KG
+```
+
+Tonnage determines restoration readiness and milestones.
+
+It should not become another spendable resource.
+
+---
+
+# A.16 UI / Screen Scope
+
+Main gameplay screens are capped at:
+
+**4**
+
+## 1. Exterior
+
+Primary cleanup gameplay.
+
+---
+
+## 2. Workshop
+
+Contains:
+
+- Vacuum upgrades,
+- Chassis upgrades,
+- Operation upgrades,
+- machine fabrication,
+- equipment milestones.
+
+---
+
+## 3. Biodome
+
+Permanent ecological progression.
+
+---
+
+## 4. World Map
+
+Used for:
+
+- departure,
+- destination choice,
+- restored-region overview.
+
+Relics should preferably live inside an existing screen or small overlay rather than creating a fifth major gameplay screen.
+
+Main menu, settings, credits and similar utility screens are not included in this cap.
+
+---
+
+# A.17 Deliberately Excluded from v1.0
+
+The following systems are explicitly **out of scope**. Replacing another feature does not authorize adding them.
+
+- Combat
+- Health/damage system
+- Hunger or survival mechanics
+- Battery-as-run-timer system
+- Randomized equipment affixes
+- Equipment loot rarity
+- Large crafting inventory
+- Complex recipe chains
+- Many material types
+- Procedural world generation
+- Day/night gameplay system
+- Weather simulation
+- Freeform factory belts
+- Online multiplayer
+- Online leaderboards
+- Large robot companion roster
+- Full relationship system
+- Ark interior decoration system
+- Freeform base building
+- Gardening minigame
+- Farming simulation
+- Endless mode required for launch
+- New Game+ required for launch
+- Post-game prestige layer above global restoration
+- Live-service systems
+- Daily quests
+- Microtransactions
+
+---
+
+# A.18 What Resets and What Persists
+
+## Returning to the Ark During a Site
+
+Nothing meaningful resets.
+
+The player:
+
+- unloads collected trash,
+- receives resources,
+- buys upgrades,
+- leaves again.
+
+Local upgrades remain active.
+
+---
+
+## Departure / Prestige
+
+Departure ends the current restoration site.
+
+### Stays Behind / Resets
+
+- local upgrade ranks,
+- local cleanup machinery,
+- local material stockpile,
+- temporary site infrastructure.
+
+In fiction, these systems are left behind to continue restoring the region.
+
+### Persists
+
+- Vacuum model,
+- Chassis model,
+- relic discoveries,
+- relic technologies,
+- Biodome progression,
+- Ark progression,
+- NPC crew,
+- world restoration state,
+- milestones.
+
+Departure should feel like **completion and movement forward**, not deletion.
+
+---
+
+# A.19 Progression Cadence Target
+
+The intended reward rhythm is:
+
+## Every few seconds
+
+Satisfying trash pickup.
+
+---
+
+## Every 1–3 minutes
+
+Local upgrade purchase.
+
+---
+
+## Every 5–10 minutes
+
+Meaningful discovery, automation improvement or major target.
+
+---
+
+## Every 20–30 minutes
+
+Site restoration and Departure.
+
+---
+
+## Every 1–2 sites
+
+Major Vacuum, Chassis, Relic or Ark milestone.
+
+---
+
+## Approximately every hour
+
+Noticeable biome/world progression.
+
+This cadence is more important than raw upgrade count.
+
+---
+
+# A.20 Scope Rule
+
+The following sentence should be treated as the v1.0 production rule:
+
+> **AFTERGREEN 1.0 contains four biomes, eight restoration sites, four Vacuum tiers, four Chassis tiers, five cleanup machines, eight relics, sixteen Biodome upgrades, four Ark visual tiers, six major robot NPCs, twelve milestones and no more than three spendable currencies. No system may exceed these caps, and no additional or excluded systems may be added. Removing other content does not create an exception.**
+
+---
+
+# A.21 Production Priority
+
+If schedule pressure appears, cut in this order:
+
+1. optional cosmetic rewards,
+2. milestone complexity,
+3. secondary NPC dialogue,
+4. site-specific decorative content,
+5. minor biome-specific variations,
+6. optional relic interactions.
+
+Do **not** cut before validating:
+
+- vacuum feel,
+- capacity/return loop,
+- local incremental upgrading,
+- excavation,
+- automation,
+- one-tonne restoration goal,
+- Biodome payoff,
+- Departure.
+
+These systems define the game.
+
+---
+
+# A.22 v1.0 Success Definition
+
+AFTERGREEN is complete when the player can:
+
+1. begin with a weak restoration robot,
+2. feel themselves become dramatically more productive,
+3. upgrade their Vacuum and Chassis across the game,
+4. build increasingly useful cleanup automation,
+5. discover all eight relics,
+6. develop a visible Biodome,
+7. restore eight ruined sites across four biomes,
+8. grow the Ark into its final form,
+9. reach a clear planetary-restoration finale,
+10. finish feeling that they played a small but complete game.
+
+That is the intended $2.99 product.

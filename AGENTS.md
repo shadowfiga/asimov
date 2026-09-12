@@ -16,3 +16,9 @@
 - Use `GameThemes.Aftergreen` for UI colors; do not hardcode colors in widgets.
 - Use the neutral grays for ordinary controls, `Color1`–`Color6` for game information, and status colors only for meaningful state.
 - Keep shared Myra styling in `Game/UI/Theming`; initialize it before constructing screens.
+
+# Full-game scope
+
+- [Appendix A: v1.0 Scope Lock](<AFTERGREEN — Full Game Design Document.md#appendix-a-v10-scope-lock>) is the hard scope for the full game and overrides conflicting earlier design content, including the vertical slice GDD.
+- Do not add features beyond that scope, exceed its content caps, or implement excluded systems. Removing other content does not authorize an exception.
+- Only an explicit user instruction revising the scope can change these limits.
