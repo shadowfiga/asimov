@@ -77,12 +77,11 @@ public sealed class MainMenuScreen : UIScreen
         };
         _content.Widgets.Add(_brand);
         _content.Widgets.Add(_buttons);
-        _menu = new UIMaterialHost(_content, [MenuPresentation.Flowers], MenuPresentation.ContentStyle)
-        { OverflowPadding = FlowerMaterial.Padding };
+        _menu = new UIMaterialHost(_content, interactions: MenuPresentation.FadeStyle);
 
         _discordButton = new MenuButton(_assets, "DISCORD", "message-circle", arrow: false)
         { Enabled = GameSettings.Instance.Menu.DiscordUrl is not null };
-        _discord = new UIMaterialHost(_discordButton);
+        _discord = new UIMaterialHost(_discordButton, [MenuPresentation.Crt]);
         var footer = new HorizontalStackPanel
         {
             HorizontalAlignment = HorizontalAlignment.Right,
@@ -106,10 +105,9 @@ public sealed class MainMenuScreen : UIScreen
             credits.Widgets.Add(new Label { Text = entry, HorizontalAlignment = HorizontalAlignment.Center });
         }
         _backButton = new MenuButton(_assets, "BACK", "arrow-left", arrow: false);
-        _back = new UIMaterialHost(_backButton);
+        _back = new UIMaterialHost(_backButton, [MenuPresentation.Crt]);
         credits.Widgets.Add(_back);
-        _credits = new UIMaterialHost(credits, [MenuPresentation.Flowers], MenuPresentation.ContentStyle)
-        { OverflowPadding = FlowerMaterial.Padding };
+        _credits = new UIMaterialHost(credits, interactions: MenuPresentation.FadeStyle);
 
         var root = _root = new Panel(styleName: "root") { Background = _assets };
         root.Widgets.Add(_menu);
@@ -131,15 +129,13 @@ public sealed class MainMenuScreen : UIScreen
         }
 
         Resize();
-        var host = new UIMaterialHost(root, [MenuPresentation.Crt], MenuPresentation.FadeStyle);
-        host.Animation.BaseParameters.Set(CrtMaterial.Strength, .22f);
-        return host;
+        return new UIMaterialHost(root, interactions: MenuPresentation.FadeStyle);
     }
 
     private MenuButton AddRow(string text, string icon, bool enabled = true, bool primary = false, bool arrow = true)
     {
         var button = new MenuButton(_assets, text, icon, primary, arrow) { Enabled = enabled };
-        var host = new UIMaterialHost(button);
+        var host = new UIMaterialHost(button, [MenuPresentation.Crt]);
         _rows.Add((button, host));
         _buttons.Widgets.Add(host);
         return button;

@@ -41,7 +41,7 @@ var host = new UIMaterialHost(button, [MenuPresentation.Crt], new UIInteractionS
 {
     Bindings = new Dictionary<string, UIInteractionBinding>
     {
-        [UITrigger.Hover] = new() { Animation = MenuPresentation.Wiggle },
+        [UITrigger.Hover] = new() { Animation = MenuPresentation.CrtHover, SettleSeconds = 0 },
         [UITrigger.Click] = new() { Sounds = [new UISoundCue { Asset = "Content/Audio/click.wav" }] }
     }
 });
@@ -49,6 +49,8 @@ panel.Widgets.Add(host);
 ```
 
 The audio path above is an authoring example; the menu has no assigned sound assets. `UI.Audio` supports volume and mute; configure an alternative service with `UI.SetAudioService` before constructing hosts.
+
+Menu buttons apply CRT while an enabled button is hovered. Leaving or disabling the button stops it immediately. The menu background and keyboard focus alone do not activate CRT.
 
 Register type defaults through `UI.Interactions.Set<T>()` during bootstrap. More specific types and individual bindings override inherited bindings. `UIInteractionBinding.Empty` disables an inherited binding. Custom trigger names use `host.Trigger(name)`; explicit playback uses `host.Play(animation)` and its cancellation/completion handle. Hover runs once per entry and settles on exit; set `Repeat = 0` for continuous playback. Sounds run once per playback, with their delay relative to the animation start; looping voices stop when cancelled.
 

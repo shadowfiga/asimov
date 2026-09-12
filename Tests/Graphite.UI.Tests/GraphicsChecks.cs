@@ -86,16 +86,16 @@ internal sealed class GraphicsChecks : Microsoft.Xna.Framework.Game
         batch.Begin(); batch.Draw(pixel, new Rectangle(40, 40, 48, 48), Color.White); batch.End();
         var parameters = new UIParameters();
         using var crt = MenuPresentation.Crt.CreateInstance(GraphicsDevice);
+        Program.Check(!crt.IsActive(parameters), "CRT is inactive by default");
+        parameters.Set(CrtMaterial.Strength, 1);
+        Program.Check(crt.IsActive(parameters), "Hover strength activates CRT");
         crt.Render(new UIMaterialContext(GraphicsDevice, batch, source, destination, parameters, .2f));
         GraphicsDevice.SetRenderTarget(null);
         var colors = new Color[128 * 128]; destination.GetData(colors);
         Program.Check(colors[0].A == 0 && colors[64 * 128 + 64].A == 255, "CRT preserves transparency");
-        using var flower = MenuPresentation.Flowers.CreateInstance(GraphicsDevice);
-        parameters.Set(FlowerMaterial.Progress, .3f);
-        flower.Render(new UIMaterialContext(GraphicsDevice, batch, source, destination, parameters, .2f));
-        GraphicsDevice.SetRenderTarget(null); destination.GetData(colors);
-        Program.Check(colors[0].A == 0 && colors[64 * 128 + 64] == GameThemes.Aftergreen.Foreground, "Bloom preserves transparent corners and central content");
-        Program.Check(colors.Where((_, i) => i % 128 < 40 || i % 128 >= 88).Any(c => c.A > 0), "Bloom draws visible petals outside content");
+        Program.Check(colors[64 * 128 + 64] != GameThemes.Aftergreen.Foreground, "CRT changes hovered content");
+        parameters.Set(CrtMaterial.Strength, 0);
+        Program.Check(!crt.IsActive(parameters), "Removing hover deactivates CRT");
     }
 
     private void RoundedSurfaceChecks()
@@ -147,28 +147,44 @@ internal sealed class GraphicsChecks : Microsoft.Xna.Framework.Game
                 _fixture = Ui.Open<FixtureScreen>();
                 break;
             case 29:
+                Program.Near(_fixture.Host.Animation.Parameters.Get(CrtMaterial.Strength), 0, "Idle buttons have no CRT");
                 _hitPosition = _fixture.Button.ToGlobal(new Vector2(40, 20));
                 _mouse.Position = _hitPosition.ToPoint();
                 break;
             case 30:
-                Program.Check(MathF.Abs(_fixture.Host.Animation.Frame.Rotation) > .01f, "Pointer hover starts wiggle");
-                Program.Check(_fixture.Button.ContainsGlobalPoint(_hitPosition.ToPoint()), "Wiggle leaves hitbox stable");
+                Program.Near(_fixture.Host.Animation.Parameters.Get(CrtMaterial.Strength), 1, "Pointer hover starts CRT");
+                Program.Check(_fixture.Host.Animation.Frame.IsIdentity, "Hover does not transform the button");
+                Program.Check(_fixture.Button.ContainsGlobalPoint(_hitPosition.ToPoint()), "CRT leaves hitbox stable");
+                Ui.Update(1.2f);
+                Program.Near(_fixture.Host.Animation.Parameters.Get(CrtMaterial.Strength), 1, "CRT continues while hovered");
+                Program.Near(_fixture.Other.Animation.Parameters.Get(CrtMaterial.Strength), 0, "Hover leaves other buttons unaffected");
                 break;
             case 31: _mouse.Position = new Point(2, 2); break;
-            case 32: _mouse.Position = _hitPosition.ToPoint(); break;
+            case 32:
+                Program.Near(_fixture.Host.Animation.Parameters.Get(CrtMaterial.Strength), 0, "Leaving hover stops CRT immediately");
+                _mouse.Position = _hitPosition.ToPoint(); break;
             case 33:
-                Program.Check(_fixture.Host.Animation.ActiveCount == 2, "Hover reentry replaces the settling playback");
-                _mouse.Position = new Point(2, 2); break;
-            case 34:
-                _fixture.Button.SetKeyboardFocus();
-                break;
-            case 35:
-                Program.Check(_fixture.Host.Animation.ActiveCount > 0, "Keyboard focus starts animation");
+                Program.Check(_fixture.Host.Animation.ActiveCount == 1, "Hover reentry starts one playback");
+                Program.Near(_fixture.Host.Animation.Parameters.Get(CrtMaterial.Strength), 1, "Hover reentry restores CRT");
                 _fixture.Button.Enabled = false;
                 break;
-            case 37:
-                Program.Check(_fixture.Host.Animation.ActiveCount == 0, "Disabled control cancels interactions");
+            case 34:
+                Program.Near(_fixture.Host.Animation.Parameters.Get(CrtMaterial.Strength), 0, "Disabling a hovered button removes CRT");
+                _mouse.Position = new Point(2, 2);
+                break;
+            case 35:
+                _mouse.Position = _hitPosition.ToPoint();
+                break;
+            case 36:
+                Program.Check(_fixture.Host.Animation.ActiveCount == 0, "Disabled control ignores hover");
+                Program.Near(_fixture.Host.Animation.Parameters.Get(CrtMaterial.Strength), 0, "Disabled control has no CRT");
                 _fixture.Button.Enabled = true;
+                _mouse.Position = new Point(2, 2);
+                _fixture.Button.SetKeyboardFocus();
+                break;
+            case 37:
+                Program.Check(_fixture.Host.Animation.ActiveCount == 0, "Keyboard focus alone does not animate");
+                Program.Near(_fixture.Host.Animation.Parameters.Get(CrtMaterial.Strength), 0, "Keyboard focus alone has no CRT");
                 _fixture.Button.DoClick();
                 Program.Check(_fixture.Clicks == 1, "Original click handler preserved");
                 _hide = _fixture.Host.Hide();
@@ -178,7 +194,7 @@ internal sealed class GraphicsChecks : Microsoft.Xna.Framework.Game
                 Program.Check(_hide.Result == UIPlaybackState.Cancelled && _fixture.Host.Enabled, "Show interrupts hide");
                 break;
             case 40:
-                _fixture.Host.Play(MenuPresentation.Bloom);
+                _fixture.Host.Play(MenuPresentation.CrtHover);
                 _fixture.Other.Animation.BaseParameters.Set(CrtMaterial.Strength, 0);
                 break;
             case 44:
@@ -259,8 +275,7 @@ internal sealed class FixtureScreen : UIScreen
         Button.Width = 240; Button.Height = 48; Button.Left = 100; Button.Top = 100;
         Button.HorizontalAlignment = HorizontalAlignment.Left; Button.VerticalAlignment = VerticalAlignment.Top;
         Button.Click += (_, _) => Clicks++;
-        Host = new UIMaterialHost(Button, [MenuPresentation.Flowers, MenuPresentation.Crt], MenuPresentation.ContentStyle)
-        { OverflowPadding = FlowerMaterial.Padding };
+        Host = new UIMaterialHost(Button, [MenuPresentation.Crt], MenuPresentation.FadeStyle);
         var other = Button.CreateTextButton("Independent material");
         other.Width = 240; other.Height = 48; other.Left = 440; other.Top = 100;
         other.HorizontalAlignment = HorizontalAlignment.Left; other.VerticalAlignment = VerticalAlignment.Top;
@@ -279,9 +294,12 @@ internal sealed class FixtureScreen : UIScreen
         var clippedButton = Button.CreateTextButton("Clipped fixture");
         clippedButton.Width = 200; clippedButton.Height = 48; clippedButton.Left = 80;
         clippedButton.HorizontalAlignment = HorizontalAlignment.Left; clippedButton.VerticalAlignment = VerticalAlignment.Top;
-        clipped.Widgets.Add(new UIMaterialHost(clippedButton, [MenuPresentation.Crt]));
+        var clippedHost = new UIMaterialHost(clippedButton, [MenuPresentation.Crt]);
+        clippedHost.Animation.BaseParameters.Set(CrtMaterial.Strength, 1);
+        clipped.Widgets.Add(clippedHost);
         panel.Widgets.Add(clipped);
         Root = new UIMaterialHost(panel, [MenuPresentation.Crt], MenuPresentation.FadeStyle);
+        Root.Animation.BaseParameters.Set(CrtMaterial.Strength, .22f);
         try
         {
             _ = new UIMaterialHost(new Button(), interactions: new UIInteractionStyle
