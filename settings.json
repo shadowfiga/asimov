@@ -2,7 +2,7 @@
   "game": {
     "name": "AFTERGREEN",
     "icon": null,
-    "startupScene": "Scenes/AftergreenScene"
+    "startupScene": "Scenes/BootstrapScene"
   },
   "window": {
     "width": 1280,

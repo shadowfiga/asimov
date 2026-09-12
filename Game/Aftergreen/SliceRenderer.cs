@@ -536,8 +536,9 @@ public sealed class SliceRenderer : IDisposable
         Text("You are a tiny machine. This is a very big mess.", 250, 257, Mint, 1.1f);
         Text("Sweep loose litter. Pull the past out of the sand.\nBuild a helper. Turn one tonne of waste into life.\nThen carry that life somewhere new.", 250, 305, Cream, 1.05f);
         Text("WASD move  /  Mouse aim  /  Hold LMB vacuum\nHold RMB and move away to excavate  /  E recycle\nEsc pause  /  M sound  /  Progress saves automatically", 250, 405, Cream, .9f);
-        Button("resume", "[ENTER] BEGIN / CONTINUE", 250, 520, 340);
-        Button("reset", ResetConfirmation ? "CONFIRM ERASE & RESTART" : "NEW EXPEDITION", 650, 520, 377);
+        Button("resume", "[ENTER] CONTINUE", 250, 520, 290);
+        Button("reset", ResetConfirmation ? "CONFIRM ERASE & RESTART" : "NEW EXPEDITION", 560, 520, 290);
+        Button("menu", "MAIN MENU", 870, 520, 157);
     }
 
     private void DrawCard()

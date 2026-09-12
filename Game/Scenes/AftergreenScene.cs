@@ -47,7 +47,8 @@ public sealed class SliceController : Behaviour
         _audio = new();
         _state.Feedback += OnFeedback;
         _resumePhase = _state.Phase;
-        _state.Phase = SlicePhase.Paused;
+        _previous = Keyboard.GetState();
+        _previousMouse = Mouse.GetState();
         if (error != null)
         {
             _state.Notify(error);
@@ -109,6 +110,11 @@ public sealed class SliceController : Behaviour
         }
         else if (_state.Phase == SlicePhase.Paused)
         {
+            if (action == "menu")
+            {
+                SceneManager.Load<MainMenuScene>();
+                return;
+            }
             if (Press(Keys.Enter) || Press(Keys.Escape) || action == "resume")
             {
                 _state.Phase = _resumePhase;

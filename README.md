@@ -1,12 +1,12 @@
 # AFTERGREEN
 
-A native, top-down restoration game prototype built with the existing Graphite / MonoGame DesktopGL engine. The startup scene now runs the AFTERGREEN vertical slice.
+A native, top-down restoration game prototype built with the existing Graphite / MonoGame DesktopGL engine. Startup runs `BootstrapScene` → `MainMenuScene` → `AftergreenScene`. Put shared initialization in `BootstrapScene.LoadData`; it runs before the main menu opens.
 
 ## Play
 
 On macOS, double-click `Play AFTERGREEN.command`. You can also run `./run.sh` (macOS/Linux) or `run.cmd` (Windows). For first-time installation, use `./setup.sh` or `setup.cmd`.
 
-- **Enter** begins or resumes the expedition.
+- Choose **Play / Continue** or press **Enter** in the main menu to load your expedition.
 - **WASD / arrows** move; **mouse** aims.
 - Hold **left mouse / Space** to vacuum loose debris.
 - Aim at a buried object marked with a gold dot; hold **right mouse / Left Shift** and **move away** to pull it free.
@@ -15,7 +15,7 @@ On macOS, double-click `Play AFTERGREEN.command`. You can also run `./run.sh` (m
 - **Esc** closes panels or pauses. **M** toggles sound.
 - All workshop and ecology choices also have clickable buttons.
 
-The pause menu offers a new expedition with a second-click confirmation before replacing progress.
+The pause menu offers Continue, Main Menu, and a new expedition with a second-click confirmation before replacing progress. Returning to the main menu saves the expedition.
 
 ## The playable loop
 
@@ -53,4 +53,6 @@ This is a first playable implementation, with procedural placeholder art and syn
 - `Game/Scenes/AftergreenScene.cs`: input and engine integration.
 - `Game/Aftergreen/SliceSelfTest.cs`: executable gameplay regression checks.
 
-The earlier Black Company prototype and its Chisel-generated tables remain in the repository but are not loaded by AFTERGREEN. Engine dependencies remain MonoGame DesktopGL 3.8.5.1, Myra 1.6.5 and .NET 8 (compatible newer runtime supported).
+Game code lives in `Game/Aftergreen`, `Game/Scenes`, and `Game/UI`; shared engine infrastructure lives in `Engine`. Balance data is authored directly in `Content/slice.json`. Render checks run bootstrap initialization, then bypass the interactive main menu.
+
+Engine dependencies remain MonoGame DesktopGL 3.8.5.1, Myra 1.6.5 and .NET 8 (compatible newer runtime supported).
