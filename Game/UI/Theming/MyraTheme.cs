@@ -2,6 +2,7 @@ using Microsoft.Xna.Framework;
 using Myra.Graphics2D;
 using Myra.Graphics2D.Brushes;
 using Myra.Graphics2D.UI.Styles;
+using Graphite.Engine.UI.Theming;
 
 namespace Graphite.Game.UI.Theming;
 
@@ -17,7 +18,7 @@ public static class MyraTheme
         Text(styles.LabelStyle, theme);
         Text(styles.TooltipStyle, theme);
         Surface(styles.TooltipStyle, theme.Gray1, theme);
-        styles.TooltipStyle.Padding = new Thickness(8);
+        styles.TooltipStyle.Padding = new Thickness(theme.Spacing.Sm);
         Surface(styles.PanelStyle, theme.Gray1, theme);
         styles.PanelStyles["root"] = new WidgetStyle { Background = Brush(theme.Background) };
         styles.PanelStyles["nested"] = new WidgetStyle { Background = Brush(theme.Gray2) };
@@ -65,18 +66,19 @@ public static class MyraTheme
 
     private static void Surface(WidgetStyle style, Color background, GameTheme theme)
     {
-        style.Background = style.DisabledBackground = Brush(background);
-        style.OverBackground = style.FocusedBackground = style.PressedBackground = Brush(background);
-        style.Border = style.OverBorder = style.DisabledBorder = style.PressedBorder = Brush(theme.Gray3);
-        style.FocusedBorder = Brush(theme.Foreground);
-        style.BorderThickness = new Thickness(1);
+        var surface = new RoundedRectangleBrush(background, theme.BorderRadius.Sm, theme.Gray3, 1);
+        style.Background = style.DisabledBackground = surface;
+        style.OverBackground = style.PressedBackground = surface;
+        style.FocusedBackground = new RoundedRectangleBrush(background, theme.BorderRadius.Sm, theme.Foreground, 1);
+        style.Border = style.OverBorder = style.DisabledBorder = style.PressedBorder = style.FocusedBorder = null;
+        style.BorderThickness = new Thickness(theme.BorderRadius.Zero);
     }
 
     private static void Button(ButtonStyle style, GameTheme theme)
     {
         Surface(style, theme.Gray2, theme);
-        style.OverBackground = Brush(theme.Gray3);
-        style.PressedBackground = Brush(theme.Gray1);
+        style.OverBackground = new RoundedRectangleBrush(theme.Gray3, theme.BorderRadius.Sm, theme.Gray4, 1);
+        style.PressedBackground = new RoundedRectangleBrush(theme.Gray1, theme.BorderRadius.Sm, theme.Gray3, 1);
     }
 
     private static void Input(TextBoxStyle style, GameTheme theme)

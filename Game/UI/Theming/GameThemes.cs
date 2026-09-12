@@ -1,5 +1,6 @@
 using System.Globalization;
 using Microsoft.Xna.Framework;
+using Graphite.Engine.UI.Theming;
 
 namespace Graphite.Game.UI.Theming;
 
@@ -7,6 +8,8 @@ public static class GameThemes
 {
     public static readonly GameTheme Aftergreen = new()
     {
+        Spacing = UISpacing.Default,
+        BorderRadius = UIBorderRadii.Default,
         BackgroundDark = Hex("#081217"),
         Background = Hex("#0E1B1F"),
         BackgroundLight = Hex("#1B2C31"),

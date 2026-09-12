@@ -3,6 +3,7 @@ using Graphite.Engine.Scenes;
 using Graphite.Engine.UI.Animation;
 using Graphite.Engine.UI.Audio;
 using Graphite.Engine.UI.Materials;
+using Graphite.Engine.UI.Theming;
 using Graphite.Game.UI;
 using Graphite.Game.Scenes;
 using Graphite.Game.UI.Materials;
@@ -10,6 +11,7 @@ using Graphite.Game.UI.Theming;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Myra;
+using Myra.Graphics2D;
 using Myra.Graphics2D.UI;
 using Ui = Graphite.Engine.UI.UI;
 
@@ -41,6 +43,7 @@ internal sealed class GraphicsChecks : Microsoft.Xna.Framework.Game
         Directory.CreateDirectory(_output);
         NativeAudioCheck();
         MaterialChecks();
+        RoundedSurfaceChecks();
         SceneManager.Load<BootstrapScene>();
         SceneManager.CommitPendingChanges();
         Program.Check(Ui.HostCount > 0, "Bootstrap opens the main menu");
@@ -93,6 +96,41 @@ internal sealed class GraphicsChecks : Microsoft.Xna.Framework.Game
         GraphicsDevice.SetRenderTarget(null); destination.GetData(colors);
         Program.Check(colors[0].A == 0 && colors[64 * 128 + 64] == GameThemes.Aftergreen.Foreground, "Bloom preserves transparent corners and central content");
         Program.Check(colors.Where((_, i) => i % 128 < 40 || i % 128 >= 88).Any(c => c.A > 0), "Bloom draws visible petals outside content");
+    }
+
+    private void RoundedSurfaceChecks()
+    {
+        using var target = new RenderTarget2D(GraphicsDevice, 80, 40);
+        using var context = new RenderContext { Opacity = 1 };
+        var pixels = new Color[80 * 40];
+        var panel = new Panel { Width = 80, Height = 40 };
+        panel.Measure(new Point(80, 40));
+        panel.Arrange(target.Bounds);
+        foreach (var radius in new[] { UIBorderRadii.Default.Zero, UIBorderRadii.Default.Md, UIBorderRadii.Default.Full })
+        {
+            GraphicsDevice.SetRenderTarget(target);
+            GraphicsDevice.Clear(Color.Transparent);
+            context.Begin();
+            context.Scissor = target.Bounds;
+            panel.Background = new RoundedRectangleBrush(Color.White, radius);
+            panel.Render(context);
+            context.End();
+            GraphicsDevice.SetRenderTarget(null);
+            target.GetData(pixels);
+            Program.Check(pixels[20 * 80 + 40].A == 255, "Rounded surfaces retain their center");
+            Program.Check(pixels[0].A == (radius == 0 ? 255 : 0), "Zero is square; rounded corners remain transparent");
+        }
+
+        GraphicsDevice.SetRenderTarget(target);
+        GraphicsDevice.Clear(Color.Transparent);
+        context.Begin();
+        context.Scissor = target.Bounds;
+        panel.Background = new RoundedRectangleBrush(Color.Transparent, UIBorderRadii.Default.Full, Color.White, 2);
+        panel.Render(context);
+        context.End();
+        GraphicsDevice.SetRenderTarget(null);
+        target.GetData(pixels);
+        Program.Check(pixels[40].A == 255 && pixels[20 * 80 + 40].A == 0, "Rounded borders preserve a transparent fill");
     }
 
     protected override void Update(GameTime gameTime)
@@ -157,6 +195,15 @@ internal sealed class GraphicsChecks : Microsoft.Xna.Framework.Game
                 _graphics.PreferredBackBufferWidth = 1280; _graphics.PreferredBackBufferHeight = 720; _graphics.ApplyChanges();
                 _menu = Ui.Open<MainMenuScreen>();
                 break;
+            case 53:
+                _graphics.PreferredBackBufferWidth = 960; _graphics.PreferredBackBufferHeight = 600; _graphics.ApplyChanges();
+                break;
+            case 57:
+                _graphics.PreferredBackBufferWidth = 640; _graphics.PreferredBackBufferHeight = 480; _graphics.ApplyChanges();
+                break;
+            case 61:
+                _graphics.PreferredBackBufferWidth = 1280; _graphics.PreferredBackBufferHeight = 720; _graphics.ApplyChanges();
+                break;
             case 69: _allocations = Ui.MaterialRenderer.AllocatedTargets; _menu.Dispose(); _menu = Ui.Open<MainMenuScreen>(); break;
             case 89:
                 Program.Check(Ui.MaterialRenderer.AllocatedTargets <= _allocations, "Repeated screens do not accumulate targets");
@@ -183,7 +230,7 @@ internal sealed class GraphicsChecks : Microsoft.Xna.Framework.Game
         Ui.Draw();
         Program.Check(GraphicsDevice.GetRenderTargets()[0].RenderTarget == target && GraphicsDevice.Viewport.Equals(previous), "Rendering restores target and viewport");
         GraphicsDevice.SetRenderTarget(null);
-        if (new[] { 4, 20, 30, 42, 46 }.Contains(_frame))
+        if (new[] { 4, 20, 30, 42, 46, 56, 60, 65 }.Contains(_frame))
         {
             using var file = File.Create(Path.Combine(_output, $"frame-{_frame}.png"));
             target.SaveAsPng(file, target.Width, target.Height);
@@ -200,6 +247,7 @@ internal sealed class GraphicsChecks : Microsoft.Xna.Framework.Game
 
 internal sealed class FixtureScreen : UIScreen
 {
+    private readonly MenuAssets _assets = new();
     public Button Button { get; private set; } = null!;
     public UIMaterialHost Host { get; private set; } = null!;
     public UIMaterialHost Other { get; private set; } = null!;
@@ -207,7 +255,7 @@ internal sealed class FixtureScreen : UIScreen
     public UIMaterialHost Root { get; private set; } = null!;
     protected override Widget Build()
     {
-        Button = Button.CreateTextButton("Material fixture");
+        Button = new MenuButton(_assets, "Material fixture", "leaf", arrow: false);
         Button.Width = 240; Button.Height = 48; Button.Left = 100; Button.Top = 100;
         Button.HorizontalAlignment = HorizontalAlignment.Left; Button.VerticalAlignment = VerticalAlignment.Top;
         Button.Click += (_, _) => Clicks++;
@@ -246,6 +294,8 @@ internal sealed class FixtureScreen : UIScreen
         catch (ArgumentException) { }
         return Root;
     }
+
+    protected override void OnDestroy() => _assets.Dispose();
 }
 
 internal sealed class FailingScreen : UIScreen

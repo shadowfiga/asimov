@@ -3,6 +3,8 @@ using System.Xml.Linq;
 using AssetManagementBase;
 using Myra;
 using Myra.Graphics2D.UI.Styles;
+using FontStashSharp;
+using System.Globalization;
 
 namespace Graphite.Game.UI.Theming;
 
@@ -21,6 +23,12 @@ internal static class ThemeAssets
         }
 
         return _assets.LoadStylesheet(StylesheetFile);
+    }
+
+    internal static SpriteFontBase Font(int size)
+    {
+        _ = LoadStylesheet();
+        return _assets!.LoadFont($"{FontFile}:{size.ToString(CultureInfo.InvariantCulture)}");
     }
 
     private static void Release(object? sender, EventArgs args)

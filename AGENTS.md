@@ -14,6 +14,9 @@
 # UI theme
 
 - Use the bundled Abel font for all game text through the shared Myra theme.
+- Use Lucide icons for UI controls; bundle the icon assets and their license.
+- Use `GameThemes.Aftergreen.Spacing` (`Xs`, `Sm`, `Md`, `Lg`, `Xl`) for gaps, padding, and margins.
+- Use `GameThemes.Aftergreen.BorderRadius` (`Zero`, `Xs`, `Sm`, `Md`, `Lg`, `Xl`, `Full`) for rounded surfaces; `Full` produces pills or circles.
 - Use `GameThemes.Aftergreen` for UI colors; do not hardcode colors in widgets.
 - Use the neutral grays for ordinary controls, `Color1`–`Color6` for game information, and status colors only for meaningful state.
 - Keep shared Myra styling in `Game/UI/Theming`; initialize it before constructing screens.

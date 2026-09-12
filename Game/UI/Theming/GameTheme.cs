@@ -1,9 +1,13 @@
 using Microsoft.Xna.Framework;
+using Graphite.Engine.UI.Theming;
 
 namespace Graphite.Game.UI.Theming;
 
 public sealed class GameTheme
 {
+    public UISpacing Spacing { get; init; } = UISpacing.Default;
+    public UIBorderRadii BorderRadius { get; init; } = UIBorderRadii.Default;
+
     // Global surfaces
     public required Color BackgroundDark { get; init; }
     public required Color Background { get; init; }

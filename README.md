@@ -18,6 +18,10 @@ Debug defaults to staging; Release defaults to production. Override with `AFTERG
 
 All UI text uses the bundled [Abel font](https://github.com/google/fonts/tree/main/ofl/abel). Its SIL Open Font License is included in `Content/Fonts/Abel/OFL.txt`.
 
+`GameThemes.Aftergreen.Spacing` supplies `Xs`, `Sm`, `Md`, `Lg`, and `Xl` for gaps, padding, and margins. `BorderRadius` supplies `Zero`, `Xs`, `Sm`, `Md`, `Lg`, `Xl`, and `Full`; full rounding is limited to half the shorter side. Global defaults live in `Engine/UI/Theming/UITokens.cs`; each theme can override them. `RoundedRectangleBrush` renders these values for fills and borders.
+
+The main menu uses [Lucide](https://lucide.dev/) icons, bundled as SVG sources and 96 px PNGs in `Content/Icons/Lucide` with their license and source revision. Normal builds use the PNGs. Menu spacing and type scale with the window; the background fills it without stretching. Continue, New Game, and Load Game remain disabled until gameplay and saves are implemented.
+
 ## Checks
 
 ```sh
