@@ -37,29 +37,6 @@ public sealed class ProductionSettings : GameSettings
         TargetFramesPerSecond = 60
     };
 
-    public override SliceConfig Slice { get; } = new()
-    {
-        TargetMass = 1000,
-        PlayerSpeed = 150,
-        VacuumRange = 145,
-        PullSpeed = 95,
-        HopperCapacity = 100,
-        UpgradedCapacity = 160,
-        ExcavationSeconds = 3.2f,
-        UpgradeCosts = [65, 110, 150],
-        BotCost = 125,
-        BotSpeed = 100,
-        BotCapacity = 24,
-        LightCount = 220,
-        MediumCount = 80,
-        HeavyCount = 18,
-        LightMass = 1,
-        MediumMass = 3,
-        HeavyMass = 15,
-        AnchorMass = 20,
-        StructureMass = 95
-    };
-
     public override MenuSettings Menu { get; } = new()
     {
         DiscordUrl = null,

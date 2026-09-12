@@ -1,60 +1,22 @@
 # AFTERGREEN
 
-A native, top-down restoration game prototype built with the existing Graphite / MonoGame DesktopGL engine. Startup runs `BootstrapScene` → `MainMenuScene` → `AftergreenScene`. Put shared initialization in `BootstrapScene.LoadData`; it runs before the main menu opens.
+Project foundation using Graphite / MonoGame DesktopGL. Startup runs `BootstrapScene` → `MainMenuScene`. Gameplay has been removed for rebuilding; the play button is disabled. The design documents remain as reference.
 
-## Play
+## Run
 
-On macOS, double-click `Play AFTERGREEN.command`. You can also run `./run.sh` (macOS/Linux) or `run.cmd` (Windows). For first-time installation, use `./setup.sh` or `setup.cmd`.
+On macOS, double-click `Play AFTERGREEN.command`. Alternatively, use `./run.sh` (macOS/Linux) or `run.cmd` (Windows). For initial setup, use `./setup.sh` or `setup.cmd`.
 
-- Choose **Play / Continue** or press **Enter** in the main menu to load your expedition.
-- **WASD / arrows** move; **mouse** aims.
-- Hold **left mouse / Space** to vacuum loose debris.
-- Aim at a buried object marked with a gold dot; hold **right mouse / Left Shift** and **move away** to pull it free.
-- Press **E** near the Ark to recycle; press E with an empty hopper to open its workshop.
-- Workshop: **1–3** buy upgrades, **4** builds the Collector Bot, **B** enters the biodome after one tonne.
-- **Esc** closes panels or pauses. **M** toggles sound.
-- All workshop and ecology choices also have clickable buttons.
+## Settings
 
-The pause menu offers Continue, Main Menu, and a new expedition with a second-click confirmation before replacing progress. Returning to the main menu saves the expedition.
+`Game/Configuration/StagingSettings.cs` and `ProductionSettings.cs` inherit the shared `GameSettings` contract in `RuntimeSettings.cs`. Read values through `GameSettings.Instance`. Menu settings belong to the game layer; window, graphics, and runtime settings belong to the engine.
 
-## The playable loop
+Debug defaults to staging; Release defaults to production. Override with `AFTERGREEN_ENVIRONMENT=staging` or `production`. Rebuild after editing settings. The main menu shows the DEMO banner only in staging.
 
-Site A contains 1,300 kg: 220 kg loose litter, 240 kg medium debris, 270 kg buried heavy objects, and six 95 kg heaps. The Ark is central and the survey map shows remaining litter, the player and the collector.
-
-Recycle to earn Scrap and Components. Fit the wider intake, bigger hopper and stronger motor. Excavating the Tire Anchor releases electronics. Pull both anchors from the southeastern Relic Heap to discover the permanent Municipal Routing Chip. It unlocks a Collector Bot built on the Ark's deployment pad. The bot independently finds debris and brings it home. Free PARKR-7 at the northeastern vehicle heap.
-
-At 1,000 recycled kg, the Ark produces a Bio-Core. Enter the biodome and choose Paper Finch Habitat or Scrub Grass. Confirm departure after reviewing what stays and what travels. Site B demonstrates the chosen perk: finches physically gather paper, or grass improves collection speed. Collect 18 kg to see the slice completion screen.
-
-## Saving and tuning
-
-Progress autosaves every ten seconds, on selected transitions, on pause and on normal close. The save and local `playtest.json` are stored in `Environment.SpecialFolder.LocalApplicationData/Aftergreen` (normally `~/.local/share/Aftergreen` on macOS/Linux). Saves separate permanent discoveries/ecology from temporary field equipment and currency. Departure leaves field upgrades and the Collector Bot behind and preserves the relic and habitat.
-
-All settings are authored in `Game/Configuration/StagingSettings.cs` and `Game/Configuration/ProductionSettings.cs`. Both inherit `GameSettings`, which extends the engine's `Settings` base. Shared game settings types (`GameSettings`, `MenuSettings`, and `SliceConfig`) live in `Game/Configuration/RuntimeSettings.cs`. Abstract section properties and required typed members make the compiler enforce the same keys in both environments. Rebuild after changing values; there are no settings JSON files or runtime configuration-file reads.
-
-Read values through `GameSettings.Instance`, such as `GameSettings.Instance.Window.Width` or `GameSettings.Instance.Slice.UpgradeCosts`. Debug builds default to staging; Release builds default to production. `AFTERGREEN_ENVIRONMENT=staging` or `production` overrides the selection before startup. The singleton validates the selected configuration once, and `GameHost` receives its engine-facing base type. Menu and slice settings remain in the game layer.
-
-## Verification
+## Checks
 
 ```sh
-dotnet build --no-restore --warnaserror
-dotnet run -- --self-test
-dotnet format Graphite.csproj --verify-no-changes --no-restore --severity warn
+dotnet build --warnaserror
+dotnet format Graphite.csproj --verify-no-changes --severity warn
 ```
 
-To capture all screens using an isolated test expedition, run `dotnet run -- --render-check /tmp/aftergreen-screens`. This requires native graphics access and never reads or writes your save.
-
-The headless gameplay checks cover suction, capacity, recycling, upgrade gates, physical excavation, cascades, relic/NPC discovery, autonomous bot delivery, Bio-Core gating, ecology purchase, save/load and departure reset. They do not require a graphics device.
-
-This is a first playable implementation, with procedural placeholder art and synthesized audio. The GDD's 20–30 minute pacing and enjoyment criteria require human playtesting; the build does not claim those gates are met. See `docs/NEXT_STEPS.md` for the playtest checklist and remaining polish.
-
-## Code
-
-- `Game/Aftergreen/SliceState.cs`: world, vacuum, excavation, recycler, economy, bot AI, ecology and persistence.
-- `Game/Aftergreen/SliceRenderer.cs`: top-down world, particles, HUD and menus.
-- `Game/Aftergreen/SliceAudio.cs`: native synthesized feedback.
-- `Game/Scenes/AftergreenScene.cs`: input and engine integration.
-- `Game/Aftergreen/SliceSelfTest.cs`: executable gameplay regression checks.
-
-Game code lives in `Game/Aftergreen`, `Game/Scenes`, and `Game/UI`; shared engine infrastructure lives in `Engine`. Balance data is authored in each environment class's `Slice` property. Render checks run bootstrap initialization, then bypass the interactive main menu.
-
-Engine dependencies remain MonoGame DesktopGL 3.8.5.1, Myra 1.6.5 and .NET 8 (compatible newer runtime supported).
+Dependencies: MonoGame DesktopGL 3.8.5.1, Myra 1.6.5, and .NET 8 with newer-runtime roll-forward support.

@@ -2,9 +2,7 @@ using Graphite.Game.Configuration;
 using Graphite.Engine.Configuration;
 using System.Diagnostics;
 using Graphite.Engine.Core;
-using Graphite.Engine.Scenes;
 using Graphite.Engine.UI;
-using Graphite.Game.Scenes;
 using Microsoft.Xna.Framework;
 using Myra.Events;
 using Myra.Graphics2D;
@@ -25,7 +23,6 @@ public sealed class MainMenuScreen : UIScreen
     private HorizontalStackPanel _footer = null!;
     private VerticalStackPanel _credits = null!;
     private MenuSettings _menuContent = null!;
-    private bool _starting;
 
     protected override Widget Build()
     {
@@ -33,6 +30,7 @@ public sealed class MainMenuScreen : UIScreen
         _playButton = Button.CreateTextButton("NEW GAME / CONTINUE");
         _playButton.Width = 350;
         _playButton.Height = 48;
+        _playButton.Enabled = false;
         _settingsButton = Button.CreateTextButton("Settings");
         _settingsButton.Width = 350;
         _settingsButton.Height = 48;
@@ -113,7 +111,6 @@ public sealed class MainMenuScreen : UIScreen
 
     protected override void Awake()
     {
-        _playButton.Click += PlayClicked;
         _quitButton.Click += Quit;
         _creditsButton.Click += ShowCredits;
         _discordButton.Click += OpenDiscord;
@@ -122,24 +119,11 @@ public sealed class MainMenuScreen : UIScreen
 
     protected override void OnDestroy()
     {
-        _playButton.Click -= PlayClicked;
         _quitButton.Click -= Quit;
         _creditsButton.Click -= ShowCredits;
         _discordButton.Click -= OpenDiscord;
         _backButton.Click -= BackClicked;
     }
-
-    public void PlayGame()
-    {
-        if (_starting || _credits.Visible)
-        {
-            return;
-        }
-        _starting = true;
-        SceneManager.Load<AftergreenScene>();
-    }
-
-    private void PlayClicked(object sender, MyraEventArgs args) => PlayGame();
 
     private void ShowCredits(object sender, MyraEventArgs args)
     {

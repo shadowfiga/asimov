@@ -27,10 +27,6 @@ public sealed class MainMenuController : Behaviour
     protected internal override void Update(float dt)
     {
         var keyboard = Keyboard.GetState();
-        if (Myra.MyraEnvironment.Game.IsActive && keyboard.IsKeyDown(Keys.Enter) && !_previous.IsKeyDown(Keys.Enter))
-        {
-            Screen.PlayGame();
-        }
         if (Myra.MyraEnvironment.Game.IsActive && keyboard.IsKeyDown(Keys.Escape) && !_previous.IsKeyDown(Keys.Escape))
         {
             Screen.BackToMenu();
