@@ -1,3 +1,4 @@
+using Graphite.Game.Configuration;
 using Graphite.Engine.Core;
 using Graphite.Engine.Scenes;
 using Graphite.Game.Aftergreen;
@@ -42,7 +43,7 @@ public sealed class SliceController : Behaviour
         {
             error = "Save could not be loaded. A new expedition has started.";
         }
-        _state = new(SliceConfig.Load(), save);
+        _state = new(GameSettings.Instance.Slice, save);
         _renderer = new(_state);
         _audio = new();
         _state.Feedback += OnFeedback;
@@ -126,7 +127,7 @@ public sealed class SliceController : Behaviour
                 {
                     _state.Feedback -= OnFeedback;
                     _renderer.Dispose();
-                    _state = new(SliceConfig.Load());
+                    _state = new(GameSettings.Instance.Slice);
                     _renderer = new(_state);
                     _state.Feedback += OnFeedback;
                     _resetConfirmation = false;

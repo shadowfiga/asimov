@@ -9,13 +9,14 @@ namespace Graphite.Engine.Core;
 public sealed class GameHost : Microsoft.Xna.Framework.Game
 {
     private readonly GraphicsDeviceManager _graphics;
-    private readonly GraphiteSettings _settings;
+    private readonly Settings _settings;
     private readonly Color _clearColor;
 
-    public GameHost()
+    public GameHost(Settings settings)
     {
-        _settings = GraphiteSettings.Load();
-        _clearColor = _settings.Graphics.ParseClearColor();
+        ArgumentNullException.ThrowIfNull(settings);
+        _settings = settings;
+        _clearColor = _settings.Graphics.ClearColor;
         _graphics = new GraphicsDeviceManager(this)
         {
             HardwareModeSwitch = !_settings.Window.Borderless,
@@ -26,7 +27,6 @@ public sealed class GameHost : Microsoft.Xna.Framework.Game
             SynchronizeWithVerticalRetrace = _settings.Graphics.VSync
         };
 
-        Content.RootDirectory = _settings.Content.RootDirectory;
         IsFixedTimeStep = _settings.Runtime.FixedTimeStep;
         IsMouseVisible = _settings.Runtime.MouseVisible;
         TargetElapsedTime = TimeSpan.FromSeconds(1d / _settings.Runtime.TargetFramesPerSecond);
@@ -39,7 +39,7 @@ public sealed class GameHost : Microsoft.Xna.Framework.Game
     {
         base.Initialize();
 
-        var iconPath = _settings.ResolveIconPath();
+        var iconPath = _settings.IconPath;
         if (iconPath is not null)
         {
             WindowIcon.Apply(Window, GraphicsDevice, iconPath);

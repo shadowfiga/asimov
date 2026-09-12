@@ -10,7 +10,7 @@ internal static class WindowIcon
     {
         if (!File.Exists(path))
         {
-            throw new FileNotFoundException("The game.icon file configured in settings.json was not found.", path);
+            throw new FileNotFoundException("The configured game.icon file was not found.", path);
         }
 
         using var stream = File.OpenRead(path);

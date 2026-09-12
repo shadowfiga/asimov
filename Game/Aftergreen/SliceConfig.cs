@@ -1,45 +1,45 @@
-using System.Text.Json;
-
 namespace Graphite.Game.Aftergreen;
 
 public sealed class SliceConfig
 {
-    public float TargetMass { get; set; } = 1000;
-    public float PlayerSpeed { get; set; } = 150;
-    public float VacuumRange { get; set; } = 145;
-    public float PullSpeed { get; set; } = 95;
-    public float HopperCapacity { get; set; } = 100;
-    public float UpgradedCapacity { get; set; } = 160;
-    public float ExcavationSeconds { get; set; } = 3.2f;
-    public int[] UpgradeCosts { get; set; } = [65, 110, 150];
-    public int BotCost { get; set; } = 125;
-    public float BotSpeed { get; set; } = 100;
-    public float BotCapacity { get; set; } = 24;
-    public int LightCount { get; set; } = 220;
-    public int MediumCount { get; set; } = 80;
-    public int HeavyCount { get; set; } = 18;
-    public float LightMass { get; set; } = 1;
-    public float MediumMass { get; set; } = 3;
-    public float HeavyMass { get; set; } = 15;
-    public float AnchorMass { get; set; } = 20;
-    public float StructureMass { get; set; } = 95;
-
-    public static SliceConfig Load()
+    public required float TargetMass { get; init; }
+    public required float PlayerSpeed { get; init; }
+    public required float VacuumRange { get; init; }
+    public required float PullSpeed { get; init; }
+    public required float HopperCapacity { get; init; }
+    public required float UpgradedCapacity { get; init; }
+    public required float ExcavationSeconds { get; init; }
+    private IReadOnlyList<int> _upgradeCosts = [];
+    public required IReadOnlyList<int> UpgradeCosts
     {
-        var path = Path.Combine(AppContext.BaseDirectory, "Content", "slice.json");
-        var config = JsonSerializer.Deserialize<SliceConfig>(File.ReadAllText(path))
-            ?? throw new InvalidDataException("Slice configuration is empty.");
-        if (config.UpgradeCosts.Length != 3 || config.UpgradeCosts.Any(x => x < 0)
-            || config.TargetMass <= 0 || config.PlayerSpeed <= 0 || config.VacuumRange <= 0
-            || config.PullSpeed <= 0 || config.HopperCapacity < 30 || config.UpgradedCapacity < 30
-            || config.ExcavationSeconds <= 0 || config.BotCapacity < 6 || config.BotSpeed <= 0
-            || config.BotCost < 0 || config.LightCount < 0 || config.MediumCount < 0 || config.HeavyCount < 0
-            || config.LightMass <= 0 || config.MediumMass <= 0 || config.HeavyMass <= 0 || config.AnchorMass <= 0
-            || config.StructureMass <= config.AnchorMass * 2 || config.HeavyMass > config.HopperCapacity
-            || config.AnchorMass > config.HopperCapacity)
+        get => _upgradeCosts;
+        init => _upgradeCosts = value is null ? [] : Array.AsReadOnly(value.ToArray());
+    }
+    public required int BotCost { get; init; }
+    public required float BotSpeed { get; init; }
+    public required float BotCapacity { get; init; }
+    public required int LightCount { get; init; }
+    public required int MediumCount { get; init; }
+    public required int HeavyCount { get; init; }
+    public required float LightMass { get; init; }
+    public required float MediumMass { get; init; }
+    public required float HeavyMass { get; init; }
+    public required float AnchorMass { get; init; }
+    public required float StructureMass { get; init; }
+
+    internal void Validate()
+    {
+        float[] positiveValues = [TargetMass, PlayerSpeed, VacuumRange, PullSpeed, HopperCapacity,
+            UpgradedCapacity, ExcavationSeconds, BotSpeed, BotCapacity, LightMass, MediumMass,
+            HeavyMass, AnchorMass, StructureMass];
+        if (positiveValues.Any(value => !float.IsFinite(value) || value <= 0)
+            || UpgradeCosts.Count != 3 || UpgradeCosts.Any(x => x < 0)
+            || HopperCapacity < 30 || UpgradedCapacity < HopperCapacity || BotCapacity < 6
+            || BotCost < 0 || LightCount < 0 || MediumCount < 0 || HeavyCount < 0
+            || StructureMass <= AnchorMass * 2 || HeavyMass > HopperCapacity || AnchorMass > HopperCapacity
+            || LightMass > HopperCapacity || MediumMass > HopperCapacity)
         {
-            throw new InvalidDataException("Invalid AFTERGREEN slice tuning values.");
+            throw new InvalidDataException("Invalid slice tuning values.");
         }
-        return config;
     }
 }

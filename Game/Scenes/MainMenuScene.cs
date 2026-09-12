@@ -31,6 +31,10 @@ public sealed class MainMenuController : Behaviour
         {
             Screen.PlayGame();
         }
+        if (Myra.MyraEnvironment.Game.IsActive && keyboard.IsKeyDown(Keys.Escape) && !_previous.IsKeyDown(Keys.Escape))
+        {
+            Screen.BackToMenu();
+        }
         _previous = keyboard;
     }
 }

@@ -29,7 +29,9 @@ At 1,000 recycled kg, the Ark produces a Bio-Core. Enter the biodome and choose 
 
 Progress autosaves every ten seconds, on selected transitions, on pause and on normal close. The save and local `playtest.json` are stored in `Environment.SpecialFolder.LocalApplicationData/Aftergreen` (normally `~/.local/share/Aftergreen` on macOS/Linux). Saves separate permanent discoveries/ecology from temporary field equipment and currency. Departure leaves field upgrades and the Collector Bot behind and preserves the relic and habitat.
 
-Edit `Content/slice.json` to tune movement, suction, mass target, hopper capacities, costs, bot speed/capacity and trash counts. `settings.json` controls the window. No content compiler is needed: the presentation uses native rendered shapes, Myra's bundled font and synthesized sounds.
+All settings are authored in `Game/Configuration/StagingSettings.cs` and `Game/Configuration/ProductionSettings.cs`. Both inherit `GameSettings`, which extends the engine's `Settings` base. Abstract section properties and required typed members make the compiler enforce the same keys in both environments. Rebuild after changing values; there are no settings JSON files or runtime configuration-file reads.
+
+Read values through `GameSettings.Instance`, such as `GameSettings.Instance.Window.Width` or `GameSettings.Instance.Slice.UpgradeCosts`. Debug builds default to staging; Release builds default to production. `AFTERGREEN_ENVIRONMENT=staging` or `production` overrides the selection before startup. The singleton validates the selected configuration once, and `GameHost` receives its engine-facing base type. Menu and slice settings remain in the game layer.
 
 ## Verification
 
@@ -53,6 +55,6 @@ This is a first playable implementation, with procedural placeholder art and syn
 - `Game/Scenes/AftergreenScene.cs`: input and engine integration.
 - `Game/Aftergreen/SliceSelfTest.cs`: executable gameplay regression checks.
 
-Game code lives in `Game/Aftergreen`, `Game/Scenes`, and `Game/UI`; shared engine infrastructure lives in `Engine`. Balance data is authored directly in `Content/slice.json`. Render checks run bootstrap initialization, then bypass the interactive main menu.
+Game code lives in `Game/Aftergreen`, `Game/Scenes`, and `Game/UI`; shared engine infrastructure lives in `Engine`. Balance data is authored in each environment class's `Slice` property. Render checks run bootstrap initialization, then bypass the interactive main menu.
 
 Engine dependencies remain MonoGame DesktopGL 3.8.5.1, Myra 1.6.5 and .NET 8 (compatible newer runtime supported).

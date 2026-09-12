@@ -1,3 +1,4 @@
+using Graphite.Game.Configuration;
 using Microsoft.Xna.Framework;
 
 namespace Graphite.Game.Aftergreen;
@@ -6,7 +7,7 @@ public static class SliceSelfTest
 {
     public static void Run()
     {
-        var config = SliceConfig.Load();
+        var config = GameSettings.Instance.Slice;
         var state = new SliceState(config);
         void Check(bool value, string label)
         {

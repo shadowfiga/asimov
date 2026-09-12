@@ -1,3 +1,4 @@
+using Graphite.Game.Configuration;
 using Graphite.Engine.Scenes;
 using Graphite.Game.Aftergreen;
 
@@ -23,6 +24,6 @@ public sealed class BootstrapScene : Scene
     {
         // Run shared startup initialization here before opening the menu or gameplay.
         // Validate authored balance data early; expedition saves load when Play is chosen.
-        _ = SliceConfig.Load();
+        _ = GameSettings.Instance.Slice;
     }
 }
