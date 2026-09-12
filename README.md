@@ -12,6 +12,10 @@ On macOS, double-click `Play AFTERGREEN.command`. Alternatively, use `./run.sh` 
 
 Debug defaults to staging; Release defaults to production. Override with `AFTERGREEN_ENVIRONMENT=staging` or `production`. Rebuild after editing settings. The main menu shows the DEMO banner only in staging.
 
+## Theme
+
+`Game/UI/Theming/GameThemes.cs` defines the palette. Bootstrap applies `MyraTheme` before opening the menu. Ordinary controls use the neutral grays; game colors identify game information, and status colors communicate state. Use the `secondary` label style for muted text and the `nested` panel style for nested surfaces.
+
 ## Checks
 
 ```sh

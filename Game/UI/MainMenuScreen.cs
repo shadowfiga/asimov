@@ -3,7 +3,7 @@ using Graphite.Engine.Configuration;
 using System.Diagnostics;
 using Graphite.Engine.Core;
 using Graphite.Engine.UI;
-using Microsoft.Xna.Framework;
+using Graphite.Game.UI.Theming;
 using Myra.Events;
 using Myra.Graphics2D;
 using Myra.Graphics2D.Brushes;
@@ -47,7 +47,6 @@ public sealed class MainMenuScreen : UIScreen
         content.Widgets.Add(new Label
         {
             Text = "AFTERGREEN",
-            TextColor = new Color(172, 218, 135),
             HorizontalAlignment = HorizontalAlignment.Center
         });
         content.Widgets.Add(_playButton);
@@ -89,7 +88,7 @@ public sealed class MainMenuScreen : UIScreen
         _backButton.Height = 48;
         _credits.Widgets.Add(_backButton);
 
-        var root = new Panel();
+        var root = new Panel(styleName: "root");
         root.Widgets.Add(_menu);
         root.Widgets.Add(_footer);
         root.Widgets.Add(_credits);
@@ -98,8 +97,8 @@ public sealed class MainMenuScreen : UIScreen
             root.Widgets.Add(new Label
             {
                 Text = "DEMO",
-                TextColor = new Color(24, 43, 43),
-                Background = new SolidBrush(new Color(172, 218, 135)),
+                TextColor = GameThemes.Aftergreen.BackgroundDark,
+                Background = new SolidBrush(GameThemes.Aftergreen.Info),
                 HorizontalAlignment = HorizontalAlignment.Left,
                 VerticalAlignment = VerticalAlignment.Top,
                 Margin = new Thickness(24),

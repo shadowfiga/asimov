@@ -1,5 +1,5 @@
 using Graphite.Engine.Configuration;
-using Microsoft.Xna.Framework;
+using Graphite.Game.UI.Theming;
 
 namespace Graphite.Game.Configuration;
 
@@ -25,7 +25,7 @@ public sealed class ProductionSettings : GameSettings
 
     public override GraphicsSettings Graphics { get; } = new()
     {
-        ClearColor = new Color(17, 17, 17),
+        ClearColor = GameThemes.Aftergreen.Background,
         VSync = true,
         PreferMultiSampling = false
     };
