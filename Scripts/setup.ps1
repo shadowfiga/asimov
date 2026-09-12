@@ -18,7 +18,7 @@ if (Test-Path $LocalDotnetExe) {
 if (-not $DotnetExe) {
     Write-Host "No compatible .NET 8 SDK and runtime found. Installing locally into .dotnet (no admin)..." -ForegroundColor Cyan
     New-Item -ItemType Directory -Force -Path $LocalDotnet | Out-Null
-    $Installer = Join-Path $Root ".dotnet-install.ps1"
+    $Installer = Join-Path $LocalDotnet "dotnet-install.ps1"
     Invoke-WebRequest "https://dot.net/v1/dotnet-install.ps1" -OutFile $Installer
     & powershell -NoProfile -ExecutionPolicy Bypass -File $Installer -Channel 8.0 -InstallDir $LocalDotnet -NoPath
     $DotnetExe = $LocalDotnetExe

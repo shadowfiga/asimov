@@ -15,7 +15,7 @@ elif command -v dotnet >/dev/null 2>&1 \
 else
   say "No compatible .NET 8 SDK and runtime found. Installing locally into .dotnet (no sudo/admin)..."
   mkdir -p "$LOCAL_DOTNET"
-  INSTALLER="$ROOT/.dotnet-install.sh"
+  INSTALLER="$LOCAL_DOTNET/dotnet-install.sh"
   if command -v curl >/dev/null 2>&1; then
     curl -fsSL https://dot.net/v1/dotnet-install.sh -o "$INSTALLER"
   elif command -v wget >/dev/null 2>&1; then

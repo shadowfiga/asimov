@@ -1,5 +1,4 @@
 using Graphite.Engine.Scenes;
-using Graphite.Game.Configuration;
 using Graphite.Game.UI.Theming;
 using Graphite.Game.UI.Materials;
 
@@ -9,15 +8,8 @@ public sealed class BootstrapScene : Scene
 {
     protected internal override void OnLoad()
     {
-        LoadData();
-        SceneManager.Load<MainMenuScene>();
-    }
-
-    private static void LoadData()
-    {
-        // Shared initialization runs here before the main menu opens.
-        _ = GameSettings.Instance;
         MyraTheme.Apply(GameThemes.Aftergreen);
         MenuPresentation.Initialize();
+        SceneManager.Load<MainMenuScene>();
     }
 }

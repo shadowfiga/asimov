@@ -14,8 +14,6 @@ namespace Graphite.Game.UI;
 
 public sealed class MainMenuScreen : UIScreen
 {
-    private Button _playButton = null!;
-    private Button _settingsButton = null!;
     private Button _quitButton = null!;
     private Button _creditsButton = null!;
     private Button _discordButton = null!;
@@ -28,13 +26,13 @@ public sealed class MainMenuScreen : UIScreen
     protected override Widget Build()
     {
         _menuContent = GameSettings.Instance.Menu;
-        _playButton = Button.CreateTextButton("NEW GAME / CONTINUE");
-        _playButton.Width = 350;
-        _playButton.Height = 48;
-        _playButton.Enabled = false;
-        _settingsButton = Button.CreateTextButton("Settings");
-        _settingsButton.Width = 350;
-        _settingsButton.Height = 48;
+        var playButton = Button.CreateTextButton("NEW GAME / CONTINUE");
+        playButton.Width = 350;
+        playButton.Height = 48;
+        playButton.Enabled = false;
+        var settingsButton = Button.CreateTextButton("Settings");
+        settingsButton.Width = 350;
+        settingsButton.Height = 48;
         _quitButton = Button.CreateTextButton("QUIT");
         _quitButton.Width = 350;
         _quitButton.Height = 48;
@@ -50,8 +48,8 @@ public sealed class MainMenuScreen : UIScreen
             Text = "AFTERGREEN",
             HorizontalAlignment = HorizontalAlignment.Center
         });
-        content.Widgets.Add(new UIMaterialHost(_playButton));
-        content.Widgets.Add(new UIMaterialHost(_settingsButton));
+        content.Widgets.Add(new UIMaterialHost(playButton));
+        content.Widgets.Add(new UIMaterialHost(settingsButton));
         content.Widgets.Add(new UIMaterialHost(_quitButton));
         _menu = new UIMaterialHost(content, [MenuPresentation.Flowers], MenuPresentation.ContentStyle) { OverflowPadding = FlowerMaterial.Padding };
 

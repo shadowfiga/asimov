@@ -1,8 +1,10 @@
 using Graphite.Engine.UI;
+using Graphite.Engine.Scenes;
 using Graphite.Engine.UI.Animation;
 using Graphite.Engine.UI.Audio;
 using Graphite.Engine.UI.Materials;
 using Graphite.Game.UI;
+using Graphite.Game.Scenes;
 using Graphite.Game.UI.Materials;
 using Graphite.Game.UI.Theming;
 using Microsoft.Xna.Framework;
@@ -39,6 +41,12 @@ internal sealed class GraphicsChecks : Microsoft.Xna.Framework.Game
         Directory.CreateDirectory(_output);
         NativeAudioCheck();
         MaterialChecks();
+        SceneManager.Load<BootstrapScene>();
+        SceneManager.CommitPendingChanges();
+        Program.Check(Ui.HostCount > 0, "Bootstrap opens the main menu");
+        SceneManager.Update(0);
+        SceneManager.Shutdown();
+        Program.Check(Ui.HostCount == 0, "Scene teardown releases the menu's material hosts");
         var hostCount = Ui.HostCount;
         try { Ui.Open<FailingScreen>(); throw new InvalidOperationException("Expected build failure"); }
         catch (NotSupportedException) { Program.Check(Ui.HostCount == hostCount, "Failed screen build releases hosts"); }

@@ -1,7 +1,6 @@
 using Graphite.Engine.Configuration;
 using Graphite.Engine.Platform;
 using Graphite.Engine.Scenes;
-using Graphite.Engine.UI;
 using Microsoft.Xna.Framework;
 
 namespace Graphite.Engine.Core;
@@ -47,7 +46,6 @@ public sealed class GameHost : Microsoft.Xna.Framework.Game
 
         Graphite.Engine.UI.UI.Initialize(this);
         Application.Reset();
-        SceneManager.Initialize();
         SceneManager.Load(_settings.Game.StartupScene);
         SceneManager.CommitPendingChanges();
     }
@@ -59,9 +57,9 @@ public sealed class GameHost : Microsoft.Xna.Framework.Game
             Exit();
         }
 
-        Time.Update(gameTime);
-        Graphite.Engine.UI.UI.Update((float)gameTime.ElapsedGameTime.TotalSeconds);
-        SceneManager.Update(Time.DeltaTime);
+        var dt = (float)gameTime.ElapsedGameTime.TotalSeconds;
+        Graphite.Engine.UI.UI.Update(dt);
+        SceneManager.Update(dt);
         SceneManager.CommitPendingChanges();
 
         base.Update(gameTime);
@@ -71,7 +69,6 @@ public sealed class GameHost : Microsoft.Xna.Framework.Game
     {
         GraphicsDevice.Clear(_clearColor);
 
-        SceneManager.Draw(gameTime);
         Graphite.Engine.UI.UI.Draw();
 
         base.Draw(gameTime);

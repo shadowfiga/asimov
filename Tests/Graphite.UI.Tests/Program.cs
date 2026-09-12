@@ -11,6 +11,7 @@ internal static class Program
 {
     public static void Main(string[] args)
     {
+        SceneChecks.Run();
         AnimationChecks();
         if (args.Contains("--graphics")) { using var game = new GraphicsChecks(); game.Run(); }
         Console.WriteLine("UI checks passed.");
