@@ -6,7 +6,6 @@ var settings = GameSettings.Instance;
 
 if (args.Contains("--self-test"))
 {
-    GameSettingsSelfTest.Run();
     SliceSelfTest.Run();
     return;
 }

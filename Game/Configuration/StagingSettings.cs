@@ -1,5 +1,4 @@
 using Graphite.Engine.Configuration;
-using Graphite.Game.Aftergreen;
 using Microsoft.Xna.Framework;
 
 namespace Graphite.Game.Configuration;

@@ -1,4 +1,5 @@
 using Graphite.Game.Configuration;
+using Graphite.Engine.Configuration;
 using System.Diagnostics;
 using Graphite.Engine.Core;
 using Graphite.Engine.Scenes;
@@ -7,6 +8,7 @@ using Graphite.Game.Scenes;
 using Microsoft.Xna.Framework;
 using Myra.Events;
 using Myra.Graphics2D;
+using Myra.Graphics2D.Brushes;
 using Myra.Graphics2D.UI;
 
 namespace Graphite.Game.UI;
@@ -93,6 +95,19 @@ public sealed class MainMenuScreen : UIScreen
         root.Widgets.Add(_menu);
         root.Widgets.Add(_footer);
         root.Widgets.Add(_credits);
+        if (GameSettings.Instance.Environment == SettingsEnvironment.Staging)
+        {
+            root.Widgets.Add(new Label
+            {
+                Text = "DEMO",
+                TextColor = new Color(24, 43, 43),
+                Background = new SolidBrush(new Color(172, 218, 135)),
+                HorizontalAlignment = HorizontalAlignment.Left,
+                VerticalAlignment = VerticalAlignment.Top,
+                Margin = new Thickness(24),
+                Padding = new Thickness(18, 10)
+            });
+        }
         return root;
     }
 
