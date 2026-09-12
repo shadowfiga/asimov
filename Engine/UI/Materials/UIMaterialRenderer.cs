@@ -64,10 +64,14 @@ internal sealed class UIMaterialRenderer(GraphicsDevice device) : IDisposable
         var rasterizer = device.RasterizerState;
         var sampler = device.SamplerStates[0];
         var texture = device.Textures[0];
+        var backBufferUsage = device.PresentationParameters.RenderTargetUsage;
         var capture = RentCapture(captureWidth, captureHeight);
         context.End();
         try
         {
+            // Capturing a subtree interrupts the current screen draw. Preserve the pixels
+            // already drawn when MonoGame binds the back buffer again for composition.
+            device.PresentationParameters.RenderTargetUsage = RenderTargetUsage.PreserveContents;
             // Capture in desktop coordinates so children retain their layout and hit-test transforms.
             // A shared scratch target per nesting depth avoids a full-screen target per idle widget.
             device.SetRenderTarget(capture);
@@ -122,6 +126,7 @@ internal sealed class UIMaterialRenderer(GraphicsDevice device) : IDisposable
         finally
         {
             device.SetRenderTargets(targets);
+            device.PresentationParameters.RenderTargetUsage = backBufferUsage;
             device.Viewport = viewport;
             device.ScissorRectangle = scissor;
             _captures.Push(capture);

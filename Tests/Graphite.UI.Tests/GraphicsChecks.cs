@@ -27,6 +27,7 @@ internal sealed class GraphicsChecks : Microsoft.Xna.Framework.Game
     private int _allocations;
     private Vector2 _hitPosition;
     private Task<UIPlaybackState>? _hide;
+    private Color[] _idleBackBuffer = [];
     private readonly string _output = Path.GetFullPath(".artifacts/ui-checks");
 
     public GraphicsChecks()
@@ -46,6 +47,14 @@ internal sealed class GraphicsChecks : Microsoft.Xna.Framework.Game
         RoundedSurfaceChecks();
         SceneManager.Load<BootstrapScene>();
         SceneManager.CommitPendingChanges();
+        var startup = System.Diagnostics.Stopwatch.StartNew();
+        while (Ui.HostCount == 0 && startup.Elapsed < TimeSpan.FromSeconds(5))
+        {
+            SceneManager.Update(0);
+            SceneManager.CommitPendingChanges();
+            Thread.Sleep(1);
+        }
+
         Program.Check(Ui.HostCount > 0, "Bootstrap opens the main menu");
         SceneManager.Update(0);
         SceneManager.Shutdown();
@@ -138,6 +147,9 @@ internal sealed class GraphicsChecks : Microsoft.Xna.Framework.Game
         _frame++;
         switch (_frame)
         {
+            case 6: _mouse.Position = new Point(140, 455); break;
+            case 10: _mouse.Position = new Point(140, 250); break;
+            case 14: _mouse.Position = new Point(2, 2); break;
             case 22:
                 Ui.Close(_menu);
                 Program.Check(_menu.IsClosing && _menu.IsOpen, "Close waits for exit animation");
@@ -239,7 +251,37 @@ internal sealed class GraphicsChecks : Microsoft.Xna.Framework.Game
             return;
         }
 
-        using var target = new RenderTarget2D(GraphicsDevice, Ui.ViewportWidth, Ui.ViewportHeight);
+        if (_frame is 4 or 8 or 12)
+        {
+            GraphicsDevice.SetRenderTarget(null);
+            GraphicsDevice.Clear(GameThemes.Aftergreen.Background);
+            var usage = GraphicsDevice.PresentationParameters.RenderTargetUsage;
+            Ui.Draw();
+            Program.Check(GraphicsDevice.PresentationParameters.RenderTargetUsage == usage,
+                "Material rendering restores the back buffer usage policy");
+            var pixels = new Color[Ui.ViewportWidth * Ui.ViewportHeight];
+            GraphicsDevice.GetBackBufferData(pixels);
+            using var capture = new Texture2D(GraphicsDevice, Ui.ViewportWidth, Ui.ViewportHeight);
+            capture.SetData(pixels);
+            using var file = File.Create(Path.Combine(_output, $"backbuffer-{_frame}.png"));
+            capture.SaveAsPng(file, capture.Width, capture.Height);
+            if (_frame == 4)
+            {
+                _idleBackBuffer = pixels;
+            }
+            else
+            {
+                Program.Check(pixels[100 * Ui.ViewportWidth + 1000] == _idleBackBuffer[100 * Ui.ViewportWidth + 1000],
+                    "Hover preserves the menu background on the real back buffer");
+                if (_frame == 12)
+                {
+                    Program.Check(pixels.SequenceEqual(_idleBackBuffer), "Disabled hover leaves the full menu unchanged");
+                }
+            }
+        }
+
+        using var target = new RenderTarget2D(GraphicsDevice, Ui.ViewportWidth, Ui.ViewportHeight,
+            false, SurfaceFormat.Color, DepthFormat.None, 0, RenderTargetUsage.PreserveContents);
         GraphicsDevice.SetRenderTarget(target);
         GraphicsDevice.Clear(GameThemes.Aftergreen.Background);
         var previous = GraphicsDevice.Viewport;
