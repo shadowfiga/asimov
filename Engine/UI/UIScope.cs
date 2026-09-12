@@ -8,12 +8,22 @@ public sealed class UIScope
     {
         var screen = UI.Open<T>();
         _screens.Add(screen);
+        screen.Closed += OnScreenClosed;
         return screen;
     }
 
     public void Close(UIScreen screen)
     {
         UI.Close(screen);
+        if (!screen.IsOpen)
+        {
+            _screens.Remove(screen);
+        }
+    }
+
+    private void OnScreenClosed(UIScreen screen)
+    {
+        screen.Closed -= OnScreenClosed;
         _screens.Remove(screen);
     }
 
@@ -21,7 +31,7 @@ public sealed class UIScope
     {
         foreach (var screen in _screens.ToArray())
         {
-            UI.Close(screen);
+            UI.Close(screen, immediate: true);
         }
 
         _screens.Clear();

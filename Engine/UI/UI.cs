@@ -1,3 +1,7 @@
+using System.Collections.Concurrent;
+using Graphite.Engine.UI.Audio;
+using Graphite.Engine.UI.Materials;
+using Microsoft.Xna.Framework.Graphics;
 using Myra;
 using Myra.Graphics2D.UI;
 
@@ -6,6 +10,36 @@ namespace Graphite.Engine.UI;
 public static class UI
 {
     private static Desktop? _desktop;
+    private static readonly List<UIMaterialHost> Hosts = [];
+    private static readonly List<UIScreen> Screens = [];
+    private static readonly ConcurrentQueue<Action> Pending = new();
+    public static void Post(Action action) { ArgumentNullException.ThrowIfNull(action); Pending.Enqueue(action); }
+    private static UIMaterialRenderer? _renderer;
+    public static UIInteractionDefaults Interactions { get; } = new();
+    public static IUIAudioService Audio { get; private set; } = new UIAudioService();
+    internal static GraphicsDevice GraphicsDevice => MyraEnvironment.Game.GraphicsDevice;
+    internal static UIMaterialRenderer MaterialRenderer => _renderer ?? throw new InvalidOperationException("UI is not initialized.");
+    internal static int ViewportWidth => GraphicsDevice.PresentationParameters.BackBufferWidth;
+    internal static int ViewportHeight => GraphicsDevice.PresentationParameters.BackBufferHeight;
+    internal static int HostCount => Hosts.Count;
+    internal static void Register(UIMaterialHost host) => Hosts.Add(host);
+    internal static void Unregister(UIMaterialHost host) => Hosts.Remove(host);
+
+    public static void SetAudioService(IUIAudioService audio)
+    {
+        ArgumentNullException.ThrowIfNull(audio);
+        if (Hosts.Count != 0)
+        {
+            throw new InvalidOperationException("Set the UI audio service before constructing hosts.");
+        }
+
+        if (ReferenceEquals(Audio, audio))
+        {
+            return;
+        }
+
+        Audio.Dispose(); Audio = audio;
+    }
 
     internal static void Initialize(Microsoft.Xna.Framework.Game game)
     {
@@ -14,16 +48,32 @@ public static class UI
         Shutdown();
         MyraEnvironment.Game = game;
         _desktop = new Desktop();
+        _renderer = new UIMaterialRenderer(game.GraphicsDevice);
+        Audio = new UIAudioService();
     }
 
     public static T Open<T>() where T : UIScreen, new()
     {
-        var screen = new T();
-        screen.OpenInternal();
-        return screen;
+        var existingHosts = Hosts.ToHashSet();
+        try
+        {
+            var screen = new T();
+            screen.OpenInternal();
+            Screens.Add(screen);
+            return screen;
+        }
+        catch
+        {
+            foreach (var host in Hosts.Where(host => !existingHosts.Contains(host)).ToArray())
+            {
+                host.Dispose();
+            }
+
+            throw;
+        }
     }
 
-    public static void Close(UIScreen screen) => screen.CloseInternal();
+    public static void Close(UIScreen screen, bool immediate = false) => screen.CloseInternal(immediate);
 
     internal static void Attach(Widget root)
     {
@@ -37,13 +87,77 @@ public static class UI
         _desktop?.Widgets.Remove(root);
     }
 
+    internal static IReadOnlyList<UIMaterialHost> ExitHostsWithin(Widget root)
+    {
+        var hosts = HostsWithin(root);
+        return hosts.Where(host => !hosts.Any(parent => !ReferenceEquals(parent, host) && IsWithin(host, parent))).ToArray();
+    }
+    internal static IReadOnlyList<UIMaterialHost> HostsWithin(Widget root)
+        => Hosts.Where(host => IsWithin(host, root)).ToArray();
+    private static bool IsWithin(Widget widget, Widget root)
+    {
+        for (Widget? current = widget; current is not null; current = current.Parent)
+        {
+            if (ReferenceEquals(current, root))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+    internal static void Update(float dt)
+    {
+        if (_desktop is null)
+        {
+            return;
+        }
+
+        while (Pending.TryDequeue(out var action))
+        {
+            action();
+        }
+
+        MyraInput.Update(_desktop);
+        foreach (var host in Hosts.ToArray())
+        {
+            host.Update(dt);
+        }
+
+        foreach (var screen in Screens.ToArray())
+        {
+            screen.UpdateClose();
+        }
+
+        Screens.RemoveAll(screen => !screen.IsOpen);
+        Audio.Update();
+        _desktop.UpdateLayout();
+    }
+
     internal static void Draw()
     {
-        _desktop?.Render();
+        _desktop?.UpdateLayout();
+        _desktop?.RenderVisual();
     }
 
     internal static void Shutdown()
     {
+        foreach (var screen in Screens.ToArray())
+        {
+            screen.CloseInternal(true);
+        }
+
+        Screens.Clear();
+        foreach (var host in Hosts.ToArray())
+        {
+            host.Dispose();
+        }
+
+        Hosts.Clear();
+        _renderer?.Dispose(); _renderer = null;
+        Audio.Dispose();
+        Interactions.Clear();
+        Pending.Clear();
         _desktop?.Dispose();
         _desktop = null;
     }

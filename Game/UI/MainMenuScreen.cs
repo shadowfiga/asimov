@@ -4,6 +4,7 @@ using System.Diagnostics;
 using Graphite.Engine.Core;
 using Graphite.Engine.UI;
 using Graphite.Game.UI.Theming;
+using Graphite.Game.UI.Materials;
 using Myra.Events;
 using Myra.Graphics2D;
 using Myra.Graphics2D.Brushes;
@@ -19,9 +20,9 @@ public sealed class MainMenuScreen : UIScreen
     private Button _creditsButton = null!;
     private Button _discordButton = null!;
     private Button _backButton = null!;
-    private VerticalStackPanel _menu = null!;
-    private HorizontalStackPanel _footer = null!;
-    private VerticalStackPanel _credits = null!;
+    private UIMaterialHost _menu = null!;
+    private UIMaterialHost _footer = null!;
+    private UIMaterialHost _credits = null!;
     private MenuSettings _menuContent = null!;
 
     protected override Widget Build()
@@ -49,10 +50,10 @@ public sealed class MainMenuScreen : UIScreen
             Text = "AFTERGREEN",
             HorizontalAlignment = HorizontalAlignment.Center
         });
-        content.Widgets.Add(_playButton);
-        content.Widgets.Add(_settingsButton);
-        content.Widgets.Add(_quitButton);
-        _menu = content;
+        content.Widgets.Add(new UIMaterialHost(_playButton));
+        content.Widgets.Add(new UIMaterialHost(_settingsButton));
+        content.Widgets.Add(new UIMaterialHost(_quitButton));
+        _menu = new UIMaterialHost(content, [MenuPresentation.Flowers], MenuPresentation.ContentStyle) { OverflowPadding = FlowerMaterial.Padding };
 
         _creditsButton = Button.CreateTextButton("CREDITS");
         _creditsButton.Width = 130;
@@ -62,31 +63,33 @@ public sealed class MainMenuScreen : UIScreen
         _discordButton.Width = 130;
         _discordButton.Height = 40;
         _discordButton.Enabled = _menuContent.DiscordUrl != null;
-        _footer = new HorizontalStackPanel
+        var footer = new HorizontalStackPanel
         {
             HorizontalAlignment = HorizontalAlignment.Right,
             VerticalAlignment = VerticalAlignment.Bottom,
             Margin = new Thickness(24),
             Spacing = 12
         };
-        _footer.Widgets.Add(_creditsButton);
-        _footer.Widgets.Add(_discordButton);
+        footer.Widgets.Add(new UIMaterialHost(_creditsButton));
+        footer.Widgets.Add(new UIMaterialHost(_discordButton));
+        _footer = new UIMaterialHost(footer, interactions: MenuPresentation.FadeStyle);
 
-        _credits = new VerticalStackPanel
+        var credits = new VerticalStackPanel
         {
             HorizontalAlignment = HorizontalAlignment.Center,
             VerticalAlignment = VerticalAlignment.Center,
             Spacing = 18,
             Visible = false
         };
-        _credits.Widgets.Add(new Label { Text = "CREDITS", HorizontalAlignment = HorizontalAlignment.Center });
+        credits.Widgets.Add(new Label { Text = "CREDITS", HorizontalAlignment = HorizontalAlignment.Center });
         foreach (var entry in _menuContent.Credits)
         {
-            _credits.Widgets.Add(new Label { Text = entry, HorizontalAlignment = HorizontalAlignment.Center });
+            credits.Widgets.Add(new Label { Text = entry, HorizontalAlignment = HorizontalAlignment.Center });
         }
         _backButton = Button.CreateTextButton("BACK");
         _backButton.Height = 48;
-        _credits.Widgets.Add(_backButton);
+        credits.Widgets.Add(new UIMaterialHost(_backButton));
+        _credits = new UIMaterialHost(credits, [MenuPresentation.Flowers], MenuPresentation.ContentStyle) { OverflowPadding = FlowerMaterial.Padding };
 
         var root = new Panel(styleName: "root");
         root.Widgets.Add(_menu);
@@ -105,7 +108,7 @@ public sealed class MainMenuScreen : UIScreen
                 Padding = new Thickness(18, 10)
             });
         }
-        return root;
+        return new UIMaterialHost(root, [MenuPresentation.Crt], MenuPresentation.FadeStyle);
     }
 
     protected override void Awake()
@@ -124,16 +127,33 @@ public sealed class MainMenuScreen : UIScreen
         _backButton.Click -= BackClicked;
     }
 
-    private void ShowCredits(object sender, MyraEventArgs args)
+    private async void ShowCredits(object sender, MyraEventArgs args)
     {
-        _menu.Visible = _footer.Visible = false;
-        _credits.Visible = true;
+        var results = await Task.WhenAll(_menu.Hide(), _footer.Hide());
+        Engine.UI.UI.Post(() =>
+        {
+            if (IsOpen && !IsClosing && results.All(result => result == Engine.UI.Animation.UIPlaybackState.Completed))
+            {
+                _credits.Show();
+            }
+        });
     }
 
-    public void BackToMenu()
+    public async void BackToMenu()
     {
-        _credits.Visible = false;
-        _menu.Visible = _footer.Visible = true;
+        if (!_credits.Visible || IsClosing)
+        {
+            return;
+        }
+
+        var result = await _credits.Hide();
+        Engine.UI.UI.Post(() =>
+        {
+            if (IsOpen && !IsClosing && result == Engine.UI.Animation.UIPlaybackState.Completed)
+            {
+                _menu.Show(); _footer.Show();
+            }
+        });
     }
 
     private void BackClicked(object sender, MyraEventArgs args) => BackToMenu();

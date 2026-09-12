@@ -60,6 +60,7 @@ public sealed class GameHost : Microsoft.Xna.Framework.Game
         }
 
         Time.Update(gameTime);
+        Graphite.Engine.UI.UI.Update((float)gameTime.ElapsedGameTime.TotalSeconds);
         SceneManager.Update(Time.DeltaTime);
         SceneManager.CommitPendingChanges();
 

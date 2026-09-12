@@ -1,0 +1,250 @@
+using Graphite.Engine.UI;
+using Graphite.Engine.UI.Animation;
+using Graphite.Engine.UI.Audio;
+using Graphite.Engine.UI.Materials;
+using Graphite.Game.UI;
+using Graphite.Game.UI.Materials;
+using Graphite.Game.UI.Theming;
+using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework.Graphics;
+using Myra;
+using Myra.Graphics2D.UI;
+using Ui = Graphite.Engine.UI.UI;
+
+namespace Graphite.UI.Tests;
+
+internal sealed class GraphicsChecks : Microsoft.Xna.Framework.Game
+{
+    private readonly GraphicsDeviceManager _graphics;
+    private MainMenuScreen _menu = null!;
+    private FixtureScreen _fixture = null!;
+    private MouseInfo _mouse = new();
+    private int _frame;
+    private int _allocations;
+    private Vector2 _hitPosition;
+    private Task<UIPlaybackState>? _hide;
+    private readonly string _output = Path.GetFullPath(".artifacts/ui-checks");
+
+    public GraphicsChecks()
+    {
+        _graphics = new GraphicsDeviceManager(this) { PreferredBackBufferWidth = 1280, PreferredBackBufferHeight = 720 };
+        IsFixedTimeStep = false;
+    }
+    protected override void Initialize()
+    {
+        base.Initialize();
+        Ui.Initialize(this);
+        MyraTheme.Apply(GameThemes.Aftergreen); MenuPresentation.Initialize();
+        MyraEnvironment.MouseInfoGetter = () => _mouse;
+        Directory.CreateDirectory(_output);
+        NativeAudioCheck();
+        MaterialChecks();
+        var hostCount = Ui.HostCount;
+        try { Ui.Open<FailingScreen>(); throw new InvalidOperationException("Expected build failure"); }
+        catch (NotSupportedException) { Program.Check(Ui.HostCount == hostCount, "Failed screen build releases hosts"); }
+        _menu = Ui.Open<MainMenuScreen>();
+    }
+    private void NativeAudioCheck()
+    {
+        var path = Path.Combine(_output, "silent-fixture.wav");
+        using (var writer = new BinaryWriter(File.Create(path)))
+        {
+            const int bytes = 2205 * 2;
+            writer.Write("RIFF"u8); writer.Write(36 + bytes); writer.Write("WAVEfmt "u8);
+            writer.Write(16); writer.Write((short)1); writer.Write((short)1); writer.Write(22050);
+            writer.Write(44100); writer.Write((short)2); writer.Write((short)16);
+            writer.Write("data"u8); writer.Write(bytes); writer.Write(new byte[bytes]);
+        }
+        using (var audio = new UIAudioService { Muted = true })
+        {
+            using var voice = audio.Play(new UISoundCue { Asset = path, Loop = true, Volume = .3f, Pitch = .1f, Pan = -.2f });
+            Program.Check(voice.IsPlaying, "Native audio fixture starts");
+            audio.Volume = .2f; audio.Update(); voice.Stop(); audio.Update();
+            Program.Check(!voice.IsPlaying, "Native audio fixture stops and cleans up");
+        }
+        File.Delete(path);
+    }
+    private void MaterialChecks()
+    {
+        using var source = new RenderTarget2D(GraphicsDevice, 128, 128, false, SurfaceFormat.Color, DepthFormat.None, 0, RenderTargetUsage.PreserveContents);
+        using var destination = new RenderTarget2D(GraphicsDevice, 128, 128);
+        using var batch = new SpriteBatch(GraphicsDevice);
+        using var pixel = new Texture2D(GraphicsDevice, 1, 1);
+        pixel.SetData([GameThemes.Aftergreen.Foreground]);
+        GraphicsDevice.SetRenderTarget(source); GraphicsDevice.Clear(Color.Transparent);
+        batch.Begin(); batch.Draw(pixel, new Rectangle(40, 40, 48, 48), Color.White); batch.End();
+        var parameters = new UIParameters();
+        using var crt = MenuPresentation.Crt.CreateInstance(GraphicsDevice);
+        crt.Render(new UIMaterialContext(GraphicsDevice, batch, source, destination, parameters, .2f));
+        GraphicsDevice.SetRenderTarget(null);
+        var colors = new Color[128 * 128]; destination.GetData(colors);
+        Program.Check(colors[0].A == 0 && colors[64 * 128 + 64].A == 255, "CRT preserves transparency");
+        using var flower = MenuPresentation.Flowers.CreateInstance(GraphicsDevice);
+        parameters.Set(FlowerMaterial.Progress, .3f);
+        flower.Render(new UIMaterialContext(GraphicsDevice, batch, source, destination, parameters, .2f));
+        GraphicsDevice.SetRenderTarget(null); destination.GetData(colors);
+        Program.Check(colors[0].A == 0 && colors[64 * 128 + 64] == GameThemes.Aftergreen.Foreground, "Bloom preserves transparent corners and central content");
+        Program.Check(colors.Where((_, i) => i % 128 < 40 || i % 128 >= 88).Any(c => c.A > 0), "Bloom draws visible petals outside content");
+    }
+
+    protected override void Update(GameTime gameTime)
+    {
+        _frame++;
+        switch (_frame)
+        {
+            case 22:
+                Ui.Close(_menu);
+                Program.Check(_menu.IsClosing && _menu.IsOpen, "Close waits for exit animation");
+                break;
+            case 27:
+                Program.Check(!_menu.IsOpen, "Screen closes after finite exit");
+                _fixture = Ui.Open<FixtureScreen>();
+                break;
+            case 29:
+                _hitPosition = _fixture.Button.ToGlobal(new Vector2(40, 20));
+                _mouse.Position = _hitPosition.ToPoint();
+                break;
+            case 30:
+                Program.Check(MathF.Abs(_fixture.Host.Animation.Frame.Rotation) > .01f, "Pointer hover starts wiggle");
+                Program.Check(_fixture.Button.ContainsGlobalPoint(_hitPosition.ToPoint()), "Wiggle leaves hitbox stable");
+                break;
+            case 31: _mouse.Position = new Point(2, 2); break;
+            case 32: _mouse.Position = _hitPosition.ToPoint(); break;
+            case 33:
+                Program.Check(_fixture.Host.Animation.ActiveCount == 2, "Hover reentry replaces the settling playback");
+                _mouse.Position = new Point(2, 2); break;
+            case 34:
+                _fixture.Button.SetKeyboardFocus();
+                break;
+            case 35:
+                Program.Check(_fixture.Host.Animation.ActiveCount > 0, "Keyboard focus starts animation");
+                _fixture.Button.Enabled = false;
+                break;
+            case 37:
+                Program.Check(_fixture.Host.Animation.ActiveCount == 0, "Disabled control cancels interactions");
+                _fixture.Button.Enabled = true;
+                _fixture.Button.DoClick();
+                Program.Check(_fixture.Clicks == 1, "Original click handler preserved");
+                _hide = _fixture.Host.Hide();
+                Program.Check(!_hide.IsCompleted, "Host hide waits");
+                Program.Check(ReferenceEquals(_hide, _fixture.Host.Hide()), "Repeated hide is idempotent");
+                _fixture.Host.Show();
+                Program.Check(_hide.Result == UIPlaybackState.Cancelled && _fixture.Host.Enabled, "Show interrupts hide");
+                break;
+            case 40:
+                _fixture.Host.Play(MenuPresentation.Bloom);
+                _fixture.Other.Animation.BaseParameters.Set(CrtMaterial.Strength, 0);
+                break;
+            case 44:
+                Program.Near(_fixture.Host.Animation.Parameters.Get(CrtMaterial.Strength), 1, "Material state is independent");
+                Program.Near(_fixture.Other.Animation.Parameters.Get(CrtMaterial.Strength), 0, "Per-instance material override");
+                _graphics.PreferredBackBufferWidth = 960; _graphics.PreferredBackBufferHeight = 600; _graphics.ApplyChanges();
+                break;
+            case 50:
+                _fixture.Root.Hide(immediate: true); Ui.Update(0);
+                _fixture.Root.Show(); Ui.Update(0);
+                Program.Check(_fixture.Host.Visible && _fixture.Other.Visible, "Ancestor hide preserves child visibility");
+                _fixture.Dispose();
+                Program.Check(_fixture.Host.IsDisposed && _fixture.Other.IsDisposed, "Teardown disposes nested hosts");
+                _graphics.PreferredBackBufferWidth = 1280; _graphics.PreferredBackBufferHeight = 720; _graphics.ApplyChanges();
+                _menu = Ui.Open<MainMenuScreen>();
+                break;
+            case 69: _allocations = Ui.MaterialRenderer.AllocatedTargets; _menu.Dispose(); _menu = Ui.Open<MainMenuScreen>(); break;
+            case 89:
+                Program.Check(Ui.MaterialRenderer.AllocatedTargets <= _allocations, "Repeated screens do not accumulate targets");
+                _menu.Dispose();
+                var renderer = Ui.MaterialRenderer;
+                Ui.Shutdown();
+                Program.Check(renderer.AllocatedTargets == 0, "All render targets released at shutdown");
+                Exit();
+                return;
+        }
+        Ui.Update(.04f);
+    }
+    protected override void Draw(GameTime gameTime)
+    {
+        if (_frame >= 89)
+        {
+            return;
+        }
+
+        using var target = new RenderTarget2D(GraphicsDevice, Ui.ViewportWidth, Ui.ViewportHeight);
+        GraphicsDevice.SetRenderTarget(target);
+        GraphicsDevice.Clear(GameThemes.Aftergreen.Background);
+        var previous = GraphicsDevice.Viewport;
+        Ui.Draw();
+        Program.Check(GraphicsDevice.GetRenderTargets()[0].RenderTarget == target && GraphicsDevice.Viewport.Equals(previous), "Rendering restores target and viewport");
+        GraphicsDevice.SetRenderTarget(null);
+        if (new[] { 4, 20, 30, 42, 46 }.Contains(_frame))
+        {
+            using var file = File.Create(Path.Combine(_output, $"frame-{_frame}.png"));
+            target.SaveAsPng(file, target.Width, target.Height);
+            var pixels = new Color[target.Width * target.Height]; target.GetData(pixels);
+            Program.Check(pixels.Any(pixel => pixel.R > 150 && pixel.G > 150), "Rendered UI retains readable text");
+            if (_frame == 42)
+            {
+                Program.Check(pixels[270 * target.Width + 240].R > 40, "Material renders inside clipped panel");
+                Program.Check(pixels[270 * target.Width + 280].R < 40, "Material respects ancestor clipping");
+            }
+        }
+    }
+}
+
+internal sealed class FixtureScreen : UIScreen
+{
+    public Button Button { get; private set; } = null!;
+    public UIMaterialHost Host { get; private set; } = null!;
+    public UIMaterialHost Other { get; private set; } = null!;
+    public int Clicks { get; private set; }
+    public UIMaterialHost Root { get; private set; } = null!;
+    protected override Widget Build()
+    {
+        Button = Button.CreateTextButton("Material fixture");
+        Button.Width = 240; Button.Height = 48; Button.Left = 100; Button.Top = 100;
+        Button.HorizontalAlignment = HorizontalAlignment.Left; Button.VerticalAlignment = VerticalAlignment.Top;
+        Button.Click += (_, _) => Clicks++;
+        Host = new UIMaterialHost(Button, [MenuPresentation.Flowers, MenuPresentation.Crt], MenuPresentation.ContentStyle)
+        { OverflowPadding = FlowerMaterial.Padding };
+        var other = Button.CreateTextButton("Independent material");
+        other.Width = 240; other.Height = 48; other.Left = 440; other.Top = 100;
+        other.HorizontalAlignment = HorizontalAlignment.Left; other.VerticalAlignment = VerticalAlignment.Top;
+        Other = new UIMaterialHost(other, [MenuPresentation.Crt]);
+        var panel = new Panel(styleName: "root"); panel.Widgets.Add(Host); panel.Widgets.Add(Other);
+        var clipped = new Panel
+        {
+            Left = 100,
+            Top = 240,
+            Width = 160,
+            Height = 80,
+            ClipToBounds = true,
+            HorizontalAlignment = HorizontalAlignment.Left,
+            VerticalAlignment = VerticalAlignment.Top
+        };
+        var clippedButton = Button.CreateTextButton("Clipped fixture");
+        clippedButton.Width = 200; clippedButton.Height = 48; clippedButton.Left = 80;
+        clippedButton.HorizontalAlignment = HorizontalAlignment.Left; clippedButton.VerticalAlignment = VerticalAlignment.Top;
+        clipped.Widgets.Add(new UIMaterialHost(clippedButton, [MenuPresentation.Crt]));
+        panel.Widgets.Add(clipped);
+        Root = new UIMaterialHost(panel, [MenuPresentation.Crt], MenuPresentation.FadeStyle);
+        try
+        {
+            _ = new UIMaterialHost(new Button(), interactions: new UIInteractionStyle
+            {
+                Bindings = new Dictionary<string, UIInteractionBinding>
+                { [UITrigger.Hide] = new() { Animation = MenuPresentation.FadeOut with { Repeat = 0 } } }
+            });
+            throw new InvalidOperationException("Expected infinite hide rejection");
+        }
+        catch (ArgumentException) { }
+        return Root;
+    }
+}
+
+internal sealed class FailingScreen : UIScreen
+{
+    protected override Widget Build()
+    {
+        _ = new UIMaterialHost(Button.CreateTextButton("Unattached fixture"));
+        throw new NotSupportedException("Deliberate build failure");
+    }
+}
