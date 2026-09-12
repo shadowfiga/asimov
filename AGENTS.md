@@ -13,6 +13,7 @@
 
 # UI theme
 
+- Use the bundled Abel font for all game text through the shared Myra theme.
 - Use `GameThemes.Aftergreen` for UI colors; do not hardcode colors in widgets.
 - Use the neutral grays for ordinary controls, `Color1`–`Color6` for game information, and status colors only for meaningful state.
 - Keep shared Myra styling in `Game/UI/Theming`; initialize it before constructing screens.

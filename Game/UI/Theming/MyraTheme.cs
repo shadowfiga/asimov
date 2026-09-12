@@ -1,5 +1,4 @@
 using Microsoft.Xna.Framework;
-using Myra;
 using Myra.Graphics2D;
 using Myra.Graphics2D.Brushes;
 using Myra.Graphics2D.UI.Styles;
@@ -8,16 +7,13 @@ namespace Graphite.Game.UI.Theming;
 
 public static class MyraTheme
 {
-    // Apply before constructing screens; retain Myra's fonts and control glyphs.
+    // Apply before constructing screens; use Abel with Myra's control glyphs.
     public static void Apply(GameTheme theme)
     {
         ArgumentNullException.ThrowIfNull(theme);
-        var styles = DefaultAssets.DefaultStylesheet.Clone();
+        var styles = ThemeAssets.LoadStylesheet();
         styles.DesktopStyle = new DesktopStyle { Background = Brush(theme.Background) };
         styles.PanelStyle = new WidgetStyle();
-        // Myra 1.6.5 omits these styles when cloning.
-        styles.TooltipStyle = (LabelStyle)DefaultAssets.DefaultStylesheet.TooltipStyle.Clone();
-        styles.TabControlStyle.CloseButtonStyle = (ImageButtonStyle)DefaultAssets.DefaultStylesheet.TabControlStyle.CloseButtonStyle.Clone();
         Text(styles.LabelStyle, theme);
         Text(styles.TooltipStyle, theme);
         Surface(styles.TooltipStyle, theme.Gray1, theme);

@@ -16,6 +16,8 @@ Debug defaults to staging; Release defaults to production. Override with `AFTERG
 
 `Game/UI/Theming/GameThemes.cs` defines the palette. Bootstrap applies `MyraTheme` before opening the menu. Ordinary controls use the neutral grays; game colors identify game information, and status colors communicate state. Use the `secondary` label style for muted text and the `nested` panel style for nested surfaces.
 
+All UI text uses the bundled [Abel font](https://github.com/google/fonts/tree/main/ofl/abel). Its SIL Open Font License is included in `Content/Fonts/Abel/OFL.txt`.
+
 ## Checks
 
 ```sh
