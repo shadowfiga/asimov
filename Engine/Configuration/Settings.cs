@@ -1,3 +1,5 @@
+using Graphite.Engine.Persistence;
+
 namespace Graphite.Engine.Configuration;
 
 public enum SettingsEnvironment
@@ -27,6 +29,7 @@ public abstract class Settings
         {
             throw new InvalidDataException("game.name and game.startupScene must be non-empty strings.");
         }
+        _ = PersistencePaths.ForGame(Game.Id, Environment);
         if (Game.Icon is not null && string.IsNullOrWhiteSpace(Game.Icon))
         {
             throw new InvalidDataException("game.icon must be null or a non-empty path.");

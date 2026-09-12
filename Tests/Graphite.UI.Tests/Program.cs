@@ -13,7 +13,7 @@ internal static class Program
     {
         SceneChecks.Run();
         AnimationChecks();
-        if (args.Contains("--graphics")) { using var game = new GraphicsChecks(); game.Run(); }
+        if (args.Contains("--graphics")) { StartupChecks.Run(); using var game = new GraphicsChecks(); game.Run(); }
         Console.WriteLine("UI checks passed.");
     }
     internal static void Check(bool condition, string message)

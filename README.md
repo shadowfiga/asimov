@@ -14,7 +14,7 @@ Debug defaults to staging; Release defaults to production. Override with `AFTERG
 
 ## Theme
 
-`Game/UI/Theming/GameThemes.cs` defines the palette. Bootstrap applies `MyraTheme` before opening the menu. Ordinary controls use the neutral grays; game colors identify game information, and status colors communicate state. Use the `secondary` label style for muted text and the `nested` panel style for nested surfaces.
+`Game/UI/Theming/GameThemes.cs` defines the palette. `Startup.Initialize` applies `MyraTheme` before the first scene is constructed. Ordinary controls use the neutral grays; game colors identify game information, and status colors communicate state. Use the `secondary` label style for muted text and the `nested` panel style for nested surfaces.
 
 All UI text uses the bundled [Abel font](https://github.com/google/fonts/tree/main/ofl/abel). Its SIL Open Font License is included in `Content/Fonts/Abel/OFL.txt`.
 
@@ -24,56 +24,57 @@ The main menu uses [Lucide](https://lucide.dev/) icons, bundled as SVG sources a
 
 ## Persistence
 
-`Engine/Persistence` provides `SaveSerializer`, `SaveStore`, and typed `Preferences`. Game state belongs in `Game/Sessions` (`Graphite.Game.Sessions`); `SessionManager` replaces the old `GameManager`. A session contains data and stable entity/asset IDs. Runtime scenes, graphics resources, services, and events stay outside saved state.
+Use the static engine APIs from any scene. `GameHost` initializes storage and loads preferences before calling `Startup.Initialize` and constructing the first scene. The game startup callback installs its theme, interaction styles, and audio preferences; bootstrap then opens the main menu.
+
+```csharp
+using Graphite.Engine.Persistence;
+
+Storage.Save(session);
+Session restored = Storage.Load<Session>();
+
+// Multiple saves use explicit slot IDs; omitting one uses the default slot.
+var slotId = Guid.NewGuid();
+Storage.Save(session, slotId, name: "Coast");
+Session expedition = Storage.Load<Session>(slotId);
+var slots = Storage.ListSlots<Session>();
+Storage.Delete(slotId);
+
+Preferences.Set("audio.masterVolume", .7f);
+float volume = Preferences.Get("audio.masterVolume", 1f);
+Preferences.Remove<float>("audio.masterVolume");
+
+// Reusable typed keys add a shared default and optional validation.
+Preferences.Set(PlayerPreferences.MasterVolume, .7f);
+volume = Preferences.Get(PlayerPreferences.MasterVolume);
+Preferences.Remove(PlayerPreferences.MasterVolume);
+```
+
+Save takes one data object and serializes it internally. Load returns a new, fully typed object. No game persistence manager or session coordinator is needed. Call these synchronous APIs on the game thread; file operations finish before returning. They have no background queue, gates, or cross-process locks. Set/Remove persist immediately, and a failed write leaves both the cached preferences and the current file unchanged. Large saves can block a frame; concurrent writers are outside this API's contract.
+
+`Load<T>` throws for missing, invalid, incompatible, or unreadable files. Use `Storage.TryLoad<T>(slotId)` when you need a `SaveResult<T>` with a distinct status (`Success`, `NotFound`, `Corrupt`, `Incompatible`, `IoError`) and backup-recovery information. Save/Delete throw on failure. Slot listing includes metadata and compatibility status, validates each payload, and throws on directory I/O errors. Contract/programming errors always throw. Persistence remains available during scene teardown and is cleared when the host is disposed.
 
 Mark each data class/struct with `[SaveContract("stable.id", Version = 1)]` and each persisted field/property with `[SaveMember("stableName")]`. Public/private instance members are supported; properties need getters and setters, and fields must be writable. Unmarked members are ignored. Classes need a public or private parameterless constructor. Keep saved names stable when renaming C# symbols. `ISaveValidatable.Validate()` runs before serialization and after loading; it should only inspect data and throw `InvalidDataException` for invalid state.
 
-The serializer supports primitives, enums, strings, GUIDs, date/time values, nested contracts, one-dimensional arrays, lists, sets, and string-keyed dictionaries (including common list/dictionary interfaces). Collections initialize empty; missing fields keep their defaults and explicit null collections load as empty. Polymorphic objects, reference identity, cycles, and unsupported member types fail explicitly. Supply `JsonConverter` instances to `SaveSerializer` for additional value types, such as game-specific coordinates. The current implementation uses cached reflection contracts, not an AOT source generator.
+`SaveSerializer` supports primitives, enums, strings, GUIDs, date/time values, nested contracts, one-dimensional arrays, lists, sets, and string-keyed dictionaries (including common list/dictionary interfaces). Collections initialize empty; missing fields keep their defaults and explicit null collections load as empty. Polymorphic objects, reference identity, cycles, and unsupported member types fail explicitly. Standalone serializers accept custom `JsonConverter` instances. Session data lives in `Game/Sessions`; runtime scenes, graphics resources, services, and events stay outside saved state.
+
+Storage uses `Environment.SpecialFolder.LocalApplicationData/<Game.Id>/{staging|production}`. Slots live under `saves/<guid>.json` or `saves/default.json`; preferences live in `preferences.json`. Both C# settings files define the stable game ID. Existing GUID slot files and preference files remain compatible.
+
+Each document includes format and schema versions, timestamps, and a data checksum. Writes flush a temporary file, preserve the previous valid file as `.bak`, then replace the primary on the same filesystem. Load recovers a missing/corrupt primary from its backup, and never downgrades a newer-format save. Files are limited to 64 MiB; stale temporary files left by a process crash are ignored.
+
+Register game migrations in `Startup.Initialize` before any scene loads:
 
 ```csharp
-var sessions = SessionManager.Instance;
-var session = sessions.StartNew("Coast");
-session.AddPlayTime(30);
-var saved = await sessions.SaveAsync();
-if (saved.IsSuccess)
-{
-    var loaded = await sessions.LoadAsync(saved.Value!.Id);
-}
-
-// The engine also accepts any contracted data object.
-var result = await GamePersistence.Saves.LoadAsync<Session>(slotId);
-var slots = await GamePersistence.Saves.ListSlotsAsync<Session>();
-```
-
-Mutate session data and initiate saves at the game update boundary. `SaveAsync` serializes immediately before returning its task, so queued file writes cannot observe later changes to the live session. A validated loaded session replaces the active data reference; failures leave the current session intact. Starting/ending a session or requesting another load invalidates an older pending load. Apply scene changes after awaiting a successful load on the game thread.
-
-Storage uses `Environment.SpecialFolder.LocalApplicationData/aftergreen/{staging|production}`. Slots live under `saves/<guid>.json`; preferences live in `preferences.json`. The game ID and environment determine the location, independently of C# namespaces and the install directory. `SaveSlotInfo` holds metadata, compatibility status, and backup-recovery state. Slot listing currently validates each payload; filesystem errors while listing throw. Save/load/delete return success, missing, corrupt, incompatible, or I/O error results. Cancellation throws `OperationCanceledException`; contract/programming errors throw directly.
-
-Each document includes its format version, contract/schema version, timestamps, and a data checksum. Writes use a unique temporary file, flush it, preserve the previous valid file as `.bak`, then replace the primary on the same filesystem. Locks serialize competing writers; failures clean temporary files and preserve the current save. Load can recover a missing/corrupt primary from its backup, but never silently downgrades a newer-format save. Cancellation is honored before commit; a committed write returns success. Files are limited to 64 MiB. Locks leave small `.lock` files; stale `.tmp` files left by a process crash are ignored.
-
-Add game-owned migrations to `Game/Persistence/SessionMigrations.cs` whenever the session version increases:
-
-```csharp
-new SaveMigration("aftergreen.session", 1, data =>
+Storage.RegisterMigration(new SaveMigration("aftergreen.session", 1, data =>
 {
     data["newName"] = data["oldName"]?.DeepClone();
     data.Remove("oldName");
     return data;
-})
+}));
 ```
 
-A migration converts its `FromVersion` to the next version. Loading runs the chain in memory, then deserializes and validates; it never rewrites the file. Missing migrations/newer versions are incompatible, and failed migrations leave files unchanged. Version 1 currently has no migrations.
+Each migration advances one schema version. Loading runs the chain in memory before deserialization and validation; it never rewrites the file. Missing migrations/newer versions are incompatible. Version 1 currently has no migrations.
 
-Preferences support `bool`, `int`, `long`, `float`, `double`, and `string`, with typed defaults and optional validation. Declare game keys in `Game/Preferences/PlayerPreferences.cs`. Unknown or invalid stored values use the key's default; conflicting key types within an instance are rejected. Updates remain in memory until flushed, merge with unrelated on-disk keys, and preserve changes made during an in-flight write.
-
-```csharp
-GamePersistence.Preferences.Set(PlayerPreferences.MasterVolume, .7f);
-PlayerPreferences.ApplyAudio();
-await GamePersistence.Preferences.FlushAsync();
-// Remove(key) restores its default; the removal persists on the next flush.
-```
-
-Bootstrap loads preferences and discovers slots before opening the menu, then applies audio preferences. Player preferences are shared across slots; the staging/production C# settings continue to define application configuration. No gameplay autosave triggers or save-slot UI have been added yet.
+Preferences support `bool`, `int`, `long`, `float`, `double`, and `string`. `Get<T>(key)` uses the type's default (`""` for strings); pass a fallback or a `PreferenceKey<T>` for another default. Stored types must match Get/Set/Remove; mismatches throw rather than convert or overwrite values. Game keys live in `Game/Configuration/PlayerPreferences.cs`. Player preferences are shared across slots. No gameplay autosave triggers or save-slot UI have been added yet.
 
 ## Checks
 
@@ -108,7 +109,7 @@ The audio path above is an authoring example; the menu has no assigned sound ass
 
 Menu buttons apply CRT while an enabled button is hovered. Leaving or disabling the button stops it immediately. The menu background and keyboard focus alone do not activate CRT.
 
-Register type defaults through `UI.Interactions.Set<T>()` during bootstrap. More specific types and individual bindings override inherited bindings. `UIInteractionBinding.Empty` disables an inherited binding. Custom trigger names use `host.Trigger(name)`; explicit playback uses `host.Play(animation)` and its cancellation/completion handle. Hover runs once per entry and settles on exit; set `Repeat = 0` for continuous playback. Sounds run once per playback, with their delay relative to the animation start; looping voices stop when cancelled.
+Register type defaults through `UI.Interactions.Set<T>()` in `Startup.Initialize`. More specific types and individual bindings override inherited bindings. `UIInteractionBinding.Empty` disables an inherited binding. Custom trigger names use `host.Trigger(name)`; explicit playback uses `host.Play(animation)` and its cancellation/completion handle. Hover runs once per entry and settles on exit; set `Repeat = 0` for continuous playback. Sounds run once per playback, with their delay relative to the animation start; looping voices stop when cancelled.
 
 `UIAnimationTrack` subclasses write additive translation/rotation, multiplicative scale/opacity, or typed material parameters through `UIAnimationFrame`. Tracks must keep playback state out of shared definitions. Material parameters start from `host.Animation.BaseParameters`; the newest active parameter track wins, and completion restores the underlying value. `UIShaderMaterial` subclasses load `.mgfxo` assets and bind typed parameters in `Configure`. Custom `UIMaterialInstance` implementations can draw textures or implement other passes. Set `OverflowPadding` on material hosts where decorations extend beyond the content; ancestor clipping still applies.
 

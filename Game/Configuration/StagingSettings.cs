@@ -9,6 +9,7 @@ public sealed class StagingSettings : GameSettings
 
     public override GameIdentitySettings Game { get; } = new()
     {
+        Id = "aftergreen",
         Name = "AFTERGREEN",
         Icon = null,
         StartupScene = "Scenes/BootstrapScene"

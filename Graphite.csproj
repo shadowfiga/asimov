@@ -20,6 +20,7 @@
   <ItemGroup>
     <Compile Remove="Tests/**/*.cs" />
     <InternalsVisibleTo Include="Graphite.UI.Tests" />
+    <InternalsVisibleTo Include="Graphite.Persistence.Tests" />
     <None Update="Content\**\*.*">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>

@@ -1,7 +1,6 @@
 using Graphite.Engine.Persistence;
-using Graphite.Game.Persistence;
 
-namespace Graphite.Game.Preferences;
+namespace Graphite.Game.Configuration;
 
 public static class PlayerPreferences
 {
@@ -10,7 +9,7 @@ public static class PlayerPreferences
 
     public static void ApplyAudio()
     {
-        Engine.UI.UI.Audio.Volume = GamePersistence.Preferences.Get(MasterVolume);
-        Engine.UI.UI.Audio.Muted = GamePersistence.Preferences.Get(Muted);
+        Engine.UI.UI.Audio.Volume = Preferences.Get(MasterVolume);
+        Engine.UI.UI.Audio.Muted = Preferences.Get(Muted);
     }
 }

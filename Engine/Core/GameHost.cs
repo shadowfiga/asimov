@@ -1,5 +1,6 @@
 using Graphite.Engine.Configuration;
 using Graphite.Engine.Platform;
+using Graphite.Engine.Persistence;
 using Graphite.Engine.Scenes;
 using Microsoft.Xna.Framework;
 
@@ -10,11 +11,14 @@ public sealed class GameHost : Microsoft.Xna.Framework.Game
     private readonly GraphicsDeviceManager _graphics;
     private readonly Settings _settings;
     private readonly Color _clearColor;
+    private readonly Action? _initialize;
 
-    public GameHost(Settings settings)
+    public GameHost(Settings settings, Action? initialize = null)
     {
         ArgumentNullException.ThrowIfNull(settings);
+        settings.Validate();
         _settings = settings;
+        _initialize = initialize;
         _clearColor = _settings.Graphics.ClearColor;
         _graphics = new GraphicsDeviceManager(this)
         {
@@ -46,6 +50,15 @@ public sealed class GameHost : Microsoft.Xna.Framework.Game
 
         Graphite.Engine.UI.UI.Initialize(this);
         Application.Reset();
+        var directory = PersistencePaths.ForGame(_settings.Game.Id, _settings.Environment);
+        Storage.Initialize(Path.Combine(directory, "saves"));
+        var preferences = Preferences.Initialize(directory);
+        if (preferences.Status is not (SaveStatus.Success or SaveStatus.NotFound))
+        {
+            Console.Error.WriteLine($"Could not load preferences: {preferences.Error}");
+        }
+
+        _initialize?.Invoke();
         SceneManager.Load(_settings.Game.StartupScene);
         SceneManager.CommitPendingChanges();
     }
@@ -78,8 +91,16 @@ public sealed class GameHost : Microsoft.Xna.Framework.Game
     {
         if (disposing)
         {
-            SceneManager.Shutdown();
-            Graphite.Engine.UI.UI.Shutdown();
+            try
+            {
+                SceneManager.Shutdown();
+                Graphite.Engine.UI.UI.Shutdown();
+            }
+            finally
+            {
+                Preferences.Shutdown();
+                Storage.Shutdown();
+            }
         }
 
         base.Dispose(disposing);

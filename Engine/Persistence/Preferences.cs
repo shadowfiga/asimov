@@ -2,213 +2,158 @@ using System.Text.Json;
 
 namespace Graphite.Engine.Persistence;
 
-/// <summary>Thread-safe preference values. Set/Remove change memory; FlushAsync persists only local changes.</summary>
-public sealed class Preferences
+/// <summary>Typed preferences loaded before the first scene. Set/Remove persist immediately on the game thread.</summary>
+public static class Preferences
 {
     private const string Filename = "preferences.json";
     private const string ContractId = "graphite.preferences";
-    private readonly AtomicFileStorage _storage;
-    private readonly object _gate = new();
-    private readonly Dictionary<string, Entry> _values = new(StringComparer.Ordinal);
-    private readonly Dictionary<string, string> _types = new(StringComparer.Ordinal);
-    private readonly Dictionary<string, long> _dirty = new(StringComparer.Ordinal);
-    private readonly SemaphoreSlim _operations = new(1);
-    private long _revision;
+    private static AtomicFileStorage? _storage;
+    private static Dictionary<string, Entry> _values = [];
+    private static AtomicFileStorage Files => _storage ?? throw new InvalidOperationException("Preferences are not initialized. Start the game host first.");
+    public static string FilePath => Files.PathFor(Filename);
 
-    public Preferences(string directory) : this(new AtomicFileStorage(directory)) { }
-    public Preferences(AtomicFileStorage storage) => _storage = storage;
-    public string FilePath => _storage.PathFor(Filename);
-
-    public T Get<T>(PreferenceKey<T> key)
+    internal static SaveResult Initialize(string directory)
     {
-        lock (_gate)
-        {
-            Register(key);
-            if (_values.TryGetValue(key.Name, out var entry) && entry.Type == key.TypeTag)
-            {
-                try
-                {
-                    var value = entry.Value.Deserialize<T>();
-                    if (value is not null && key.IsValid(value))
-                    {
-                        return value;
-                    }
-                }
-                catch (JsonException) { }
-            }
-
-            return key.DefaultValue;
-        }
-    }
-
-    public void Set<T>(PreferenceKey<T> key, T value)
-    {
-        if (!key.IsValid(value))
-        {
-            throw new ArgumentOutOfRangeException(nameof(value), $"Invalid value for {key.Name}.");
-        }
-
-        lock (_gate)
-        {
-            Register(key);
-            _values[key.Name] = new Entry(key.TypeTag, JsonSerializer.SerializeToElement(value));
-            _dirty[key.Name] = ++_revision;
-        }
-    }
-
-    public void Remove<T>(PreferenceKey<T> key)
-    {
-        lock (_gate)
-        {
-            Register(key);
-            _values.Remove(key.Name);
-            _dirty[key.Name] = ++_revision;
-        }
-    }
-
-    private void Register<T>(PreferenceKey<T> key)
-    {
-        if (_types.TryGetValue(key.Name, out var type) && type != key.TypeTag)
-        {
-            throw new InvalidOperationException($"Preference {key.Name} is already registered as {type}.");
-        }
-
-        _types[key.Name] = key.TypeTag;
-    }
-
-    public async Task<SaveResult> LoadAsync(CancellationToken cancellationToken = default)
-    {
-        await _operations.WaitAsync(cancellationToken).ConfigureAwait(false);
+        Shutdown();
+        _storage = new AtomicFileStorage(directory);
         try
         {
-            using var lease = await _storage.LockAsync(Filename, cancellationToken).ConfigureAwait(false);
-            var read = await ReadAsync(cancellationToken).ConfigureAwait(false);
-            if (read.Status is SaveStatus.Success or SaveStatus.NotFound)
-            {
-                lock (_gate)
-                {
-                    foreach (var key in _values.Keys.Where(key => !_dirty.ContainsKey(key)).ToArray())
-                    {
-                        _values.Remove(key);
-                    }
-
-                    foreach (var (key, entry) in read.Values)
-                    {
-                        if (!_dirty.ContainsKey(key))
-                        {
-                            _values[key] = entry;
-                        }
-                    }
-                }
-            }
-
+            var read = Read();
+            _values = read.Values;
             return new(read.Status, read.Error, read.Recovered);
         }
         catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
         {
             return new(SaveStatus.IoError, exception.Message);
         }
-        finally { _operations.Release(); }
     }
 
-    public async Task<SaveResult> FlushAsync(CancellationToken cancellationToken = default)
+    internal static void Shutdown()
     {
-        await _operations.WaitAsync(cancellationToken).ConfigureAwait(false);
-        try
-        {
-            Dictionary<string, (long Revision, Entry? Value)> changes;
-            lock (_gate)
-            {
-                changes = _dirty.ToDictionary(pair => pair.Key, pair => (pair.Value, _values.GetValueOrDefault(pair.Key)), StringComparer.Ordinal);
-            }
-
-            if (changes.Count == 0)
-            {
-                return new(SaveStatus.Success);
-            }
-
-            using var lease = await _storage.LockAsync(Filename, cancellationToken).ConfigureAwait(false);
-            var read = await ReadAsync(cancellationToken).ConfigureAwait(false);
-            if (read.Status is not (SaveStatus.Success or SaveStatus.NotFound))
-            {
-                return new(read.Status, read.Error);
-            }
-
-            foreach (var (key, change) in changes)
-            {
-                if (change.Value is { } value)
-                {
-                    read.Values[key] = value;
-                }
-                else
-                {
-                    read.Values.Remove(key);
-                }
-            }
-
-            var now = DateTimeOffset.UtcNow;
-            var created = read.Document?.CreatedUtc ?? now;
-            var data = JsonSerializer.SerializeToElement(read.Values);
-            var document = new StoredDocument
-            {
-                ContractId = ContractId,
-                SchemaVersion = 1,
-                Name = "preferences",
-                CreatedUtc = created,
-                UpdatedUtc = now < created ? created : now,
-                Data = data,
-                Checksum = StoredDocument.Hash(data)
-            };
-            await _storage.WriteAsync(Filename, JsonSerializer.SerializeToUtf8Bytes(document), read.Status == SaveStatus.Success && !read.Recovered, cancellationToken).ConfigureAwait(false);
-            lock (_gate)
-            {
-                foreach (var (key, change) in changes)
-                {
-                    if (_dirty.GetValueOrDefault(key) == change.Revision)
-                    {
-                        _dirty.Remove(key);
-                    }
-                }
-
-                foreach (var key in _values.Keys.Where(key => !_dirty.ContainsKey(key)).ToArray())
-                {
-                    _values.Remove(key);
-                }
-
-                foreach (var (key, entry) in read.Values)
-                {
-                    if (!_dirty.ContainsKey(key))
-                    {
-                        _values[key] = entry;
-                    }
-                }
-            }
-
-            return new(SaveStatus.Success, RecoveredFromBackup: read.Recovered);
-        }
-        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
-        {
-            return new(SaveStatus.IoError, exception.Message);
-        }
-        finally { _operations.Release(); }
+        _storage = null;
+        _values = [];
     }
 
-    private async Task<ReadResult> ReadAsync(CancellationToken cancellationToken)
+    public static T Get<T>(string key) => Get(new PreferenceKey<T>(key, Default<T>()));
+    public static T Get<T>(string key, T defaultValue) => Get(new PreferenceKey<T>(key, defaultValue));
+    public static void Set<T>(string key, T value) => Set(new PreferenceKey<T>(key, Default<T>()), value);
+    public static bool Remove<T>(string key) => Remove(new PreferenceKey<T>(key, Default<T>()));
+
+    public static T Get<T>(PreferenceKey<T> key)
     {
-        var primary = await ReadFileAsync(Filename, cancellationToken).ConfigureAwait(false);
+        var entry = Find(key);
+        if (entry is not null)
+        {
+            try
+            {
+                var value = entry.Value.Deserialize<T>();
+                if (value is not null && key.IsValid(value))
+                {
+                    return value;
+                }
+            }
+            catch (JsonException) { }
+        }
+
+        return key.DefaultValue;
+    }
+
+    public static void Set<T>(PreferenceKey<T> key, T value)
+    {
+        var current = Find(key);
+        if (!key.IsValid(value))
+        {
+            throw new ArgumentOutOfRangeException(nameof(value), $"Invalid value for {key.Name}.");
+        }
+
+        var entry = new Entry(key.TypeTag, JsonSerializer.SerializeToElement(value));
+        if (current?.Value.GetRawText() == entry.Value.GetRawText())
+        {
+            return;
+        }
+
+        var values = new Dictionary<string, Entry>(_values) { [key.Name] = entry };
+        Persist(values);
+    }
+
+    public static bool Remove<T>(PreferenceKey<T> key)
+    {
+        if (Find(key) is null)
+        {
+            return false;
+        }
+
+        var values = new Dictionary<string, Entry>(_values);
+        values.Remove(key.Name);
+        Persist(values);
+        return true;
+    }
+
+    private static Entry? Find<T>(PreferenceKey<T> key)
+    {
+        _ = Files;
+        ArgumentNullException.ThrowIfNull(key);
+        _values.TryGetValue(key.Name, out var entry);
+        if (entry is not null && entry.Type != key.TypeTag)
+        {
+            throw new InvalidOperationException($"Preference '{key.Name}' is stored as {entry.Type}, not {key.TypeTag}.");
+        }
+
+        return entry;
+    }
+
+    private static T Default<T>() => (T)(Type.GetTypeCode(typeof(T)) switch
+    {
+        TypeCode.Boolean => (object)false,
+        TypeCode.Int32 => 0,
+        TypeCode.Int64 => 0L,
+        TypeCode.Single => 0f,
+        TypeCode.Double => 0d,
+        TypeCode.String => string.Empty,
+        _ => throw new NotSupportedException("Preferences support bool, int, long, float, double and string values.")
+    });
+
+    private static void Persist(Dictionary<string, Entry> values)
+    {
+        var previous = Read();
+        if (previous.Status == SaveStatus.Incompatible)
+        {
+            throw new InvalidDataException(previous.Error);
+        }
+
+        var now = DateTimeOffset.UtcNow;
+        var created = previous.Document?.CreatedUtc ?? now;
+        var data = JsonSerializer.SerializeToElement(values);
+        var document = new StoredDocument
+        {
+            ContractId = ContractId,
+            SchemaVersion = 1,
+            Name = "preferences",
+            CreatedUtc = created,
+            UpdatedUtc = now < created ? created : now,
+            Data = data,
+            Checksum = StoredDocument.Hash(data)
+        };
+        Files.Write(Filename, JsonSerializer.SerializeToUtf8Bytes(document), previous.Status == SaveStatus.Success && !previous.Recovered);
+        _values = values;
+    }
+
+    private static ReadResult Read()
+    {
+        var primary = ReadFile(Filename);
         if (primary.Status is not (SaveStatus.Corrupt or SaveStatus.NotFound))
         {
             return primary;
         }
 
-        var backup = await ReadFileAsync(Filename + ".bak", cancellationToken).ConfigureAwait(false);
+        var backup = ReadFile(Filename + ".bak");
         return backup.Status == SaveStatus.Success ? backup with { Recovered = true }
             : backup.Status == SaveStatus.NotFound ? primary : backup;
     }
 
-    private async Task<ReadResult> ReadFileAsync(string filename, CancellationToken cancellationToken)
+    private static ReadResult ReadFile(string filename)
     {
-        var result = await StoredDocument.ReadAsync(_storage, filename, cancellationToken).ConfigureAwait(false);
+        var result = StoredDocument.Read(Files, filename);
         if (!result.IsSuccess)
         {
             return new(result.Status) { Error = result.Error };
@@ -223,8 +168,7 @@ public sealed class Preferences
         try
         {
             var values = document.Data.Deserialize<Dictionary<string, Entry>>() ?? [];
-            if (values.Any(pair => string.IsNullOrWhiteSpace(pair.Key) || pair.Value is null || string.IsNullOrWhiteSpace(pair.Value.Type)
-                || pair.Value.Value.ValueKind is JsonValueKind.Undefined or JsonValueKind.Null))
+            if (values.Any(pair => string.IsNullOrWhiteSpace(pair.Key) || pair.Value is null || !ValidEntry(pair.Value)))
             {
                 return new(SaveStatus.Corrupt) { Error = "Invalid preference entry." };
             }
@@ -236,6 +180,17 @@ public sealed class Preferences
             return new(SaveStatus.Corrupt) { Error = exception.Message };
         }
     }
+
+    private static bool ValidEntry(Entry entry) => entry.Type switch
+    {
+        "bool" => entry.Value.ValueKind is JsonValueKind.True or JsonValueKind.False,
+        "string" => entry.Value.ValueKind == JsonValueKind.String,
+        "int" => entry.Value.ValueKind == JsonValueKind.Number && entry.Value.TryGetInt32(out _),
+        "long" => entry.Value.ValueKind == JsonValueKind.Number && entry.Value.TryGetInt64(out _),
+        "float" => entry.Value.ValueKind == JsonValueKind.Number && entry.Value.TryGetSingle(out var value) && float.IsFinite(value),
+        "double" => entry.Value.ValueKind == JsonValueKind.Number && entry.Value.TryGetDouble(out var value) && double.IsFinite(value),
+        _ => false
+    };
 
     private sealed record Entry(string Type, JsonElement Value);
     private sealed record ReadResult(SaveStatus Status)

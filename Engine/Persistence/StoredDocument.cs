@@ -17,11 +17,11 @@ internal sealed class StoredDocument
 
     public static string Hash(JsonElement data) => Convert.ToHexString(SHA256.HashData(JsonSerializer.SerializeToUtf8Bytes(data)));
 
-    public static async Task<SaveResult<StoredDocument>> ReadAsync(AtomicFileStorage storage, string name, CancellationToken cancellationToken)
+    public static SaveResult<StoredDocument> Read(AtomicFileStorage storage, string name)
     {
         try
         {
-            var bytes = await storage.ReadAsync(name, cancellationToken).ConfigureAwait(false);
+            var bytes = storage.Read(name);
             if (bytes is null)
             {
                 return new(SaveStatus.NotFound);

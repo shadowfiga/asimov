@@ -4,6 +4,7 @@ namespace Graphite.Engine.Configuration;
 
 public sealed class GameIdentitySettings
 {
+    public required string Id { get; init; }
     public required string Name { get; init; }
     public required string? Icon { get; init; }
     public required string StartupScene { get; init; }

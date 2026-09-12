@@ -1,4 +1,6 @@
 using Graphite.Engine.UI;
+using Graphite.Engine.Persistence;
+using Graphite.Game;
 using Graphite.Engine.Scenes;
 using Graphite.Engine.UI.Animation;
 using Graphite.Engine.UI.Audio;
@@ -39,7 +41,8 @@ internal sealed class GraphicsChecks : Microsoft.Xna.Framework.Game
     {
         base.Initialize();
         Ui.Initialize(this);
-        MyraTheme.Apply(GameThemes.Aftergreen); MenuPresentation.Initialize();
+        Preferences.Initialize(Path.Combine(_output, "preferences"));
+        Startup.Initialize();
         MyraEnvironment.MouseInfoGetter = () => _mouse;
         Directory.CreateDirectory(_output);
         NativeAudioCheck();
@@ -47,14 +50,6 @@ internal sealed class GraphicsChecks : Microsoft.Xna.Framework.Game
         RoundedSurfaceChecks();
         SceneManager.Load<BootstrapScene>();
         SceneManager.CommitPendingChanges();
-        var startup = System.Diagnostics.Stopwatch.StartNew();
-        while (Ui.HostCount == 0 && startup.Elapsed < TimeSpan.FromSeconds(5))
-        {
-            SceneManager.Update(0);
-            SceneManager.CommitPendingChanges();
-            Thread.Sleep(1);
-        }
-
         Program.Check(Ui.HostCount > 0, "Bootstrap opens the main menu");
         SceneManager.Update(0);
         SceneManager.Shutdown();
@@ -238,6 +233,7 @@ internal sealed class GraphicsChecks : Microsoft.Xna.Framework.Game
                 _menu.Dispose();
                 var renderer = Ui.MaterialRenderer;
                 Ui.Shutdown();
+                Preferences.Shutdown();
                 Program.Check(renderer.AllocatedTargets == 0, "All render targets released at shutdown");
                 Exit();
                 return;

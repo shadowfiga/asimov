@@ -1,13 +1,9 @@
-using System.Collections.Concurrent;
-
 namespace Graphite.Engine.Persistence;
 
-/// <summary>File transactions use a per-directory process gate and an OS file lock.</summary>
-public class AtomicFileStorage(string directory)
+internal sealed class AtomicFileStorage(string directory)
 {
-    private static readonly ConcurrentDictionary<string, SemaphoreSlim> Gates = new(StringComparer.Ordinal);
     public string DirectoryPath { get; } = Path.GetFullPath(directory);
-    public const int MaximumFileBytes = 64 * 1024 * 1024;
+    private const int MaximumFileBytes = 64 * 1024 * 1024;
 
     public string PathFor(string name)
     {
@@ -19,79 +15,47 @@ public class AtomicFileStorage(string directory)
         return Path.Combine(DirectoryPath, name);
     }
 
-    internal async Task<IDisposable> LockAsync(string name, CancellationToken cancellationToken)
-    {
-        var path = PathFor(name);
-        var gate = Gates.GetOrAdd(DirectoryPath, _ => new SemaphoreSlim(1));
-        await gate.WaitAsync(cancellationToken).ConfigureAwait(false);
-        try
-        {
-            Directory.CreateDirectory(DirectoryPath);
-            var deadline = DateTime.UtcNow.AddSeconds(10);
-            while (true)
-            {
-                cancellationToken.ThrowIfCancellationRequested();
-                try
-                {
-                    var file = new FileStream(path + ".lock", FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.None);
-                    return new Lease(file, gate);
-                }
-                catch (IOException) when (DateTime.UtcNow < deadline)
-                {
-                    await Task.Delay(25, cancellationToken).ConfigureAwait(false);
-                }
-            }
-        }
-        catch
-        {
-            gate.Release();
-            throw;
-        }
-    }
-
-    internal async Task<byte[]?> ReadAsync(string name, CancellationToken cancellationToken)
+    public byte[]? Read(string name)
     {
         try
         {
-            await using var stream = new FileStream(PathFor(name), FileMode.Open, FileAccess.Read, FileShare.Read,
-                8192, FileOptions.Asynchronous | FileOptions.SequentialScan);
+            using var stream = File.OpenRead(PathFor(name));
             if (stream.Length > MaximumFileBytes)
             {
                 throw new InvalidDataException("The persistence file exceeds the size limit.");
             }
 
             var bytes = new byte[(int)stream.Length];
-            await stream.ReadExactlyAsync(bytes, cancellationToken).ConfigureAwait(false);
+            stream.ReadExactly(bytes);
             return bytes;
         }
         catch (FileNotFoundException) { return null; }
         catch (DirectoryNotFoundException) { return null; }
     }
 
-    internal async Task WriteAsync(string name, byte[] bytes, bool backupCurrent, CancellationToken cancellationToken)
+    public void Write(string name, byte[] bytes, bool backupCurrent)
     {
         if (bytes.Length > MaximumFileBytes)
         {
             throw new InvalidDataException("The persistence file exceeds the size limit.");
         }
 
+        Directory.CreateDirectory(DirectoryPath);
         var path = PathFor(name);
         var temporary = path + "." + Guid.NewGuid().ToString("N") + ".tmp";
         var backupTemporary = temporary + ".bak";
         try
         {
-            await using (var stream = new FileStream(temporary, FileMode.CreateNew, FileAccess.Write, FileShare.None, 8192, FileOptions.Asynchronous))
+            using (var stream = new FileStream(temporary, FileMode.CreateNew, FileAccess.Write, FileShare.None))
             {
-                await stream.WriteAsync(bytes, cancellationToken).ConfigureAwait(false);
-                await stream.FlushAsync(cancellationToken).ConfigureAwait(false);
+                stream.Write(bytes);
                 stream.Flush(flushToDisk: true);
             }
 
-            cancellationToken.ThrowIfCancellationRequested();
             if (backupCurrent)
             {
                 File.Copy(path, backupTemporary);
-                using (var backup = new FileStream(backupTemporary, FileMode.Open, FileAccess.Write, FileShare.None))
+                using (var backup = File.OpenWrite(backupTemporary))
                 {
                     backup.Flush(flushToDisk: true);
                 }
@@ -99,8 +63,7 @@ public class AtomicFileStorage(string directory)
                 File.Move(backupTemporary, path + ".bak", overwrite: true);
             }
 
-            cancellationToken.ThrowIfCancellationRequested();
-            Commit(temporary, path);
+            File.Move(temporary, path, overwrite: true);
         }
         finally
         {
@@ -109,25 +72,5 @@ public class AtomicFileStorage(string directory)
         }
     }
 
-    /// <summary>Replace on the same filesystem. Override in storage tests to simulate an interrupted commit.</summary>
-    protected virtual void Commit(string temporaryPath, string destinationPath)
-        => File.Move(temporaryPath, destinationPath, overwrite: true);
-
-    internal void Delete(string name) => File.Delete(PathFor(name));
-
-    private sealed class Lease(FileStream stream, SemaphoreSlim gate) : IDisposable
-    {
-        private bool _disposed;
-        public void Dispose()
-        {
-            if (_disposed)
-            {
-                return;
-            }
-
-            _disposed = true;
-            try { stream.Dispose(); }
-            finally { gate.Release(); }
-        }
-    }
+    public void Delete(string name) => File.Delete(PathFor(name));
 }
