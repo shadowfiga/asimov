@@ -1,6 +1,6 @@
-using System.Diagnostics;
 using Graphite.Engine.Configuration;
 using Graphite.Engine.Core;
+using Graphite.Engine.Persistence;
 using Graphite.Engine.UI;
 using Graphite.Engine.UI.Animation;
 using Graphite.Engine.UI.Theming;
@@ -18,24 +18,35 @@ namespace Graphite.Game.UI;
 public sealed class MainMenuScreen : UIScreen
 {
     private readonly MenuAssets _assets = new();
-    private readonly List<(MenuButton Button, UIMaterialHost Host)> _rows = [];
+    private readonly List<MenuButton> _rows = [];
+    private MenuButton _settingsButton = null!;
     private MenuButton _quitButton = null!;
     private MenuButton _creditsButton = null!;
-    private MenuButton _discordButton = null!;
-    private MenuButton _backButton = null!;
+    private MenuButton _creditsBackButton = null!;
+    private MenuButton _settingsBackButton = null!;
+    private HorizontalSlider _crtIntensity = null!;
+    private HorizontalProgressBar _crtMeter = null!;
+    private Label _crtPercentage = null!;
+    private UIMaterialHost _screen = null!;
     private UIMaterialHost _menu = null!;
-    private UIMaterialHost _footer = null!;
     private UIMaterialHost _credits = null!;
-    private UIMaterialHost _back = null!;
-    private UIMaterialHost _discord = null!;
+    private UIMaterialHost _settings = null!;
     private VerticalStackPanel _content = null!;
     private VerticalStackPanel _brand = null!;
     private VerticalStackPanel _buttons = null!;
+    private VerticalStackPanel _settingsContent = null!;
+    private VerticalStackPanel _creditsContent = null!;
     private MenuTitle _title = null!;
-    private Image _logo = null!;
-    private Label? _demo;
+    private Label? _staging;
     private Panel _root = null!;
     private Point _lastSize;
+
+    internal MenuButton SettingsButton => _settingsButton;
+    internal bool CrtEnabled => _crtIntensity.Value > 0;
+    internal HorizontalSlider CrtIntensityControl => _crtIntensity;
+    internal bool CrtControlVisible => _crtIntensity.Visible;
+    internal UIMaterialHost ScreenHost => _screen;
+    internal bool SettingsVisible => _settings.Visible;
 
     protected override Widget Build()
     {
@@ -52,20 +63,30 @@ public sealed class MainMenuScreen : UIScreen
 
     private Widget BuildMenu()
     {
-        var theme = GameThemes.Aftergreen;
+        var theme = GameThemes.DeepDrive;
         var spacing = theme.Spacing;
-        _logo = _assets.Icon("leaf", 56, Color.Lerp(theme.Color4, theme.Gray5, .5f));
-        _logo.HorizontalAlignment = HorizontalAlignment.Center;
         _title = new MenuTitle();
-        _brand = new VerticalStackPanel { Spacing = spacing.Md };
-        _brand.Widgets.Add(_logo);
+        _brand = new VerticalStackPanel { Spacing = spacing.Sm };
+        _brand.Widgets.Add(new Label
+        {
+            Text = "K-01 INDUSTRIES // FIELD TERMINAL",
+            Font = ThemeAssets.Font(15),
+            TextColor = theme.Selection,
+            HorizontalAlignment = HorizontalAlignment.Left
+        });
         _brand.Widgets.Add(_title);
-        _buttons = new VerticalStackPanel { Spacing = spacing.Sm };
+        _brand.Widgets.Add(new Label
+        {
+            Text = "RESOURCES TODAY. A BRIGHTER TOMORROW.",
+            StyleName = "secondary",
+            Font = ThemeAssets.Font(16)
+        });
 
+        _buttons = new VerticalStackPanel { Spacing = spacing.Sm };
         AddRow("CONTINUE", "play", enabled: false, primary: true, arrow: false);
-        AddRow("NEW GAME", "leaf", enabled: false);
-        AddRow("LOAD GAME", "folder-open", enabled: false);
-        AddRow("SETTINGS", "settings");
+        AddRow("NEW OPERATION", "play", enabled: false);
+        AddRow("LOAD OPERATION", "folder-open", enabled: false);
+        _settingsButton = AddRow("SETTINGS", "settings");
         _creditsButton = AddRow("CREDITS", "users", enabled: GameSettings.Instance.Menu.Credits.Count > 0);
         _quitButton = AddRow("QUIT", "log-out");
 
@@ -79,65 +100,181 @@ public sealed class MainMenuScreen : UIScreen
         _content.Widgets.Add(_buttons);
         _menu = new UIMaterialHost(_content, interactions: MenuPresentation.FadeStyle);
 
-        _discordButton = new MenuButton(_assets, "DISCORD", "message-circle", arrow: false)
-        { Enabled = GameSettings.Instance.Menu.DiscordUrl is not null };
-        _discord = new UIMaterialHost(_discordButton, [MenuPresentation.Crt]);
-        var footer = new HorizontalStackPanel
-        {
-            HorizontalAlignment = HorizontalAlignment.Right,
-            VerticalAlignment = VerticalAlignment.Bottom
-        };
-        footer.Widgets.Add(_discord);
-        _footer = new UIMaterialHost(footer, interactions: MenuPresentation.FadeStyle);
+        _settingsContent = BuildSettings(theme);
+        _settings = new UIMaterialHost(_settingsContent, interactions: MenuPresentation.FadeStyle);
+        _creditsContent = BuildCredits(theme);
+        _credits = new UIMaterialHost(_creditsContent, interactions: MenuPresentation.FadeStyle);
 
-        var credits = new VerticalStackPanel
-        {
-            Spacing = spacing.Md,
-            Padding = new Thickness(spacing.Xl),
-            Background = new RoundedRectangleBrush(theme.BackgroundDark * .94f, theme.BorderRadius.Lg, theme.Gray3, 1),
-            HorizontalAlignment = HorizontalAlignment.Center,
-            VerticalAlignment = VerticalAlignment.Center,
-            Visible = false
-        };
-        credits.Widgets.Add(new Label { Text = "CREDITS", Font = ThemeAssets.Font(30), HorizontalAlignment = HorizontalAlignment.Center });
-        foreach (var entry in GameSettings.Instance.Menu.Credits)
-        {
-            credits.Widgets.Add(new Label { Text = entry, HorizontalAlignment = HorizontalAlignment.Center });
-        }
-        _backButton = new MenuButton(_assets, "BACK", "arrow-left", arrow: false);
-        _back = new UIMaterialHost(_backButton, [MenuPresentation.Crt]);
-        credits.Widgets.Add(_back);
-        _credits = new UIMaterialHost(credits, interactions: MenuPresentation.FadeStyle);
-
-        var root = _root = new Panel(styleName: "root") { Background = _assets };
-        root.Widgets.Add(_menu);
-        root.Widgets.Add(_footer);
-        root.Widgets.Add(_credits);
+        _root = new Panel(styleName: "root") { Background = _assets };
+        _root.Widgets.Add(_menu);
+        _root.Widgets.Add(_settings);
+        _root.Widgets.Add(_credits);
         if (GameSettings.Instance.Environment == SettingsEnvironment.Staging)
         {
-            _demo = new Label
+            _staging = new Label
             {
-                Text = "DEMO",
-                Font = ThemeAssets.Font(16),
-                TextColor = theme.BackgroundDark,
-                Background = new RoundedRectangleBrush(theme.Info, theme.BorderRadius.Xs),
+                Text = "STAGING",
+                Font = ThemeAssets.Font(14),
+                TextColor = theme.DeepBlack,
+                Background = new RoundedRectangleBrush(theme.Selection, theme.BorderRadius.Xs),
                 HorizontalAlignment = HorizontalAlignment.Left,
                 VerticalAlignment = VerticalAlignment.Top,
                 Padding = new Thickness(spacing.Sm, spacing.Xs)
             };
-            root.Widgets.Add(_demo);
+            _root.Widgets.Add(_staging);
         }
 
+        _screen = new UIMaterialHost(_root, [MenuPresentation.Crt], MenuPresentation.FadeStyle);
+        ApplyCrtSettings();
         Resize();
-        return new UIMaterialHost(root, interactions: MenuPresentation.FadeStyle);
+        return _screen;
+    }
+
+    private VerticalStackPanel BuildSettings(GameTheme theme)
+    {
+        var spacing = theme.Spacing;
+        var content = DialogContent("SETTINGS", theme);
+        content.Widgets.Add(new Label
+        {
+            Text = "DISPLAY",
+            Font = ThemeAssets.Font(15),
+            TextColor = theme.Selection
+        });
+
+        var intensity = Preferences.Get(PlayerPreferences.CrtIntensity);
+        _crtMeter = new HorizontalProgressBar
+        {
+            Minimum = 0,
+            Maximum = 1,
+            Value = intensity,
+            Width = 240,
+            Height = 20,
+            VerticalAlignment = VerticalAlignment.Center
+        };
+        _crtIntensity = new HorizontalSlider
+        {
+            Minimum = 0,
+            Maximum = 1,
+            Value = intensity,
+            WheelStep = .05f,
+            Width = 240,
+            Height = 24,
+            VerticalAlignment = VerticalAlignment.Center
+        };
+        _crtPercentage = new Label
+        {
+            Text = IntensityLabel(intensity),
+            Font = ThemeAssets.Font(16),
+            TextColor = theme.PrimaryText,
+            Width = 54,
+            HorizontalAlignment = HorizontalAlignment.Right,
+            VerticalAlignment = VerticalAlignment.Center
+        };
+        content.Widgets.Add(IntensityControl(theme));
+        _settingsBackButton = new MenuButton(_assets, "BACK", "arrow-left", arrow: false)
+        {
+            Width = 240,
+            Height = 54,
+            Margin = new Thickness(0, spacing.Md, 0, 0)
+        };
+        content.Widgets.Add(_settingsBackButton);
+        return content;
+    }
+
+    private Grid IntensityControl(GameTheme theme)
+    {
+        var control = new Grid
+        {
+            ColumnSpacing = theme.Spacing.Sm,
+            Height = 54,
+            HorizontalAlignment = HorizontalAlignment.Stretch
+        };
+        control.ColumnsProportions.Add(Proportion.Auto);
+        control.ColumnsProportions.Add(Proportion.Auto);
+        control.ColumnsProportions.Add(Proportion.Auto);
+        control.ColumnsProportions.Add(Proportion.Auto);
+        control.ColumnsProportions.Add(Proportion.Auto);
+        control.RowsProportions.Add(new Proportion(ProportionType.Fill));
+        control.Widgets.Add(new Label
+        {
+            Text = "CRT EFFECT",
+            Font = ThemeAssets.Font(18),
+            TextColor = theme.SecondaryText,
+            VerticalAlignment = VerticalAlignment.Center
+        });
+
+        var no = EndpointLabel("NO", theme);
+        Grid.SetColumn(no, 1);
+        control.Widgets.Add(no);
+
+        var meter = new Grid { Width = 240, Height = 24, VerticalAlignment = VerticalAlignment.Center };
+        meter.RowsProportions.Add(new Proportion(ProportionType.Fill));
+        meter.ColumnsProportions.Add(new Proportion(ProportionType.Fill));
+        meter.Widgets.Add(_crtMeter);
+        meter.Widgets.Add(_crtIntensity);
+        Grid.SetColumn(meter, 2);
+        control.Widgets.Add(meter);
+
+        var full = EndpointLabel("FULL", theme);
+        Grid.SetColumn(full, 3);
+        control.Widgets.Add(full);
+        Grid.SetColumn(_crtPercentage, 4);
+        control.Widgets.Add(_crtPercentage);
+        return control;
+    }
+
+    private static Label EndpointLabel(string text, GameTheme theme) => new()
+    {
+        Text = text,
+        Font = ThemeAssets.Font(14),
+        TextColor = theme.SecondaryText,
+        VerticalAlignment = VerticalAlignment.Center
+    };
+
+    private VerticalStackPanel BuildCredits(GameTheme theme)
+    {
+        var content = DialogContent("CREDITS", theme);
+        foreach (var entry in GameSettings.Instance.Menu.Credits)
+        {
+            content.Widgets.Add(new Label { Text = entry, HorizontalAlignment = HorizontalAlignment.Left });
+        }
+        _creditsBackButton = new MenuButton(_assets, "BACK", "arrow-left", arrow: false)
+        {
+            Width = 240,
+            Height = 54,
+            Margin = new Thickness(0, theme.Spacing.Md, 0, 0)
+        };
+        content.Widgets.Add(_creditsBackButton);
+        return content;
+    }
+
+    private static VerticalStackPanel DialogContent(string title, GameTheme theme)
+    {
+        var content = new VerticalStackPanel
+        {
+            Width = 620,
+            Spacing = theme.Spacing.Md,
+            Padding = new Thickness(theme.Spacing.Xl),
+            Background = new RoundedRectangleBrush(theme.RaisedSurface, theme.BorderRadius.Xs, theme.Border, 1),
+            HorizontalAlignment = HorizontalAlignment.Center,
+            VerticalAlignment = VerticalAlignment.Center,
+            Visible = false
+        };
+        content.Widgets.Add(new Label
+        {
+            Text = title,
+            Font = ThemeAssets.Font(32),
+            TextColor = theme.PrimaryText,
+            HorizontalAlignment = HorizontalAlignment.Left
+        });
+        return content;
     }
 
     private MenuButton AddRow(string text, string icon, bool enabled = true, bool primary = false, bool arrow = true)
     {
         var button = new MenuButton(_assets, text, icon, primary, arrow) { Enabled = enabled };
-        var host = new UIMaterialHost(button, [MenuPresentation.Crt]);
-        _rows.Add((button, host));
-        _buttons.Widgets.Add(host);
+        _rows.Add(button);
+        _buttons.Widgets.Add(button);
         return button;
     }
 
@@ -151,34 +288,29 @@ public sealed class MainMenuScreen : UIScreen
         }
 
         _lastSize = currentSize;
-        var spacing = GameThemes.Aftergreen.Spacing;
+        var spacing = GameThemes.DeepDrive.Spacing;
         var scale = Math.Clamp(size.BackBufferHeight / 900f, .45f, 1.2f);
         var edge = Math.Max(spacing.Md, (int)(spacing.Xl * 2 * scale));
-        var width = Math.Max(200, Math.Min((int)(440 * scale), size.BackBufferWidth - edge * 2));
+        var width = Math.Max(280, Math.Min((int)(520 * scale), size.BackBufferWidth - edge * 2));
         _menu.Width = width + edge;
         _menu.Margin = new Thickness(edge, spacing.Xl, 0, spacing.Xl);
         _content.Spacing = Math.Max(spacing.Md, (int)(spacing.Xl * scale));
-        _brand.Spacing = Math.Max(spacing.Xs, (int)(spacing.Md * scale));
+        _brand.Spacing = Math.Max(spacing.Xs, (int)(spacing.Sm * scale));
         _buttons.Spacing = Math.Max(spacing.Xs, (int)(spacing.Sm * scale));
-        _logo.Width = _logo.Height = (int)(64 * scale);
         _title.Fit(width, Math.Max(24, (int)(48 * scale)));
-        foreach (var (button, host) in _rows)
+        foreach (var button in _rows)
         {
-            host.Width = width;
-            host.Height = Math.Max(34, (int)(76 * scale));
-            button.Resize(scale);
+            button.Width = width;
+            button.Height = Math.Max(34, (int)(68 * scale));
+            button.Resize(scale, 30);
         }
 
-        _footer.Margin = new Thickness(spacing.Xl);
-        _discord.Width = Math.Max(140, (int)(180 * scale));
-        _discord.Height = Math.Max(36, (int)(50 * scale));
-        _discordButton.Resize(Math.Min(.8f, scale), 26);
-        _back.Width = Math.Min(320, width);
-        _back.Height = Math.Max(40, (int)(64 * scale));
-        _backButton.Resize(scale);
-        if (_demo is not null)
+        var dialogWidth = Math.Max(360, Math.Min(620, size.BackBufferWidth - edge * 2));
+        _settingsContent.Width = dialogWidth;
+        _creditsContent.Width = dialogWidth;
+        if (_staging is not null)
         {
-            _demo.Margin = new Thickness(edge, spacing.Lg);
+            _staging.Margin = new Thickness(edge, spacing.Lg);
         }
     }
 
@@ -186,72 +318,78 @@ public sealed class MainMenuScreen : UIScreen
 
     protected override void Awake()
     {
+        _settingsButton.Click += ShowSettings;
         _quitButton.Click += Quit;
         _creditsButton.Click += ShowCredits;
-        _discordButton.Click += OpenDiscord;
-        _backButton.Click += BackClicked;
+        _creditsBackButton.Click += BackClicked;
+        _settingsBackButton.Click += BackClicked;
+        _crtIntensity.ValueChanged += ChangeCrtIntensity;
         _root.ArrangeUpdated += OnResize;
     }
 
     protected override void OnDestroy()
     {
+        _settingsButton.Click -= ShowSettings;
         _quitButton.Click -= Quit;
         _creditsButton.Click -= ShowCredits;
-        _discordButton.Click -= OpenDiscord;
-        _backButton.Click -= BackClicked;
+        _creditsBackButton.Click -= BackClicked;
+        _settingsBackButton.Click -= BackClicked;
+        _crtIntensity.ValueChanged -= ChangeCrtIntensity;
         _root.ArrangeUpdated -= OnResize;
         _assets.Dispose();
     }
 
-    private async void ShowCredits(object sender, MyraEventArgs args)
+    private void ShowSettings(object sender, MyraEventArgs args) => ShowPanel(_settings);
+    private void ShowCredits(object sender, MyraEventArgs args) => ShowPanel(_credits);
+
+    private async void ShowPanel(UIMaterialHost panel)
     {
-        var results = await Task.WhenAll(_menu.Hide(), _footer.Hide());
+        var result = await _menu.Hide();
         Engine.UI.UI.Post(() =>
         {
-            if (IsOpen && !IsClosing && results.All(result => result == UIPlaybackState.Completed))
+            if (IsOpen && !IsClosing && result == UIPlaybackState.Completed)
             {
-                _credits.Show();
+                panel.Show();
             }
         });
     }
 
     public async void BackToMenu()
     {
-        if (!_credits.Visible || IsClosing)
+        if (IsClosing)
         {
             return;
         }
 
-        var result = await _credits.Hide();
+        var panel = _settings.Visible ? _settings : _credits.Visible ? _credits : null;
+        if (panel is null)
+        {
+            return;
+        }
+
+        var result = await panel.Hide();
         Engine.UI.UI.Post(() =>
         {
             if (IsOpen && !IsClosing && result == UIPlaybackState.Completed)
             {
                 _menu.Show();
-                _footer.Show();
             }
         });
     }
 
-    private void BackClicked(object sender, MyraEventArgs args) => BackToMenu();
-
-    private void OpenDiscord(object sender, MyraEventArgs args)
+    private void ChangeCrtIntensity(object sender, ValueChangedEventArgs<float> args)
     {
-        var discordUrl = GameSettings.Instance.Menu.DiscordUrl;
-        if (discordUrl is null)
-        {
-            return;
-        }
-
-        try
-        {
-            using var process = Process.Start(new ProcessStartInfo(discordUrl.AbsoluteUri) { UseShellExecute = true });
-        }
-        catch (Exception exception) when (exception is System.ComponentModel.Win32Exception or InvalidOperationException)
-        {
-            Console.Error.WriteLine($"Could not open Discord: {exception.Message}");
-        }
+        Preferences.Set(PlayerPreferences.CrtIntensity, _crtIntensity.Value);
+        _crtMeter.Value = _crtIntensity.Value;
+        _crtPercentage.Text = IntensityLabel(_crtIntensity.Value);
+        ApplyCrtSettings();
     }
 
+    private static string IntensityLabel(float intensity) => $"{intensity:P0}";
+
+    private void ApplyCrtSettings()
+        => CrtMaterial.Configure(_screen.Animation.BaseParameters, Preferences.Get(PlayerPreferences.CrtIntensity));
+
+    private void BackClicked(object sender, MyraEventArgs args) => BackToMenu();
     private static void Quit(object sender, MyraEventArgs args) => Application.Quit();
 }

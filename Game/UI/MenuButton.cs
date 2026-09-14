@@ -12,17 +12,27 @@ internal sealed class MenuButton : Button
     private readonly Image _icon;
     private readonly Image? _arrow;
     private readonly Grid _layout;
+    private readonly (IImage Normal, IImage Highlight, IImage Pressed, IImage Disabled) _iconImages;
+    private readonly (IImage Normal, IImage Highlight, IImage Pressed, IImage Disabled)? _arrowImages;
+
+    internal bool IsContentHighlighted
+        => _label.TextColor == GameThemes.DeepDrive.SelectionHighlight &&
+           ReferenceEquals(_icon.Renderable, _iconImages.Highlight) &&
+           (_arrow is null || ReferenceEquals(_arrow.Renderable, _arrowImages!.Value.Highlight));
 
     internal MenuButton(MenuAssets assets, string text, string icon, bool primary = false, bool arrow = true)
     {
-        var theme = GameThemes.Aftergreen;
-        var radius = theme.BorderRadius.Md;
-        var fill = primary ? Color.Lerp(theme.Background, theme.Color4, .22f) * .88f : theme.BackgroundDark * .78f;
-        var border = primary ? theme.Color4 * .85f : theme.Gray3 * .6f;
-        Background = DisabledBackground = new RoundedRectangleBrush(fill, radius, border, 1);
-        OverBackground = new RoundedRectangleBrush(theme.Gray1 * .94f, radius, theme.Gray5, 1);
-        FocusedBackground = new RoundedRectangleBrush(theme.Gray1 * .94f, radius, theme.Foreground, 1);
-        PressedBackground = new RoundedRectangleBrush(theme.Background * .98f, radius, theme.Color4, 1);
+        var theme = GameThemes.DeepDrive;
+        var radius = theme.BorderRadius.Xs;
+        var fill = primary ? Color.Lerp(theme.ControlSurface, theme.Selection, .09f) : theme.DeepBlack;
+        var border = primary ? theme.Selection : theme.Border;
+        Background = new RoundedRectangleBrush(fill, radius, border, 1);
+        DisabledBackground = new RoundedRectangleBrush(theme.DeepBlack, radius, theme.Border, 1);
+        OverBackground = new RoundedRectangleBrush(
+            Color.Lerp(theme.ControlSurface, theme.Selection, .16f), radius, theme.SelectionHighlight, 2);
+        FocusedBackground = new RoundedRectangleBrush(
+            Color.Lerp(theme.ControlSurface, theme.Selection, .1f), radius, theme.SelectionHighlight, 2);
+        PressedBackground = new RoundedRectangleBrush(theme.Selection, radius, theme.SelectionHighlight, 1);
         Border = OverBorder = FocusedBorder = PressedBorder = DisabledBorder = null;
         BorderThickness = new Thickness(theme.BorderRadius.Zero);
 
@@ -37,14 +47,18 @@ internal sealed class MenuButton : Button
         _layout.ColumnsProportions.Add(new Proportion(ProportionType.Fill));
         _layout.ColumnsProportions.Add(Proportion.Auto);
         _layout.RowsProportions.Add(new Proportion(ProportionType.Fill));
-        _icon = assets.Icon(icon, 28, theme.Gray5);
+        _icon = assets.Icon(icon, 28, theme.SecondaryText);
+        _iconImages = IconImages(_icon);
         _layout.Widgets.Add(_icon);
         _label = new Label
         {
             Text = text,
             Font = ThemeAssets.Font(24),
-            TextColor = theme.Gray5,
-            DisabledTextColor = theme.Gray4,
+            TextColor = theme.SecondaryText,
+            DisabledTextColor = theme.Disabled,
+            OverTextColor = theme.SelectionHighlight,
+            FocusedTextColor = theme.SelectionHighlight,
+            PressedTextColor = theme.DeepBlack,
             HorizontalAlignment = HorizontalAlignment.Left,
             VerticalAlignment = VerticalAlignment.Center
         };
@@ -52,17 +66,24 @@ internal sealed class MenuButton : Button
         _layout.Widgets.Add(_label);
         if (arrow)
         {
-            _arrow = assets.Icon("chevron-right", 18, theme.Gray4);
+            _arrow = assets.Icon("chevron-right", 18, theme.Disabled);
+            _arrowImages = IconImages(_arrow);
             Grid.SetColumn(_arrow, 2);
             _layout.Widgets.Add(_arrow);
         }
 
         Content = _layout;
+        MouseEntered += RefreshContentState;
+        MouseLeft += RefreshContentState;
+        PressedChanged += RefreshContentState;
+        KeyboardFocusChanged += RefreshContentState;
+        EnabledChanged += RefreshContentState;
+        RefreshContentState();
     }
 
     internal void Resize(float scale, int fontSize = 34)
     {
-        var spacing = GameThemes.Aftergreen.Spacing;
+        var spacing = GameThemes.DeepDrive.Spacing;
         _layout.Padding = new Thickness((int)(spacing.Lg * scale), 0);
         _layout.ColumnSpacing = (int)(spacing.Lg * scale);
         _label.Font = ThemeAssets.Font(Math.Max(17, (int)(fontSize * scale)));
@@ -72,4 +93,39 @@ internal sealed class MenuButton : Button
             _arrow.Width = _arrow.Height = Math.Max(14, (int)(20 * scale));
         }
     }
+
+    internal void SetText(string text) => _label.Text = text;
+
+    private static (IImage Normal, IImage Highlight, IImage Pressed, IImage Disabled) IconImages(Image image)
+        => (
+            image.Renderable ?? throw new InvalidOperationException("Menu icon needs a normal renderable."),
+            image.OverRenderable ?? throw new InvalidOperationException("Menu icon needs a hover renderable."),
+            image.PressedRenderable ?? throw new InvalidOperationException("Menu icon needs a pressed renderable."),
+            image.DisabledRenderable ?? throw new InvalidOperationException("Menu icon needs a disabled renderable."));
+
+    private void RefreshContentState(object sender, Myra.Events.MyraEventArgs args)
+        => RefreshContentState();
+
+    private void RefreshContentState()
+    {
+        var theme = GameThemes.DeepDrive;
+        var highlighted = IsMouseInside || IsKeyboardFocused;
+        _label.TextColor = !Enabled
+            ? theme.Disabled
+            : IsPressed
+                ? theme.DeepBlack
+                : highlighted
+                    ? theme.SelectionHighlight
+                    : theme.SecondaryText;
+        _icon.Renderable = Select(_iconImages, highlighted);
+        if (_arrow is not null && _arrowImages is { } arrowImages)
+        {
+            _arrow.Renderable = Select(arrowImages, highlighted);
+        }
+    }
+
+    private IImage Select(
+        (IImage Normal, IImage Highlight, IImage Pressed, IImage Disabled) images,
+        bool highlighted)
+        => !Enabled ? images.Disabled : IsPressed ? images.Pressed : highlighted ? images.Highlight : images.Normal;
 }

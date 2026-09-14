@@ -57,7 +57,7 @@ internal static class ThemeAssets
         private readonly AssetManager _resources = AssetManager.CreateResourceAssetManager(typeof(DefaultAssets).Assembly, "Resources.");
         private readonly string _fontPath = Path.Combine(AppContext.BaseDirectory, "Content", "Fonts", "Abel", FontFile);
 
-        public string Name => "AFTERGREEN theme";
+        public string Name => "DEEP // DRIVE theme";
         public bool Exists(string path) => path == FontFile ? File.Exists(_fontPath) : _resources.Exists(path);
 
         public Stream Open(string path)

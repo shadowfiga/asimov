@@ -1,6 +1,7 @@
 using Graphite.Engine.UI;
 using Graphite.Engine.Persistence;
 using Graphite.Game;
+using Graphite.Game.Configuration;
 using Graphite.Engine.Scenes;
 using Graphite.Engine.UI.Animation;
 using Graphite.Engine.UI.Audio;
@@ -29,7 +30,6 @@ internal sealed class GraphicsChecks : Microsoft.Xna.Framework.Game
     private int _allocations;
     private Vector2 _hitPosition;
     private Task<UIPlaybackState>? _hide;
-    private Color[] _idleBackBuffer = [];
     private readonly string _output = Path.GetFullPath(".artifacts/ui-checks");
 
     public GraphicsChecks()
@@ -42,6 +42,7 @@ internal sealed class GraphicsChecks : Microsoft.Xna.Framework.Game
         base.Initialize();
         Ui.Initialize(this);
         Preferences.Initialize(Path.Combine(_output, "preferences"));
+        Preferences.Set(PlayerPreferences.CrtIntensity, 1f);
         Startup.Initialize();
         MyraEnvironment.MouseInfoGetter = () => _mouse;
         Directory.CreateDirectory(_output);
@@ -85,21 +86,29 @@ internal sealed class GraphicsChecks : Microsoft.Xna.Framework.Game
         using var destination = new RenderTarget2D(GraphicsDevice, 128, 128);
         using var batch = new SpriteBatch(GraphicsDevice);
         using var pixel = new Texture2D(GraphicsDevice, 1, 1);
-        pixel.SetData([GameThemes.Aftergreen.Foreground]);
+        pixel.SetData([GameThemes.DeepDrive.PrimaryText]);
         GraphicsDevice.SetRenderTarget(source); GraphicsDevice.Clear(Color.Transparent);
         batch.Begin(); batch.Draw(pixel, new Rectangle(40, 40, 48, 48), Color.White); batch.End();
         var parameters = new UIParameters();
         using var crt = MenuPresentation.Crt.CreateInstance(GraphicsDevice);
         Program.Check(!crt.IsActive(parameters), "CRT is inactive by default");
-        parameters.Set(CrtMaterial.Strength, 1);
-        Program.Check(crt.IsActive(parameters), "Hover strength activates CRT");
+        CrtMaterial.Configure(parameters, 1f);
+        Program.Check(crt.IsActive(parameters), "Aged CRT activates at non-zero intensity");
+        parameters.Set(CrtMaterial.Noise, 0);
+        parameters.Set(CrtMaterial.Vignette, 0);
+        parameters.Set(CrtMaterial.Bloom, 0);
         crt.Render(new UIMaterialContext(GraphicsDevice, batch, source, destination, parameters, .2f));
         GraphicsDevice.SetRenderTarget(null);
         var colors = new Color[128 * 128]; destination.GetData(colors);
         Program.Check(colors[0].A == 0 && colors[64 * 128 + 64].A == 255, "CRT preserves transparency");
-        Program.Check(colors[64 * 128 + 64] != GameThemes.Aftergreen.Foreground, "CRT changes hovered content");
-        parameters.Set(CrtMaterial.Strength, 0);
-        Program.Check(!crt.IsActive(parameters), "Removing hover deactivates CRT");
+        Program.Check(colors[64 * 128 + 64] != GameThemes.DeepDrive.PrimaryText, "CRT changes fullscreen content");
+        var center = colors[64 * 128 + 64].ToVector3();
+        var nextRow = colors[65 * 128 + 64].ToVector3();
+        var nextColumn = colors[64 * 128 + 65].ToVector3();
+        Program.Check(Vector3.Distance(center, nextRow) > Vector3.Distance(center, nextColumn) * 4,
+            "CRT scanlines vary across rows and therefore render horizontally");
+        CrtMaterial.Configure(parameters, 0f);
+        Program.Check(!crt.IsActive(parameters), "Zero intensity disables CRT processing");
     }
 
     private void RoundedSurfaceChecks()
@@ -143,9 +152,38 @@ internal sealed class GraphicsChecks : Microsoft.Xna.Framework.Game
         switch (_frame)
         {
             case 6: _mouse.Position = new Point(140, 455); break;
+            case 8:
+                Program.Check(_menu.SettingsButton.IsContentHighlighted,
+                    "Menu hover colors the button text, icon, and arrow");
+                break;
             case 10: _mouse.Position = new Point(140, 250); break;
-            case 14: _mouse.Position = new Point(2, 2); break;
+            case 14:
+                _mouse.Position = new Point(2, 2);
+                _menu.SettingsButton.DoClick();
+                break;
+            case 19:
+                Program.Check(_menu.SettingsVisible, "Settings opens from the main menu");
+                _menu.CrtIntensityControl.Value = 0;
+                break;
+            case 20:
+                Program.Check(!_menu.CrtEnabled, "Zero intensity disables CRT processing");
+                Program.Check(_menu.CrtControlVisible, "CRT remains controllable at zero intensity");
+                Program.Near(Preferences.Get(PlayerPreferences.CrtIntensity), 0, "Disabling CRT persists zero intensity");
+                Program.Near(_menu.ScreenHost.Animation.Parameters.Get(CrtMaterial.Scanlines), 0, "CRT can be disabled fullscreen");
+                _menu.CrtIntensityControl.Value = .5f;
+                break;
+            case 21:
+                Program.Check(_menu.CrtEnabled, "Non-zero intensity checks CRT enablement");
+                Program.Check(_menu.CrtControlVisible, "CRT progress-slider stays visible when enabled");
+                Program.Near(Preferences.Get(PlayerPreferences.CrtIntensity), .5f, "Enabling CRT selects fifty percent");
+                Program.Near(_menu.ScreenHost.Animation.Parameters.Get(CrtMaterial.Scanlines), .05f,
+                    "Fifty percent uses the original aged strength");
+                _menu.CrtIntensityControl.Value = 1;
+                break;
             case 22:
+                Program.Near(Preferences.Get(PlayerPreferences.CrtIntensity), 1, "Full aged CRT intensity persists immediately");
+                Program.Near(_menu.ScreenHost.Animation.Parameters.Get(CrtMaterial.Scanlines), .1f,
+                    "Full aged CRT is more pronounced");
                 Ui.Close(_menu);
                 Program.Check(_menu.IsClosing && _menu.IsOpen, "Close waits for exit animation");
                 break;
@@ -154,29 +192,28 @@ internal sealed class GraphicsChecks : Microsoft.Xna.Framework.Game
                 _fixture = Ui.Open<FixtureScreen>();
                 break;
             case 29:
-                Program.Near(_fixture.Host.Animation.Parameters.Get(CrtMaterial.Strength), 0, "Idle buttons have no CRT");
+                Program.Check(_fixture.Host.Animation.ActiveCount == 0, "Idle buttons have no material animation");
                 _hitPosition = _fixture.Button.ToGlobal(new Vector2(40, 20));
                 _mouse.Position = _hitPosition.ToPoint();
                 break;
             case 30:
-                Program.Near(_fixture.Host.Animation.Parameters.Get(CrtMaterial.Strength), 1, "Pointer hover starts CRT");
-                Program.Check(_fixture.Host.Animation.Frame.IsIdentity, "Hover does not transform the button");
-                Program.Check(_fixture.Button.ContainsGlobalPoint(_hitPosition.ToPoint()), "CRT leaves hitbox stable");
+                Program.Check(_fixture.Host.Animation.ActiveCount == 0, "Pointer hover uses ordinary widget states");
+                Program.Check(_fixture.Host.Animation.Frame.IsIdentity, "Ordinary hover does not transform the button");
+                Program.Check(_fixture.Button.ContainsGlobalPoint(_hitPosition.ToPoint()), "Hover leaves hitbox stable");
                 Ui.Update(1.2f);
-                Program.Near(_fixture.Host.Animation.Parameters.Get(CrtMaterial.Strength), 1, "CRT continues while hovered");
-                Program.Near(_fixture.Other.Animation.Parameters.Get(CrtMaterial.Strength), 0, "Hover leaves other buttons unaffected");
+                Program.Check(_fixture.Host.Animation.ActiveCount == 0, "Hover remains free of material playback");
+                Program.Check(_fixture.Other.Animation.ActiveCount == 0, "Hover leaves other buttons unaffected");
                 break;
             case 31: _mouse.Position = new Point(2, 2); break;
             case 32:
-                Program.Near(_fixture.Host.Animation.Parameters.Get(CrtMaterial.Strength), 0, "Leaving hover stops CRT immediately");
+                Program.Check(_fixture.Host.Animation.ActiveCount == 0, "Leaving hover needs no material cleanup");
                 _mouse.Position = _hitPosition.ToPoint(); break;
             case 33:
-                Program.Check(_fixture.Host.Animation.ActiveCount == 1, "Hover reentry starts one playback");
-                Program.Near(_fixture.Host.Animation.Parameters.Get(CrtMaterial.Strength), 1, "Hover reentry restores CRT");
+                Program.Check(_fixture.Host.Animation.ActiveCount == 0, "Hover reentry remains an ordinary widget state");
                 _fixture.Button.Enabled = false;
                 break;
             case 34:
-                Program.Near(_fixture.Host.Animation.Parameters.Get(CrtMaterial.Strength), 0, "Disabling a hovered button removes CRT");
+                Program.Check(_fixture.Host.Animation.ActiveCount == 0, "Disabling a hovered button starts no effect");
                 _mouse.Position = new Point(2, 2);
                 break;
             case 35:
@@ -184,14 +221,13 @@ internal sealed class GraphicsChecks : Microsoft.Xna.Framework.Game
                 break;
             case 36:
                 Program.Check(_fixture.Host.Animation.ActiveCount == 0, "Disabled control ignores hover");
-                Program.Near(_fixture.Host.Animation.Parameters.Get(CrtMaterial.Strength), 0, "Disabled control has no CRT");
+                Program.Check(_fixture.Host.Animation.ActiveCount == 0, "Disabled control has no material effect");
                 _fixture.Button.Enabled = true;
                 _mouse.Position = new Point(2, 2);
                 _fixture.Button.SetKeyboardFocus();
                 break;
             case 37:
                 Program.Check(_fixture.Host.Animation.ActiveCount == 0, "Keyboard focus alone does not animate");
-                Program.Near(_fixture.Host.Animation.Parameters.Get(CrtMaterial.Strength), 0, "Keyboard focus alone has no CRT");
                 _fixture.Button.DoClick();
                 Program.Check(_fixture.Clicks == 1, "Original click handler preserved");
                 _hide = _fixture.Host.Hide();
@@ -201,12 +237,12 @@ internal sealed class GraphicsChecks : Microsoft.Xna.Framework.Game
                 Program.Check(_hide.Result == UIPlaybackState.Cancelled && _fixture.Host.Enabled, "Show interrupts hide");
                 break;
             case 40:
-                _fixture.Host.Play(MenuPresentation.CrtHover);
-                _fixture.Other.Animation.BaseParameters.Set(CrtMaterial.Strength, 0);
+                CrtMaterial.Configure(_fixture.Root.Animation.BaseParameters, 1f);
+                CrtMaterial.Configure(_fixture.Other.Animation.BaseParameters, 0f);
                 break;
             case 44:
-                Program.Near(_fixture.Host.Animation.Parameters.Get(CrtMaterial.Strength), 1, "Material state is independent");
-                Program.Near(_fixture.Other.Animation.Parameters.Get(CrtMaterial.Strength), 0, "Per-instance material override");
+                Program.Near(_fixture.Root.Animation.Parameters.Get(CrtMaterial.Scanlines), .1f, "Full aged CRT applies");
+                Program.Near(_fixture.Other.Animation.Parameters.Get(CrtMaterial.Scanlines), 0, "Per-instance CRT override remains independent");
                 _graphics.PreferredBackBufferWidth = 960; _graphics.PreferredBackBufferHeight = 600; _graphics.ApplyChanges();
                 break;
             case 50:
@@ -250,7 +286,7 @@ internal sealed class GraphicsChecks : Microsoft.Xna.Framework.Game
         if (_frame is 4 or 8 or 12)
         {
             GraphicsDevice.SetRenderTarget(null);
-            GraphicsDevice.Clear(GameThemes.Aftergreen.Background);
+            GraphicsDevice.Clear(GameThemes.DeepDrive.Background);
             var usage = GraphicsDevice.PresentationParameters.RenderTargetUsage;
             Ui.Draw();
             Program.Check(GraphicsDevice.PresentationParameters.RenderTargetUsage == usage,
@@ -261,25 +297,14 @@ internal sealed class GraphicsChecks : Microsoft.Xna.Framework.Game
             capture.SetData(pixels);
             using var file = File.Create(Path.Combine(_output, $"backbuffer-{_frame}.png"));
             capture.SaveAsPng(file, capture.Width, capture.Height);
-            if (_frame == 4)
-            {
-                _idleBackBuffer = pixels;
-            }
-            else
-            {
-                Program.Check(pixels[100 * Ui.ViewportWidth + 1000] == _idleBackBuffer[100 * Ui.ViewportWidth + 1000],
-                    "Hover preserves the menu background on the real back buffer");
-                if (_frame == 12)
-                {
-                    Program.Check(pixels.SequenceEqual(_idleBackBuffer), "Disabled hover leaves the full menu unchanged");
-                }
-            }
+            Program.Check(pixels[100 * Ui.ViewportWidth + 1000].A == 255,
+                "Fullscreen CRT preserves opaque menu background coverage");
         }
 
         using var target = new RenderTarget2D(GraphicsDevice, Ui.ViewportWidth, Ui.ViewportHeight,
             false, SurfaceFormat.Color, DepthFormat.None, 0, RenderTargetUsage.PreserveContents);
         GraphicsDevice.SetRenderTarget(target);
-        GraphicsDevice.Clear(GameThemes.Aftergreen.Background);
+        GraphicsDevice.Clear(GameThemes.DeepDrive.Background);
         var previous = GraphicsDevice.Viewport;
         Ui.Draw();
         Program.Check(GraphicsDevice.GetRenderTargets()[0].RenderTarget == target && GraphicsDevice.Viewport.Equals(previous), "Rendering restores target and viewport");
@@ -292,8 +317,10 @@ internal sealed class GraphicsChecks : Microsoft.Xna.Framework.Game
             Program.Check(pixels.Any(pixel => pixel.R > 150 && pixel.G > 150), "Rendered UI retains readable text");
             if (_frame == 42)
             {
-                Program.Check(pixels[270 * target.Width + 240].R > 40, "Material renders inside clipped panel");
-                Program.Check(pixels[270 * target.Width + 280].R < 40, "Material respects ancestor clipping");
+                var inside = pixels[270 * target.Width + 240];
+                var outside = pixels[270 * target.Width + 280];
+                Program.Check(inside.R + inside.G + inside.B > outside.R + outside.G + outside.B,
+                    "Material renders inside clipped panel and respects ancestor clipping");
             }
         }
     }
@@ -309,11 +336,11 @@ internal sealed class FixtureScreen : UIScreen
     public UIMaterialHost Root { get; private set; } = null!;
     protected override Widget Build()
     {
-        Button = new MenuButton(_assets, "Material fixture", "leaf", arrow: false);
+        Button = new MenuButton(_assets, "Material fixture", "settings", arrow: false);
         Button.Width = 240; Button.Height = 48; Button.Left = 100; Button.Top = 100;
         Button.HorizontalAlignment = HorizontalAlignment.Left; Button.VerticalAlignment = VerticalAlignment.Top;
         Button.Click += (_, _) => Clicks++;
-        Host = new UIMaterialHost(Button, [MenuPresentation.Crt], MenuPresentation.FadeStyle);
+        Host = new UIMaterialHost(Button, interactions: MenuPresentation.FadeStyle);
         var other = Button.CreateTextButton("Independent material");
         other.Width = 240; other.Height = 48; other.Left = 440; other.Top = 100;
         other.HorizontalAlignment = HorizontalAlignment.Left; other.VerticalAlignment = VerticalAlignment.Top;
@@ -333,11 +360,11 @@ internal sealed class FixtureScreen : UIScreen
         clippedButton.Width = 200; clippedButton.Height = 48; clippedButton.Left = 80;
         clippedButton.HorizontalAlignment = HorizontalAlignment.Left; clippedButton.VerticalAlignment = VerticalAlignment.Top;
         var clippedHost = new UIMaterialHost(clippedButton, [MenuPresentation.Crt]);
-        clippedHost.Animation.BaseParameters.Set(CrtMaterial.Strength, 1);
+        CrtMaterial.Configure(clippedHost.Animation.BaseParameters, .4f);
         clipped.Widgets.Add(clippedHost);
         panel.Widgets.Add(clipped);
         Root = new UIMaterialHost(panel, [MenuPresentation.Crt], MenuPresentation.FadeStyle);
-        Root.Animation.BaseParameters.Set(CrtMaterial.Strength, .22f);
+        CrtMaterial.Configure(Root.Animation.BaseParameters, 1f);
         try
         {
             _ = new UIMaterialHost(new Button(), interactions: new UIInteractionStyle

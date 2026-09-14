@@ -8,8 +8,7 @@ public static class Startup
 {
     public static void Initialize()
     {
-        MyraTheme.Apply(GameThemes.Aftergreen);
-        MenuPresentation.Initialize();
+        MyraTheme.Apply(GameThemes.DeepDrive);
         PlayerPreferences.ApplyAudio();
     }
 }

@@ -6,32 +6,21 @@ namespace Graphite.Game.UI.Theming;
 
 public static class GameThemes
 {
-    public static readonly GameTheme Aftergreen = new()
+    public static readonly GameTheme DeepDrive = new()
     {
         Spacing = UISpacing.Default,
         BorderRadius = UIBorderRadii.Default,
-        BackgroundDark = Hex("#081217"),
-        Background = Hex("#0E1B1F"),
-        BackgroundLight = Hex("#1B2C31"),
-        Foreground = Hex("#F2F7F4"),
-
-        Gray1 = Hex("#253A41"),
-        Gray2 = Hex("#3F5B63"),
-        Gray3 = Hex("#608089"),
-        Gray4 = Hex("#82939A"),
-        Gray5 = Hex("#C5D4D9"),
-
-        Color1 = Hex("#2E7D32"),
-        Color2 = Hex("#7ED957"),
-        Color3 = Hex("#A3C957"),
-        Color4 = Hex("#19A7A5"),
-        Color5 = Hex("#8B6F4E"),
-        Color6 = Hex("#3FA9F5"),
-
-        Success = Hex("#4CD964"),
-        Warning = Hex("#FFB020"),
-        Destructive = Hex("#B5523C"),
-        Info = Hex("#2EC4E6")
+        DeepBlack = Hex("#050505"),
+        Background = Hex("#090A09"),
+        RaisedSurface = Hex("#111211"),
+        ControlSurface = Hex("#181918"),
+        Border = Hex("#393B39"),
+        Disabled = Hex("#70736F"),
+        SecondaryText = Hex("#B7BAB6"),
+        PrimaryText = Hex("#E8EAE7"),
+        Selection = Hex("#E9943A"),
+        SelectionHighlight = Hex("#FFA143"),
+        Success = Hex("#79C98B")
     };
 
     private static Color Hex(string value)

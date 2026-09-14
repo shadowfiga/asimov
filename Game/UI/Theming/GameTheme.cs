@@ -8,30 +8,22 @@ public sealed class GameTheme
     public UISpacing Spacing { get; init; } = UISpacing.Default;
     public UIBorderRadii BorderRadius { get; init; } = UIBorderRadii.Default;
 
-    // Global surfaces
-    public required Color BackgroundDark { get; init; }
+    // Monochrome terminal surfaces
+    public required Color DeepBlack { get; init; }
     public required Color Background { get; init; }
-    public required Color BackgroundLight { get; init; }
-    public required Color Foreground { get; init; }
+    public required Color RaisedSurface { get; init; }
+    public required Color ControlSurface { get; init; }
+    public required Color Border { get; init; }
 
-    // Neutral UI scale
-    public required Color Gray1 { get; init; }
-    public required Color Gray2 { get; init; }
-    public required Color Gray3 { get; init; }
-    public required Color Gray4 { get; init; }
-    public required Color Gray5 { get; init; }
+    // Text and inactive state
+    public required Color Disabled { get; init; }
+    public required Color SecondaryText { get; init; }
+    public required Color PrimaryText { get; init; }
 
-    // Game-specific colors
-    public required Color Color1 { get; init; }
-    public required Color Color2 { get; init; }
-    public required Color Color3 { get; init; }
-    public required Color Color4 { get; init; }
-    public required Color Color5 { get; init; }
-    public required Color Color6 { get; init; }
+    // Orange is reserved for selection, focus, action, and immediate attention.
+    public required Color Selection { get; init; }
+    public required Color SelectionHighlight { get; init; }
 
-    // Status
+    // Green is reserved for successful, completed, purchased, valid, or confirmed state.
     public required Color Success { get; init; }
-    public required Color Warning { get; init; }
-    public required Color Destructive { get; init; }
-    public required Color Info { get; init; }
 }

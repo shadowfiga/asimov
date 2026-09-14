@@ -28,8 +28,8 @@ internal static class Program
             InterruptedWrites(Path.Combine(root, "writes"));
             PreferenceChecks(Path.Combine(root, "preferences"));
             Sessions(Path.Combine(root, "sessions"));
-            Check(PersistencePaths.ForGame("aftergreen", SettingsEnvironment.Staging)
-                != PersistencePaths.ForGame("aftergreen", SettingsEnvironment.Production), "Environments use separate directories");
+            Check(PersistencePaths.ForGame("deep-drive", SettingsEnvironment.Staging)
+                != PersistencePaths.ForGame("deep-drive", SettingsEnvironment.Production), "Environments use separate directories");
             Throws<ArgumentException>(() => PersistencePaths.ForGame("../escape", SettingsEnvironment.Staging));
         }
         finally
@@ -178,7 +178,7 @@ internal static class Program
         source.SetScore(2);
         var path = Path.Combine(root, "default.json");
         Directory.CreateDirectory(path + ".bak");
-        Throws<IOException>(() => Storage.Save(source));
+        ThrowsFileFailure(() => Storage.Save(source));
         Check(Storage.Load<Fixture>().Score == 1, "A failed write preserves the current save");
         Check(!Directory.EnumerateFiles(root, "*.tmp*").Any(), "Failed writes clean temporary files");
         Directory.Delete(path + ".bak");
@@ -193,6 +193,10 @@ internal static class Program
         var volume = PlayerPreferences.MasterVolume;
         var muted = PlayerPreferences.Muted;
         Check(Preferences.Initialize(root).Status == SaveStatus.NotFound && Preferences.Get(volume) == 1, "Missing preferences use typed defaults");
+        Check(Preferences.Get(PlayerPreferences.CrtIntensity) == 1f, "Display preferences default to full aged CRT");
+        Preferences.Set(PlayerPreferences.CrtIntensity, .35f);
+        Preferences.Initialize(root);
+        Check(Preferences.Get(PlayerPreferences.CrtIntensity) == .35f, "CRT intensity persists immediately");
         Check(Preferences.Get<string>("name") == "" && Preferences.Get<int>("quality") == 0
             && !Preferences.Get<bool>("muted") && Preferences.Get<float>("scale") == 0f
             && Preferences.Get<long>("count") == 0L && Preferences.Get<double>("time") == 0d, "String keys have correctly typed defaults");
@@ -241,8 +245,8 @@ internal static class Program
         Preferences.Initialize(failures);
         Preferences.Set(volume, .3f);
         Directory.CreateDirectory(Preferences.FilePath + ".bak");
-        Throws<IOException>(() => Preferences.Set(volume, .6f));
-        Throws<IOException>(() => Preferences.Remove(volume));
+        ThrowsFileFailure(() => Preferences.Set(volume, .6f));
+        ThrowsFileFailure(() => Preferences.Remove(volume));
         Check(Preferences.Get(volume) == .3f, "Failed sets and removals leave the cached value intact");
         Directory.Delete(Preferences.FilePath + ".bak");
         Preferences.Initialize(failures);
@@ -257,10 +261,11 @@ internal static class Program
         Storage.Initialize(root);
         var session = new Session();
         session.AddPlayTime(42);
-        session.CompleteSite("coast");
+        session.ClearSector("a-3-crystal-basin");
         Storage.Save(session);
         var loaded = Storage.Load<Session>();
-        Check(loaded.PlayTimeSeconds == 42 && loaded.CompletedSites.Contains("coast"), "Save and load accept and return the whole session directly");
+        Check(loaded.PlayTimeSeconds == 42 && loaded.ClearedSectors.Contains("a-3-crystal-basin"),
+            "Save and load accept and return the whole campaign directly");
         Check(!ReferenceEquals(session, loaded), "Loaded session is independent of live state");
         var slotId = Guid.NewGuid();
         var second = new Session();
@@ -294,6 +299,12 @@ internal static class Program
     {
         try { action(); } catch (T) { _checks++; return; }
         throw new InvalidOperationException($"Expected {typeof(T).Name}.");
+    }
+    private static void ThrowsFileFailure(Action action)
+    {
+        try { action(); }
+        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException) { _checks++; return; }
+        throw new InvalidOperationException("Expected a file-system failure.");
     }
     [SaveContract("test.fixture")]
     private sealed class Fixture : ISaveValidatable

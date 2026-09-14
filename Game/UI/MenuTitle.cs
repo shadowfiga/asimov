@@ -8,7 +8,7 @@ namespace Graphite.Game.UI;
 
 internal sealed class MenuTitle : Widget
 {
-    private readonly string[] _letters = "AFTERGREEN".Select(letter => letter.ToString()).ToArray();
+    private readonly string[] _letters = "DEEP // DRIVE".Select(letter => letter.ToString()).ToArray();
     private SpriteFontBase _font = ThemeAssets.Font(40);
     private float _tracking;
 
@@ -26,7 +26,7 @@ internal sealed class MenuTitle : Widget
         var position = new Vector2(ActualBounds.X, ActualBounds.Y);
         foreach (var letter in _letters)
         {
-            context.DrawString(_font, letter, position, GameThemes.Aftergreen.Gray5);
+            context.DrawString(_font, letter, position, GameThemes.DeepDrive.PrimaryText);
             position.X += _font.MeasureString(letter).X + _tracking;
         }
     }

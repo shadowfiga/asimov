@@ -1,26 +1,28 @@
-# AFTERGREEN
+# DEEP // DRIVE
 
-Project foundation using Graphite / MonoGame DesktopGL. Startup runs `BootstrapScene` → `MainMenuScene`. Gameplay has been removed for rebuilding; the play button is disabled. The design documents remain as reference.
+Mining-defense roguelite foundation using Graphite / MonoGame DesktopGL. Startup runs `BootstrapScene` → `MainMenuScene`. Gameplay is being rebuilt around the prototype scope, so operation buttons remain disabled while Settings is functional. The authoritative product scope is [DEEP DRIVE — Game Design Document.md](<DEEP DRIVE — Game Design Document.md>).
 
 ## Run
 
-On macOS, double-click `Play AFTERGREEN.command`. Alternatively, use `./run.sh` (macOS/Linux) or `run.cmd` (Windows). For initial setup, use `./setup.sh` or `setup.cmd`.
+On macOS, double-click `Play DEEP DRIVE.command`. Alternatively, use `./run.sh` (macOS/Linux) or `run.cmd` (Windows). For initial setup, use `./setup.sh` or `setup.cmd`.
 
 ## Settings
 
 `Game/Configuration/StagingSettings.cs` and `ProductionSettings.cs` inherit the shared `GameSettings` contract in `RuntimeSettings.cs`. Read values through `GameSettings.Instance`. Menu settings belong to the game layer; window, graphics, and runtime settings belong to the engine.
 
-Debug defaults to staging; Release defaults to production. Override with `AFTERGREEN_ENVIRONMENT=staging` or `production`. Rebuild after editing settings. The main menu shows the DEMO banner only in staging.
+Debug defaults to staging; Release defaults to production. Override with `DEEP_DRIVE_ENVIRONMENT=staging` or `production`. Rebuild after editing settings. The main menu shows the STAGING badge only in staging.
 
 ## Theme
 
-`Game/UI/Theming/GameThemes.cs` defines the palette. `Startup.Initialize` applies `MyraTheme` before the first scene is constructed. Ordinary controls use the neutral grays; game colors identify game information, and status colors communicate state. Use the `secondary` label style for muted text and the `nested` panel style for nested surfaces.
+`Game/UI/Theming/GameThemes.cs` defines the monochrome industrial-terminal palette. `Startup.Initialize` applies `MyraTheme` before the first scene is constructed. Ordinary UI uses black, charcoal, gray, and off-white. Orange is reserved for selection, focus, important action, and immediate attention. Green is reserved for successful, completed, purchased, valid, or confirmed state. Use the `secondary` label style for muted text and the `nested` panel style for nested surfaces.
 
 All UI text uses the bundled [Abel font](https://github.com/google/fonts/tree/main/ofl/abel). Its SIL Open Font License is included in `Content/Fonts/Abel/OFL.txt`.
 
-`GameThemes.Aftergreen.Spacing` supplies `Xs`, `Sm`, `Md`, `Lg`, and `Xl` for gaps, padding, and margins. `BorderRadius` supplies `Zero`, `Xs`, `Sm`, `Md`, `Lg`, `Xl`, and `Full`; full rounding is limited to half the shorter side. Global defaults live in `Engine/UI/Theming/UITokens.cs`; each theme can override them. `RoundedRectangleBrush` renders these values for fills and borders.
+`GameThemes.DeepDrive.Spacing` supplies `Xs`, `Sm`, `Md`, `Lg`, and `Xl` for gaps, padding, and margins. `BorderRadius` supplies `Zero`, `Xs`, `Sm`, `Md`, `Lg`, `Xl`, and `Full`; full rounding is limited to half the shorter side. Global defaults live in `Engine/UI/Theming/UITokens.cs`; each theme can override them. `RoundedRectangleBrush` renders these values for fills and borders.
 
-The main menu uses [Lucide](https://lucide.dev/) icons, bundled as SVG sources and 96 px PNGs in `Content/Icons/Lucide` with their license and source revision. Normal builds use the PNGs. Menu spacing and type scale with the window; the background fills it without stretching. Continue, New Game, and Load Game remain disabled while gameplay is being rebuilt.
+The main menu uses [Lucide](https://lucide.dev/) icons, bundled as SVG sources and 96 px PNGs in `Content/Icons/Lucide` with their license and source revision. Normal builds use the PNGs. Menu spacing and type scale with the window. Continue, New Operation, and Load Operation remain disabled while gameplay is being rebuilt.
+
+Settings expose only one fullscreen CRT progress-slider from `NO` (0%) to a more pronounced `FULL` (100%). Zero disables processing and every non-zero value enables it; no separate checkbox or boolean is stored. The only treatment is the Aged profile with horizontal scanlines. There is no direction selector or screen curvature. Menu buttons use ordinary Myra hover/focus states rather than per-button shader materials.
 
 ## Persistence
 
@@ -64,7 +66,7 @@ Each document includes format and schema versions, timestamps, and a data checks
 Register game migrations in `Startup.Initialize` before any scene loads:
 
 ```csharp
-Storage.RegisterMigration(new SaveMigration("aftergreen.session", 1, data =>
+Storage.RegisterMigration(new SaveMigration("deep-drive.campaign", 1, data =>
 {
     data["newName"] = data["oldName"]?.DeepClone();
     data.Remove("oldName");
@@ -93,21 +95,14 @@ Wrap a Myra control before adding it to a layout. The host owns its outer positi
 Material captures preserve the back buffer while compositing, then restore its original usage policy. When drawing UI into a custom `RenderTarget2D`, create that destination with `RenderTargetUsage.PreserveContents` so nested material passes retain previously drawn content.
 
 ```csharp
-var button = Button.CreateTextButton("BACK");
-var host = new UIMaterialHost(button, [MenuPresentation.Crt], new UIInteractionStyle
-{
-    Bindings = new Dictionary<string, UIInteractionBinding>
-    {
-        [UITrigger.Hover] = new() { Animation = MenuPresentation.CrtHover, SettleSeconds = 0 },
-        [UITrigger.Click] = new() { Sounds = [new UISoundCue { Asset = "Content/Audio/click.wav" }] }
-    }
-});
-panel.Widgets.Add(host);
+var screenRoot = new Panel(styleName: "root");
+var host = new UIMaterialHost(screenRoot, [MenuPresentation.Crt], MenuPresentation.FadeStyle);
+CrtMaterial.Configure(host.Animation.BaseParameters, intensity: 1f);
 ```
 
-The audio path above is an authoring example; the menu has no assigned sound assets. `UI.Audio` supports volume and mute; configure an alternative service with `UI.SetAudioService` before constructing hosts.
+The menu has no assigned sound assets. `UI.Audio` supports volume and mute; configure an alternative service with `UI.SetAudioService` before constructing hosts.
 
-Menu buttons apply CRT while an enabled button is hovered. Leaving or disabling the button stops it immediately. The menu background and keyboard focus alone do not activate CRT.
+Apply CRT materials to fullscreen screen roots, not individual controls. Buttons use standard background, border, text, and icon states for hover, focus, press, and disabled feedback.
 
 Register type defaults through `UI.Interactions.Set<T>()` in `Startup.Initialize`. More specific types and individual bindings override inherited bindings. `UIInteractionBinding.Empty` disables an inherited binding. Custom trigger names use `host.Trigger(name)`; explicit playback uses `host.Play(animation)` and its cancellation/completion handle. Hover runs once per entry and settles on exit; set `Repeat = 0` for continuous playback. Sounds run once per playback, with their delay relative to the animation start; looping voices stop when cancelled.
 

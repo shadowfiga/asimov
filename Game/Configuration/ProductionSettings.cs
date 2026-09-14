@@ -9,8 +9,8 @@ public sealed class ProductionSettings : GameSettings
 
     public override GameIdentitySettings Game { get; } = new()
     {
-        Id = "aftergreen",
-        Name = "AFTERGREEN",
+        Id = "deep-drive",
+        Name = "DEEP // DRIVE",
         Icon = null,
         StartupScene = "Scenes/BootstrapScene"
     };
@@ -26,7 +26,7 @@ public sealed class ProductionSettings : GameSettings
 
     public override GraphicsSettings Graphics { get; } = new()
     {
-        ClearColor = GameThemes.Aftergreen.Background,
+        ClearColor = GameThemes.DeepDrive.Background,
         VSync = true,
         PreferMultiSampling = false
     };
@@ -40,7 +40,6 @@ public sealed class ProductionSettings : GameSettings
 
     public override MenuSettings Menu { get; } = new()
     {
-        DiscordUrl = null,
         Credits = []
     };
 }

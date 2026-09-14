@@ -5,7 +5,7 @@ namespace Graphite.Game.Configuration;
 public abstract class GameSettings : Settings
 {
     private static readonly Lazy<GameSettings> Shared = new(() => Create(
-        SelectEnvironment(System.Environment.GetEnvironmentVariable("AFTERGREEN_ENVIRONMENT"))));
+        SelectEnvironment(System.Environment.GetEnvironmentVariable("DEEP_DRIVE_ENVIRONMENT"))));
 
     public static GameSettings Instance => Shared.Value;
     public abstract MenuSettings Menu { get; }
@@ -36,7 +36,7 @@ public abstract class GameSettings : Settings
         {
             "staging" => SettingsEnvironment.Staging,
             "production" => SettingsEnvironment.Production,
-            _ => throw new InvalidDataException("AFTERGREEN_ENVIRONMENT must be staging or production.")
+            _ => throw new InvalidDataException("DEEP_DRIVE_ENVIRONMENT must be staging or production.")
         };
     }
 
@@ -47,10 +47,6 @@ public abstract class GameSettings : Settings
         {
             throw new InvalidDataException("menu settings cannot be null.");
         }
-        if (Menu.DiscordUrl is { } url && (!url.IsAbsoluteUri || url.Scheme != Uri.UriSchemeHttps))
-        {
-            throw new InvalidDataException("menu.discordUrl must be null or an absolute HTTPS URL.");
-        }
         if (Menu.Credits.Any(string.IsNullOrWhiteSpace))
         {
             throw new InvalidDataException("menu.credits must be an array of non-empty strings.");
@@ -60,6 +56,5 @@ public abstract class GameSettings : Settings
 
 public sealed class MenuSettings
 {
-    public required Uri? DiscordUrl { get; init; }
     public IReadOnlyList<string> Credits { get; init; } = [];
 }
