@@ -18,6 +18,7 @@ internal sealed class SettingsNavigationButton : Button
     {
         var theme = GameThemes.DeepDrive;
         Height = 52;
+        HorizontalAlignment = HorizontalAlignment.Stretch;
         Padding = new Thickness(theme.Spacing.Md, theme.Spacing.Sm);
         // Match the selected outline instead of inheriting the thinner generic button states.
         OverBackground = new RoundedRectangleBrush(Color.Lerp(theme.ControlSurface, theme.Selection, .16f),

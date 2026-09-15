@@ -20,7 +20,6 @@ public sealed class SettingsDialog : UIScreen
     private MenuButton _back = null!;
     private Dialog _overlay = null!;
     private DisplayConfirmationDialog _confirmation = null!;
-    private Proportion _sidebarWidth = null!;
     private AccessibilitySettingsPage _accessibility = null!;
     private VideoSettingsPage _video = null!;
     private AudioSettingsPage _audio = null!;
@@ -71,6 +70,8 @@ public sealed class SettingsDialog : UIScreen
         _pages = [_video, _audio, _accessibility];
         _frame = new Grid
         {
+            Width = theme.Layout.SettingsSize.X,
+            Height = theme.Layout.SettingsSize.Y,
             RowSpacing = spacing.Md,
             Padding = new Thickness(spacing.Xl),
             Background = DialogLayout.Surface()
@@ -83,9 +84,10 @@ public sealed class SettingsDialog : UIScreen
         _frame.RowsProportions.Add(Proportion.Auto);
         _frame.Widgets.Add(DialogLayout.Title("SETTINGS"));
         AddToFrame(new HorizontalSeparator { Thickness = 2 }, 1);
-        var body = new Grid { ColumnSpacing = spacing.Lg };
-        _sidebarWidth = new Proportion(ProportionType.Pixels, 200);
-        body.ColumnsProportions.Add(_sidebarWidth);
+        var body = new AdaptiveGrid { ColumnSpacing = spacing.Lg };
+        body.ColumnsProportions.Add(new Proportion(ProportionType.Pixels, theme.Layout.SidebarWidth));
+        body.ColumnRules.Add(new UIColumnRule(0, theme.Layout.SidebarWidth,
+            theme.Layout.CompactSidebarWidth, theme.Layout.SidebarBreakpoint));
         body.ColumnsProportions.Add(Proportion.Auto);
         body.ColumnsProportions.Add(new Proportion(ProportionType.Fill));
         body.RowsProportions.Add(new Proportion(ProportionType.Fill));
@@ -106,11 +108,8 @@ public sealed class SettingsDialog : UIScreen
         body.Widgets.Add(_pageScroll);
         AddToFrame(body, 2);
         AddToFrame(new HorizontalSeparator { Thickness = 2 }, 3);
-        _back = new MenuButton(_assets, "BACK", "arrow-left", arrow: false,
-            textVariant: MenuButtonTextVariant.Compact, iconSize: 28)
+        _back = new MenuButton(_assets, "BACK", "arrow-left", arrow: false, size: MenuButtonSize.Dialog)
         {
-            Width = 200,
-            Height = 48,
             HorizontalAlignment = HorizontalAlignment.Right
         };
         AddToFrame(_back, 4);
@@ -120,7 +119,6 @@ public sealed class SettingsDialog : UIScreen
         root.Widgets.Add(_overlay);
         root.Widgets.Add(_confirmation.Overlay);
         SelectPage(0);
-        Resize();
         return root;
     }
 
@@ -150,20 +148,6 @@ public sealed class SettingsDialog : UIScreen
         }
     }
 
-    private void Resize()
-    {
-        var spacing = GameThemes.DeepDrive.Spacing;
-        _frame.Width = Math.Min(1080, Math.Max(1, Ui.LayoutSize.X - spacing.Xl * 2));
-        _frame.Height = Math.Min(620, Math.Max(1, Ui.LayoutSize.Y - spacing.Xl * 2));
-        _sidebarWidth.Value = _frame.Width < 900 ? 180 : 200;
-        foreach (var button in _navigation)
-        {
-            button.Width = (int)_sidebarWidth.Value;
-        }
-        _accessibility.Synchronize();
-        _video.Synchronize();
-    }
-
     protected override void Awake()
     {
         foreach (var page in _pages)
@@ -172,13 +156,11 @@ public sealed class SettingsDialog : UIScreen
         }
         _confirmation.Attach();
         _back.Click += BackClicked;
-        Ui.LayoutChanged += Resize;
         _overlay.SetKeyboardFocus();
     }
 
     protected override void OnDestroy()
     {
-        Ui.LayoutChanged -= Resize;
         _back.Click -= BackClicked;
         foreach (var page in _pages)
         {

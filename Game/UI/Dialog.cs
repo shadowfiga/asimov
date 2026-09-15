@@ -29,6 +29,8 @@ internal sealed class Dialog : Panel
         Background = DisabledBackground = OverBackground = FocusedBackground = PressedBackground = scrim;
         Border = DisabledBorder = OverBorder = FocusedBorder = PressedBorder = null;
         BorderThickness = new Thickness(0);
+        // The shared layout backend fits the child's declared size inside this safe area.
+        Padding = new Thickness(GameThemes.DeepDrive.Spacing.Xl);
         HorizontalAlignment = HorizontalAlignment.Stretch;
         VerticalAlignment = VerticalAlignment.Stretch;
         AcceptsKeyboardFocus = true;

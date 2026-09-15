@@ -69,6 +69,15 @@ internal sealed class VideoSettingsPage : SettingsPage
         }
     }
 
-    internal override void Attach() => DisplaySettings.Changed += Synchronize;
-    public override void Dispose() => DisplaySettings.Changed -= Synchronize;
+    internal override void Attach()
+    {
+        base.Attach();
+        DisplaySettings.Changed += Synchronize;
+    }
+
+    public override void Dispose()
+    {
+        base.Dispose();
+        DisplaySettings.Changed -= Synchronize;
+    }
 }

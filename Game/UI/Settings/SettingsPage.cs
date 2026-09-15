@@ -18,8 +18,10 @@ internal abstract class SettingsPage : VerticalStackPanel, IDisposable
     }
     internal virtual void Attach()
     {
+        Graphite.Engine.UI.UI.PreferencesChanged += Synchronize;
     }
     public virtual void Dispose()
     {
+        Graphite.Engine.UI.UI.PreferencesChanged -= Synchronize;
     }
 }

@@ -22,21 +22,13 @@ internal sealed class DisplayConfirmationDialog : IDisposable
 
     internal DisplayConfirmationDialog(MenuAssets assets)
     {
-        var content = DialogLayout.Content("KEEP DISPLAY SETTINGS?", 520);
+        var content = DialogLayout.Content("KEEP DISPLAY SETTINGS?", GameThemes.DeepDrive.Layout.ConfirmationWidth);
         _countdown = DialogLayout.Title("", 18);
         _countdown.TextColor = GameThemes.DeepDrive.SecondaryText;
         content.Widgets.Add(_countdown);
         var buttons = new HorizontalStackPanel { Spacing = GameThemes.DeepDrive.Spacing.Sm };
-        Keep = new MenuButton(assets, "KEEP", textVariant: MenuButtonTextVariant.Compact)
-        {
-            Width = 200,
-            Height = 44
-        };
-        Revert = new MenuButton(assets, "CANCEL", textVariant: MenuButtonTextVariant.Compact, tone: MenuButtonTone.Danger)
-        {
-            Width = 200,
-            Height = 44
-        };
+        Keep = new MenuButton(assets, "KEEP", size: MenuButtonSize.Confirmation);
+        Revert = new MenuButton(assets, "CANCEL", tone: MenuButtonTone.Danger, size: MenuButtonSize.Confirmation);
         Keep.Click += (_, _) => DisplaySettings.KeepChanges();
         Revert.Click += (_, _) => DisplaySettings.Revert();
         buttons.Widgets.Add(Keep);

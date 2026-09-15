@@ -14,15 +14,11 @@ namespace Graphite.Game.Scenes;
 
 public sealed class MainMenuUI : UIScreen
 {
-    private const float ButtonScale = .8f;
     private readonly MenuAssets _assets = new();
     private readonly UIScope _dialogs = new();
-    private readonly List<MenuButton> _rows = [];
     private MenuButton _settingsButton = null!;
     private MenuButton _creditsButton = null!;
     private MenuButton _quitButton = null!;
-    private UIMaterialHost _menu = null!;
-    private MenuTitle _title = null!;
     private CreditsDialog? _credits;
     internal SettingsDialog? Settings
     {
@@ -47,9 +43,8 @@ public sealed class MainMenuUI : UIScreen
     {
         var theme = GameThemes.DeepDrive;
         var spacing = theme.Spacing;
-        _title = new MenuTitle();
         var brand = new VerticalStackPanel { Spacing = spacing.Sm };
-        brand.Widgets.Add(_title);
+        brand.Widgets.Add(new MenuTitle());
         var buttons = new VerticalStackPanel { Spacing = spacing.Sm };
         AddRow(buttons, "CONTINUE", "play", enabled: false, primary: true, arrow: false);
         AddRow(buttons, "NEW OPERATION", "play", enabled: false);
@@ -60,48 +55,34 @@ public sealed class MainMenuUI : UIScreen
         var content = new VerticalStackPanel
         {
             Spacing = spacing.Xl,
-            HorizontalAlignment = HorizontalAlignment.Left,
+            HorizontalAlignment = HorizontalAlignment.Stretch,
             VerticalAlignment = VerticalAlignment.Center
         };
         content.Widgets.Add(brand);
         content.Widgets.Add(buttons);
-        _menu = new UIMaterialHost(new ScrollViewer
+        var menu = new UIMaterialHost(new ScrollViewer
         {
             Content = content,
+            Width = theme.Layout.MenuWidth + spacing.Md,
             ShowHorizontalScrollBar = false,
             HorizontalAlignment = HorizontalAlignment.Left,
             VerticalAlignment = VerticalAlignment.Stretch
         }, interactions: MenuPresentation.FadeStyle);
-        var root = new Panel(styleName: "root") { Background = _assets };
-        root.Widgets.Add(_menu);
-        Resize();
+        var root = new Panel(styleName: "root")
+        {
+            Background = _assets,
+            Padding = new Thickness(spacing.Xl * 2, spacing.Xl)
+        };
+        root.Widgets.Add(menu);
         return new UIMaterialHost(root, interactions: MenuPresentation.FadeStyle);
     }
 
     private MenuButton AddRow(VerticalStackPanel buttons, string text, string icon,
         bool enabled = true, bool primary = false, bool arrow = true)
     {
-        var button = new MenuButton(_assets, text, icon, primary, arrow) { Enabled = enabled };
-        _rows.Add(button);
+        var button = new MenuButton(_assets, text, icon, primary, arrow, size: MenuButtonSize.Menu) { Enabled = enabled };
         buttons.Widgets.Add(button);
         return button;
-    }
-
-    private void Resize()
-    {
-        var spacing = GameThemes.DeepDrive.Spacing;
-        var edge = spacing.Xl * 2;
-        var availableWidth = Math.Max(1, Ui.LayoutSize.X - edge * 2);
-        var width = Math.Min(520, availableWidth);
-        _menu.Width = width + edge;
-        _menu.Margin = new Thickness(edge, spacing.Xl, 0, spacing.Xl);
-        _title.Fit(width, 48);
-        foreach (var button in _rows)
-        {
-            button.Width = Math.Min((int)(520 * ButtonScale), availableWidth);
-            button.Height = (int)(68 * ButtonScale);
-            button.Resize(ButtonScale);
-        }
     }
 
     protected override void Awake()
@@ -109,12 +90,10 @@ public sealed class MainMenuUI : UIScreen
         _settingsButton.Click += ShowSettings;
         _creditsButton.Click += ShowCredits;
         _quitButton.Click += Quit;
-        Ui.LayoutChanged += Resize;
     }
 
     protected override void OnDestroy()
     {
-        Ui.LayoutChanged -= Resize;
         _settingsButton.Click -= ShowSettings;
         _creditsButton.Click -= ShowCredits;
         _quitButton.Click -= Quit;

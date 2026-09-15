@@ -102,7 +102,16 @@ The current menu uses sizes from approximately 14-48 px. These are working imple
 
 ### Menu button
 
-Menu buttons have a component-level token group so their internal geometry is not derived from unrelated global spacing values or hidden widget constants. The designer must approve the following tokens:
+Menu buttons have complete size presets under `GameThemes.DeepDrive.MenuButton`. Dimensions are logical UI units, configured once; the backend fits them to their parent and applies global scale. The designer must approve these presets:
+
+| Size preset | Preferred size | Default font | Leading / trailing icon | Horizontal padding / icon gaps |
+| --- | --- | --- | --- | --- |
+| `Standard` | 520 × 68 | 30 | 34 / 20 | 24 |
+| `Menu` | 416 × 54 | 24 | 27 / 16 | 19 |
+| `Dialog` | 200 × 48 | 24 | 28 / 20 | 24 |
+| `Confirmation` | 200 × 44 | 24 | 28 / 20 | 24 |
+
+Each preset exposes these independently configurable tokens (standard values shown):
 
 | Token | Current value | Controls |
 | --- | ---: | --- |
@@ -110,13 +119,13 @@ Menu buttons have a component-level token group so their internal geometry is no
 | `VerticalPadding` | 0 px | Space inside the button's top and bottom edges |
 | `IconTextSpacing` | 24 px | Gap between the leading icon and label |
 | `TextTrailingIconSpacing` | 24 px | Gap between the label and optional trailing icon |
-| `CompactFontSize` / `CompactMinimumFontSize` | 24 / 17 px | Compact control-label size and its responsive floor |
-| `DefaultFontSize` / `DefaultMinimumFontSize` | 30 / 17 px | Standard control-label size and its responsive floor |
-| `ProminentFontSize` / `ProminentMinimumFontSize` | 34 / 19 px | High-emphasis control-label size and its responsive floor |
-| `IconSize` / `MinimumIconSize` | 34 / 22 px | Default leading-icon size and its responsive floor |
-| `TrailingIconSize` / `MinimumTrailingIconSize` | 20 / 14 px | Default trailing-icon size and its responsive floor |
+| `CompactFontSize` | 24 px | Compact control-label size |
+| `DefaultFontSize` | 30 px | Standard control-label size |
+| `ProminentFontSize` | 34 px | High-emphasis control-label size |
+| `IconSize` / `MinimumIconSize` | 34 / 22 px | Leading-icon size and minimum explicit override |
+| `TrailingIconSize` / `MinimumTrailingIconSize` | 20 / 14 px | Trailing-icon size and minimum explicit override |
 
-Every variant remains Abel Regular. `Compact`, `Default`, and `Prominent` are semantic text-variant choices for size and role; they never imply bold, italic, or another font file. A button's constructor may select `textVariant`, override its leading `iconSize`, and optionally override `trailingIconSize`. Those overrides participate in responsive scaling and must meet the matching theme minimums. Internal padding and both icon gaps remain theme-owned so buttons stay aligned across screens. The Settings and Credits BACK buttons currently select `Compact` and a 28 px leading-icon override.
+Every variant remains Abel Regular. `Compact`, `Default`, and `Prominent` are text-variant choices within a size preset, not font weights. A constructor selects `size` and may override `textVariant`, `iconSize`, or `trailingIconSize`. Icon overrides must meet the matching theme minimums. These logical sizes stay stable during reflow; only the shared desktop scale changes their physical size. Settings and Credits BACK buttons select the `Dialog` preset; graphics confirmation buttons select `Confirmation`. Main-menu buttons select `Menu`, with no local multiplier.
 
 Icons are optional. Text-only buttons center their label and reserve no icon space; a trailing arrow can be requested independently. The graphics confirmation uses text-only KEEP and CANCEL buttons. CANCEL uses the red `Danger` tone (including hover/focus) and still reverts the preview; ordinary buttons retain their existing palette.
 
@@ -240,7 +249,7 @@ Available sound parameters:
 - Implement full input remapping.
 - The UI-scale dropdown uses `RuntimePreferences.UiScaleOptions` (0.75×–1.75× in 0.25 increments, default 1.00×) and `RuntimePreferences.UiScale`, with live global resizing and immediate persistence. Older saved values clamp to the new limits and snap to the nearest preset before layout, including outside Settings. Implement the remaining text-size, reduced-bloom/flashing, and damage-number settings.
 - Display mode and resolution dropdowns are implemented globally through `DisplaySettings` and the confirmed `RuntimePreferences.Display` preference. Modes are Windowed, Borderless Fullscreen, and Fullscreen. Borderless locks the resolution selector to the native desktop size; exclusive fullscreen offers adapter-supported resolutions. A centered Keep/Cancel dialog automatically reverts unconfirmed changes after 15 seconds. Saved settings override environment defaults and survive scene changes/restarts.
-- Define screen-specific aspect-ratio reflow rules in logical UI units. The engine scales from a 1600x900 authoring reference using the smaller viewport ratio, multiplied by the UI-scale preference. `UI.LayoutSize` and `UI.LayoutChanged` expose live layout dimensions; do not scale individual widgets a second time. Use scrolling for content that exceeds the available logical viewport.
+- Define preferred sizes in `GameThemes.DeepDrive.Layout`, alignment, padding, and scrolling declaratively. The UI backend fits components to their parent; screen classes must not duplicate resize calculations. `AdaptiveGrid.ColumnRules` handles declarative parent-width breakpoints, and the shared dialog owns safe-area fitting and centering. The engine scales from a 1600x900 authoring reference using the smaller viewport ratio, multiplied by the UI-scale preference. Do not scale widgets a second time. Only exceptional layouts should override the lifecycle-managed `UIScreen.OnLayoutChanged()` hook.
 - Build a component-gallery screen for review before producing the Command Center and technology trees.
 
 ## 10. Screen delivery checklist

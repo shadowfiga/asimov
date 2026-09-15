@@ -76,6 +76,7 @@ internal sealed class GraphicsChecks : Microsoft.Xna.Framework.Game
         SquareSurfaceChecks();
         MenuButtonThemeChecks();
         DialogChecks();
+        DeclarativeLayoutChecks.Run();
         GlobalScaleChecks();
         SettingsBorderChecks();
         DisplayChecks();
@@ -470,7 +471,7 @@ internal sealed class GraphicsChecks : Microsoft.Xna.Framework.Game
     private static void MenuButtonThemeChecks()
     {
         using var assets = new MenuAssets();
-        var tokens = GameThemes.DeepDrive.MenuButton;
+        var tokens = GameThemes.DeepDrive.MenuButton.Standard;
 
         var standard = new MenuButton(assets, "Standard", "settings");
         var (standardLayout, standardIcon, standardLabel, standardArrow) = Inspect(standard);
@@ -522,29 +523,22 @@ internal sealed class GraphicsChecks : Microsoft.Xna.Framework.Game
             && arrowlessLayout.ColumnsProportions[^1].Type == ProportionType.Fill,
             "Arrowless menu buttons reserve no phantom trailing gap");
 
-        var textOnly = new MenuButton(assets, "KEEP", textVariant: MenuButtonTextVariant.Compact)
-        {
-            Width = 200,
-            Height = 44
-        };
+        var textOnly = new MenuButton(assets, "KEEP", size: MenuButtonSize.Confirmation);
         var textLayout = (Grid)textOnly.Content;
         var textLabel = textLayout.Widgets.OfType<Label>().Single();
         Program.Check(textLayout.Widgets.Count == 1 && textLayout.ColumnsProportions.Count == 1
             && !textLayout.Widgets.OfType<Image>().Any(),
             "Omitting an icon creates a true text-only button without a default chevron or reserved icon gaps");
-        foreach (var scale in new[] { .5f, 1f, 2f })
+        foreach (var width in new[] { 140, 200, 400 })
         {
-            textOnly.Resize(scale);
-            textOnly.Width = (int)(200 * scale);
-            textOnly.Height = (int)(44 * scale);
-            textOnly.Measure(new Point(textOnly.Width.Value, textOnly.Height.Value));
-            textOnly.Arrange(new Rectangle(0, 0, textOnly.Width.Value, textOnly.Height.Value));
+            textOnly.Measure(new Point(width, 44));
+            textOnly.Arrange(new Rectangle(0, 0, width, 44));
             var center = textLabel.ToGlobal(new Vector2(textLabel.Bounds.Width / 2f, textLabel.Bounds.Height / 2f));
-            Program.Check(Math.Abs(center.X - textOnly.Width.Value / 2f) <= 1
-                && Math.Abs(center.Y - textOnly.Height.Value / 2f) <= 1,
-                "Text-only labels stay centered at every component scale");
-            Program.Check(textLayout.Padding.Left == (int)(tokens.HorizontalPadding * scale),
-                "Text-only buttons retain themed outer padding");
+            Program.Check(Math.Abs(center.X - Math.Min(width, textOnly.Width!.Value) / 2f) <= 1
+                && Math.Abs(center.Y - textOnly.Height!.Value / 2f) <= 1,
+                "Text-only labels stay centered as their parent constrains the component");
+            Program.Check(textLayout.Padding.Left == GameThemes.DeepDrive.MenuButton.Confirmation.HorizontalPadding,
+                "Parent reflow does not rewrite the button's themed padding");
         }
         var trailingOnly = new MenuButton(assets, "NEXT", arrow: true);
         var trailingLayout = (Grid)trailingOnly.Content;
@@ -552,7 +546,6 @@ internal sealed class GraphicsChecks : Microsoft.Xna.Framework.Game
             && trailingLayout.ColumnsProportions.Count == 3
             && trailingLayout.ColumnsProportions[0].Type == ProportionType.Fill,
             "A trailing icon can be requested independently without a leading icon or gap");
-        trailingOnly.Resize(.75f);
 
         var cancel = new MenuButton(assets, "CANCEL", tone: MenuButtonTone.Danger);
         var cancelLabel = ((Grid)cancel.Content).Widgets.OfType<Label>().Single();
@@ -593,39 +586,29 @@ internal sealed class GraphicsChecks : Microsoft.Xna.Framework.Game
         Program.Check(ReferenceEquals(prominentLabel.Font, ThemeAssets.Font(tokens.ProminentFontSize)),
             "Prominent menu-button font variant is selectable");
 
-        compact.Resize(.1f);
-        var (smallLayout, smallIcon, smallLabel, smallArrow) = Inspect(compact);
-        var smallChevron = smallArrow
-            ?? throw new InvalidOperationException("Resized compact menu button must have a trailing icon.");
-        Program.Check(
-            ReferenceEquals(smallLabel.Font, ThemeAssets.Font(tokens.CompactMinimumFontSize))
-            && smallIcon.Width == tokens.MinimumIconSize
-            && smallIcon.Height == tokens.MinimumIconSize
-            && smallChevron.Width == tokens.MinimumTrailingIconSize
-            && smallChevron.Height == tokens.MinimumTrailingIconSize,
-            "Menu-button resizing respects themed font and icon minimums");
-        Program.Check(
-            smallLayout.Padding.Left == (int)(tokens.HorizontalPadding * .1f)
-            && smallLayout.ColumnsProportions[1].Value == (int)(tokens.IconTextSpacing * .1f)
-            && smallLayout.ColumnsProportions[3].Value == (int)(tokens.TextTrailingIconSpacing * .1f),
-            "Menu-button resizing scales themed padding and gaps");
-
-        compact.Resize(2f);
-        var (largeLayout, largeIcon, largeLabel, largeArrow) = Inspect(compact);
-        var largeChevron = largeArrow
-            ?? throw new InvalidOperationException("Resized compact menu button must retain its trailing icon.");
-        Program.Check(
-            ReferenceEquals(largeLabel.Font, ThemeAssets.Font(tokens.CompactFontSize * 2))
-            && largeIcon.Width == customIconSize * 2
-            && largeIcon.Height == customIconSize * 2
-            && largeChevron.Width == customTrailingIconSize * 2
-            && largeChevron.Height == customTrailingIconSize * 2,
-            "Menu-button resizing retains the selected variant and icon overrides");
-        Program.Check(
-            largeLayout.Padding.Left == tokens.HorizontalPadding * 2
-            && largeLayout.ColumnsProportions[1].Value == tokens.IconTextSpacing * 2
-            && largeLayout.ColumnsProportions[3].Value == tokens.TextTrailingIconSpacing * 2,
-            "Menu-button theme spacing scales with the component");
+        foreach (var size in Enum.GetValues<MenuButtonSize>())
+        {
+            var style = GameThemes.DeepDrive.MenuButton.Size(size);
+            var preset = new MenuButton(assets, "Preset", "settings", size: size);
+            var (layout, icon, label, arrow) = Inspect(preset);
+            Program.Check(preset.Width == style.Width && preset.Height == style.Height
+                && layout.Padding.Left == style.HorizontalPadding && layout.Padding.Top == style.VerticalPadding
+                && layout.ColumnsProportions[1].Value == style.IconTextSpacing
+                && layout.ColumnsProportions[3].Value == style.TextTrailingIconSpacing
+                && icon.Width == style.IconSize && arrow!.Width == style.TrailingIconSize
+                && ReferenceEquals(label.Font, ThemeAssets.Font(style.DefaultFontSize)),
+                "Each theme size supplies complete button and content dimensions on construction");
+            preset.Measure(new Point(300, 100));
+            preset.Arrange(new Rectangle(0, 0, 300, 100));
+            Program.Check(preset.Bounds.Width <= 300 && preset.Width == style.Width
+                && icon.Bounds.Width == icon.Bounds.Height && layout.Padding.Left == style.HorizontalPadding,
+                "The backend fits a preset to its parent without changing authored sizes or distorting icons");
+        }
+        compact.Measure(new Point(300, 100));
+        compact.Arrange(new Rectangle(0, 0, 300, 100));
+        Program.Check(compactIcon.Width == customIconSize && compactChevron.Width == customTrailingIconSize
+            && ReferenceEquals(compactLabel.Font, ThemeAssets.Font(tokens.CompactFontSize)),
+            "Explicit font and icon overrides survive parent-driven reflow");
 
         Program.Check(RejectsSizeOverride(() =>
                 _ = new MenuButton(assets, "Invalid", "settings", iconSize: 0), "iconSize"),
@@ -780,11 +763,11 @@ internal sealed class GraphicsChecks : Microsoft.Xna.Framework.Game
                 var iconEnd = icon.ToGlobal(new Vector2(icon.Bounds.Width, icon.Bounds.Height));
                 Program.Check(menu.SettingsButton.Width == 416 && menu.SettingsButton.Height == 54,
                     "Main-menu buttons use compact dimensions without changing the global scale");
-                Program.Check(Math.Abs(iconEnd.X - iconStart.X - (int)(GameThemes.DeepDrive.MenuButton.IconSize * .8f) * expectedScale) <= 1
+                Program.Check(Math.Abs(iconEnd.X - iconStart.X - GameThemes.DeepDrive.MenuButton.Menu.IconSize * expectedScale) <= 1
                     && Math.Abs((iconEnd.X - iconStart.X) - (iconEnd.Y - iconStart.Y)) <= 1,
                     $"Global scaling preserves square icons and their themed size ({name}: {iconStart} to {iconEnd}, bounds {icon.Bounds}, scale {expectedScale})");
                 Program.Check(Math.Abs(label.ToGlobal(Vector2.Zero).X - iconEnd.X
-                    - (int)(GameThemes.DeepDrive.MenuButton.IconTextSpacing * .8f) * expectedScale) <= 1,
+                    - GameThemes.DeepDrive.MenuButton.Menu.IconTextSpacing * expectedScale) <= 1,
                     "Global scaling preserves the themed icon/text gap");
 
                 // Exercise real pointer dispatch at the transformed slider, not direct Value assignment.

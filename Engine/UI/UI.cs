@@ -29,6 +29,8 @@ public static class UI
     public static float Scale { get; private set; } = 1;
     /// <summary>Raised on the game thread before layout/input when viewport or UI scale changes.</summary>
     public static event Action? LayoutChanged;
+    /// <summary>Preference bindings refresh on the UI thread, independently of resizing.</summary>
+    public static event Action? PreferencesChanged;
     private static readonly List<UIMaterialHost> Hosts = [];
     private static readonly List<UIScreen> Screens = [];
     private static readonly ConcurrentQueue<Action> Pending = new();
@@ -196,19 +198,24 @@ public static class UI
         }
 
         var scale = Math.Min(viewport.X / (float)ReferenceSize.X, viewport.Y / (float)ReferenceSize.Y) * _userScale;
-        if (viewport == _viewportSize && scale == Scale)
+        if (viewport != _viewportSize || scale != Scale)
         {
-            RefreshFonts();
-            return;
+            _viewportSize = viewport;
+            Scale = scale;
+            LayoutSize = new Point((int)MathF.Ceiling(viewport.X / scale), (int)MathF.Ceiling(viewport.Y / scale));
+            // Myra's measure/arrange pass fits declared sizes inside parents and transforms input globally.
+            _desktop.Scale = new Vector2(scale);
+            _desktop.InvalidateLayout();
+            foreach (var screen in Screens.ToArray())
+            {
+                screen.NotifyLayoutChanged();
+            }
+            LayoutChanged?.Invoke();
         }
-
-        _viewportSize = viewport;
-        Scale = scale;
-        LayoutSize = new Point((int)MathF.Ceiling(viewport.X / scale), (int)MathF.Ceiling(viewport.Y / scale));
-        // Myra scales transforms and pointer hit tests, but BoundsFetcher must supply logical units.
-        _desktop.Scale = new Vector2(scale);
-        _desktop.InvalidateLayout();
-        LayoutChanged?.Invoke();
+        if (preferencesChanged)
+        {
+            PreferencesChanged?.Invoke();
+        }
         RefreshFonts();
     }
 
@@ -276,6 +283,7 @@ public static class UI
         _preferencesRevision = -1;
         _userScale = Scale = 1;
         LayoutChanged = null;
+        PreferencesChanged = null;
         _fontResolver = null;
     }
 }

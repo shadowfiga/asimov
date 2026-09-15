@@ -11,14 +11,6 @@ internal sealed class MenuButton : Button
     private readonly Label _label;
     private readonly Image? _icon;
     private readonly Image? _arrow;
-    private readonly Grid _layout;
-    private readonly Proportion? _iconTextSpacing;
-    private readonly Proportion? _textTrailingIconSpacing;
-    private readonly MenuButtonTokens _tokens;
-    private readonly int _fontSize;
-    private readonly int _minimumFontSize;
-    private readonly int _iconSize;
-    private readonly int _trailingIconSize;
     private readonly Color _normalTextColor;
     private readonly Color _highlightColor;
     private readonly (IImage Normal, IImage Highlight, IImage Pressed, IImage Disabled)? _iconImages;
@@ -38,7 +30,8 @@ internal sealed class MenuButton : Button
         MenuButtonTextVariant textVariant = MenuButtonTextVariant.Default,
         int? iconSize = null,
         int? trailingIconSize = null,
-        MenuButtonTone tone = MenuButtonTone.Default)
+        MenuButtonTone tone = MenuButtonTone.Default,
+        MenuButtonSize size = MenuButtonSize.Standard)
     {
         var theme = GameThemes.DeepDrive;
         if (!Enum.IsDefined(tone))
@@ -50,14 +43,15 @@ internal sealed class MenuButton : Button
         _normalTextColor = danger ? theme.Danger : theme.SecondaryText;
         _highlightColor = danger ? theme.DangerHighlight : theme.SelectionHighlight;
         var showArrow = arrow ?? icon is not null;
-        _tokens = theme.MenuButton;
-        _fontSize = _tokens.FontSize(textVariant);
-        _minimumFontSize = _tokens.MinimumFontSize(textVariant);
-        _iconSize = SizeOverride(iconSize, _tokens.MinimumIconSize, nameof(iconSize)) ?? _tokens.IconSize;
-        _trailingIconSize = SizeOverride(
+        var tokens = theme.MenuButton.Size(size);
+        var fontSize = tokens.FontSize(textVariant);
+        var leadingSize = SizeOverride(iconSize, tokens.MinimumIconSize, nameof(iconSize)) ?? tokens.IconSize;
+        var trailingSize = SizeOverride(
             trailingIconSize,
-            _tokens.MinimumTrailingIconSize,
-            nameof(trailingIconSize)) ?? _tokens.TrailingIconSize;
+            tokens.MinimumTrailingIconSize,
+            nameof(trailingIconSize)) ?? tokens.TrailingIconSize;
+        Width = tokens.Width;
+        Height = tokens.Height;
         var radius = theme.BorderRadius.Xs;
         var fill = primary || danger ? Color.Lerp(theme.ControlSurface, accent, .09f) : theme.DeepBlack;
         var border = primary || danger ? accent : theme.Border;
@@ -71,27 +65,27 @@ internal sealed class MenuButton : Button
         Border = OverBorder = FocusedBorder = PressedBorder = DisabledBorder = null;
         BorderThickness = new Thickness(theme.BorderRadius.Zero);
 
-        _layout = new Grid
+        var layout = new Grid
         {
+            Padding = new Thickness(tokens.HorizontalPadding, tokens.VerticalPadding),
             ColumnSpacing = 0,
             HorizontalAlignment = HorizontalAlignment.Stretch,
             VerticalAlignment = VerticalAlignment.Stretch
         };
         if (icon is not null)
         {
-            _layout.ColumnsProportions.Add(Proportion.Auto);
-            _iconTextSpacing = new Proportion(ProportionType.Pixels, _tokens.IconTextSpacing);
-            _layout.ColumnsProportions.Add(_iconTextSpacing);
-            _icon = assets.Icon(icon, _iconSize, _normalTextColor, _highlightColor);
+            layout.ColumnsProportions.Add(Proportion.Auto);
+            layout.ColumnsProportions.Add(new Proportion(ProportionType.Pixels, tokens.IconTextSpacing));
+            _icon = assets.Icon(icon, leadingSize, _normalTextColor, _highlightColor);
             _iconImages = IconImages(_icon);
-            _layout.Widgets.Add(_icon);
+            layout.Widgets.Add(_icon);
         }
-        _layout.ColumnsProportions.Add(new Proportion(ProportionType.Fill));
-        _layout.RowsProportions.Add(new Proportion(ProportionType.Fill));
+        layout.ColumnsProportions.Add(new Proportion(ProportionType.Fill));
+        layout.RowsProportions.Add(new Proportion(ProportionType.Fill));
         _label = new Label
         {
             Text = text,
-            Font = ThemeAssets.Font(_fontSize),
+            Font = ThemeAssets.Font(fontSize),
             TextColor = _normalTextColor,
             DisabledTextColor = theme.Disabled,
             OverTextColor = _highlightColor,
@@ -100,53 +94,25 @@ internal sealed class MenuButton : Button
             HorizontalAlignment = icon is null && !showArrow ? HorizontalAlignment.Center : HorizontalAlignment.Left,
             VerticalAlignment = VerticalAlignment.Center
         };
-        Grid.SetColumn(_label, _layout.ColumnsProportions.Count - 1);
-        _layout.Widgets.Add(_label);
+        Grid.SetColumn(_label, layout.ColumnsProportions.Count - 1);
+        layout.Widgets.Add(_label);
         if (showArrow)
         {
-            _textTrailingIconSpacing = new Proportion(ProportionType.Pixels, _tokens.TextTrailingIconSpacing);
-            _layout.ColumnsProportions.Add(_textTrailingIconSpacing);
-            _layout.ColumnsProportions.Add(Proportion.Auto);
-            _arrow = assets.Icon("chevron-right", _trailingIconSize, danger ? theme.Danger : theme.Disabled, _highlightColor);
+            layout.ColumnsProportions.Add(new Proportion(ProportionType.Pixels, tokens.TextTrailingIconSpacing));
+            layout.ColumnsProportions.Add(Proportion.Auto);
+            _arrow = assets.Icon("chevron-right", trailingSize, danger ? theme.Danger : theme.Disabled, _highlightColor);
             _arrowImages = IconImages(_arrow);
-            Grid.SetColumn(_arrow, _layout.ColumnsProportions.Count - 1);
-            _layout.Widgets.Add(_arrow);
+            Grid.SetColumn(_arrow, layout.ColumnsProportions.Count - 1);
+            layout.Widgets.Add(_arrow);
         }
 
-        Content = _layout;
-        Resize(1);
+        Content = layout;
         MouseEntered += RefreshContentState;
         MouseLeft += RefreshContentState;
         PressedChanged += RefreshContentState;
         KeyboardFocusChanged += RefreshContentState;
         EnabledChanged += RefreshContentState;
         RefreshContentState();
-    }
-
-    internal void Resize(float scale)
-    {
-        if (!float.IsFinite(scale) || scale <= 0)
-        {
-            throw new ArgumentOutOfRangeException(nameof(scale), scale, "Menu-button scale must be positive and finite.");
-        }
-
-        var horizontalPadding = ScaleSpacing(_tokens.HorizontalPadding, scale);
-        var verticalPadding = ScaleSpacing(_tokens.VerticalPadding, scale);
-        _layout.Padding = new Thickness(horizontalPadding, verticalPadding);
-        if (_iconTextSpacing is not null)
-        {
-            _iconTextSpacing.Value = ScaleSpacing(_tokens.IconTextSpacing, scale);
-        }
-        _label.Font = ThemeAssets.Font(ScaleDimension(_fontSize, _minimumFontSize, scale));
-        if (_icon is not null)
-        {
-            _icon.Width = _icon.Height = ScaleDimension(_iconSize, _tokens.MinimumIconSize, scale);
-        }
-        if (_arrow is not null)
-        {
-            _textTrailingIconSpacing!.Value = ScaleSpacing(_tokens.TextTrailingIconSpacing, scale);
-            _arrow.Width = _arrow.Height = ScaleDimension(_trailingIconSize, _tokens.MinimumTrailingIconSize, scale);
-        }
     }
 
     internal void SetText(string text) => _label.Text = text;
@@ -163,12 +129,6 @@ internal sealed class MenuButton : Button
 
         return value;
     }
-
-    private static int ScaleDimension(int value, int minimum, float scale)
-        => Math.Max(minimum, (int)(value * scale));
-
-    private static int ScaleSpacing(int value, float scale)
-        => Math.Max(0, (int)(value * scale));
 
     private static (IImage Normal, IImage Highlight, IImage Pressed, IImage Disabled) IconImages(Image image)
         => (

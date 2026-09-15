@@ -28,6 +28,13 @@
 - Never use color as the only indication of state; pair orange and green with text, icons, borders, shape, or position.
 - Keep shared Myra styling in `Game/UI/Theming`; initialize it before constructing screens.
 
+# UI layout
+
+- Screens and dialogs declare components, preferred logical sizes, alignment, padding, and scrolling; the UI backend owns responsive fitting and global scale.
+- Use theme-defined component size presets. Do not add local scale multipliers, per-screen resize loops, or viewport-based width/height calculations for ordinary layout.
+- Use shared layout components for reflow rules. Reserve `UIScreen.OnLayoutChanged()` overrides for genuinely specialized behavior, not normal component sizing.
+- Keep preference synchronization independent of layout; do not use resize callbacks as settings bindings.
+
 # Full-game scope
 
 - [Content Scope Lock](<DEEP DRIVE — Game Design Document.md#41-content-scope-lock>) and [Things Explicitly Out of Scope](<DEEP DRIVE — Game Design Document.md#42-things-explicitly-out-of-scope>) are the hard scope for the full game.

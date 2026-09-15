@@ -1,33 +1,16 @@
-using FontStashSharp;
+using Graphite.Engine.UI;
 using Graphite.Game.UI.Theming;
-using Microsoft.Xna.Framework;
-using Myra.Graphics2D;
-using Myra.Graphics2D.UI;
 
 namespace Graphite.Game.UI;
 
-internal sealed class MenuTitle : Widget
+internal sealed class MenuTitle : DistributedLabel
 {
-    private readonly string[] _letters = "DEEP // DRIVE".Select(letter => letter.ToString()).ToArray();
-    private SpriteFontBase _font = ThemeAssets.Font(40);
-    private float _tracking;
-
-    internal void Fit(int width, int fontSize)
+    internal MenuTitle()
     {
-        _font = ThemeAssets.Font(fontSize);
-        _tracking = Math.Max(0, (width - _letters.Sum(letter => _font.MeasureString(letter).X)) / (_letters.Length - 1));
-        Width = width;
-        Height = _font.LineHeight;
-        InvalidateMeasure();
-    }
-
-    public override void InternalRender(RenderContext context)
-    {
-        var position = new Vector2(ActualBounds.X, ActualBounds.Y);
-        foreach (var letter in _letters)
-        {
-            context.DrawString(_font, letter, position, GameThemes.DeepDrive.PrimaryText);
-            position.X += _font.MeasureString(letter).X + _tracking;
-        }
+        var theme = GameThemes.DeepDrive;
+        Text = "DEEP // DRIVE";
+        Width = theme.Layout.MenuWidth;
+        Font = ThemeAssets.Font(theme.Layout.MenuTitleFontSize);
+        TextColor = theme.PrimaryText;
     }
 }

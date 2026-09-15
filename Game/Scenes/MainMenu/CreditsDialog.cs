@@ -25,7 +25,8 @@ public sealed class CreditsDialog : UIScreen
             var theme = GameThemes.DeepDrive;
             _frame = new Grid
             {
-                Width = 620,
+                Width = theme.Layout.CreditsSize.X,
+                Height = theme.Layout.CreditsSize.Y,
                 Padding = new Thickness(theme.Spacing.Xl),
                 RowSpacing = theme.Spacing.Md,
                 Background = DialogLayout.Surface()
@@ -43,15 +44,9 @@ public sealed class CreditsDialog : UIScreen
             var scroll = new ScrollViewer { Content = entries, ShowHorizontalScrollBar = false };
             Grid.SetRow(scroll, 1);
             _frame.Widgets.Add(scroll);
-            _back = new MenuButton(_assets, "BACK", "arrow-left", arrow: false,
-                textVariant: MenuButtonTextVariant.Compact, iconSize: 28)
-            {
-                Width = 200,
-                Height = 48
-            };
+            _back = new MenuButton(_assets, "BACK", "arrow-left", arrow: false, size: MenuButtonSize.Dialog);
             Grid.SetRow(_back, 2);
             _frame.Widgets.Add(_back);
-            Resize();
             return new Graphite.Game.UI.Dialog(new UIMaterialHost(_frame, interactions: MenuPresentation.FadeStyle));
         }
         catch
@@ -61,23 +56,14 @@ public sealed class CreditsDialog : UIScreen
         }
     }
 
-    private void Resize()
-    {
-        var spacing = GameThemes.DeepDrive.Spacing;
-        _frame.Width = Math.Min(620, Math.Max(1, Ui.LayoutSize.X - spacing.Xl * 2));
-        _frame.Height = Math.Min(420, Math.Max(1, Ui.LayoutSize.Y - spacing.Xl * 2));
-    }
-
     protected override void Awake()
     {
         _back.Click += Back;
-        Ui.LayoutChanged += Resize;
     }
 
     protected override void OnDestroy()
     {
         _back.Click -= Back;
-        Ui.LayoutChanged -= Resize;
         _assets.Dispose();
     }
 

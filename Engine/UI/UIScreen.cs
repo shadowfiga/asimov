@@ -33,6 +33,7 @@ public abstract class UIScreen : IDisposable
             UI.Attach(_root);
             IsOpen = true;
             Awake();
+            NotifyLayoutChanged();
         }
         catch
         {
@@ -100,6 +101,18 @@ public abstract class UIScreen : IDisposable
 
     protected virtual void Awake()
     {
+    }
+    /// <summary>Optional specialized reflow. Normal controls use parent constraints and need no override.</summary>
+    protected virtual void OnLayoutChanged()
+    {
+    }
+
+    internal void NotifyLayoutChanged()
+    {
+        if (IsOpen && !IsClosing)
+        {
+            OnLayoutChanged();
+        }
     }
     protected virtual void OnDestroy()
     {

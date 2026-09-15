@@ -1,0 +1,16 @@
+using Microsoft.Xna.Framework;
+
+namespace Graphite.Game.UI.Theming;
+
+/// <summary>Preferred logical sizes; the UI backend fits them to their parent automatically.</summary>
+public sealed record ScreenLayoutTokens
+{
+    public int MenuWidth { get; init; } = 520;
+    public int MenuTitleFontSize { get; init; } = 48;
+    public Point SettingsSize { get; init; } = new(1080, 620);
+    public Point CreditsSize { get; init; } = new(620, 420);
+    public int ConfirmationWidth { get; init; } = 520;
+    public int SidebarWidth { get; init; } = 200;
+    public int CompactSidebarWidth { get; init; } = 180;
+    public int SidebarBreakpoint { get; init; } = 836;
+}
