@@ -258,17 +258,17 @@ The interface should remain almost entirely monochromatic.
 
 # 7. CRT Presentation
 
-The UI is displayed as if through a rugged industrial CRT terminal.
+The entire rendered game is displayed as if through a rugged industrial CRT terminal. CRT is applied once as the final backbuffer-sized post-process after the scene and UI have both rendered, never as a material owned by a UI element. It remains active in menus and gameplay.
 
 Use:
 
-* subtle scanlines;
-* faint noise;
-* mild vignette;
+* subtle horizontal scanlines;
+* faint two-dimensional screen-space grain without directional banding;
+* mild radial vignette;
 * slight bloom;
 * occasional terminal response animation.
 
-A single progress-slider scales the aged CRT treatment from off to a pronounced full-strength look. Zero means disabled and any non-zero intensity means enabled. Scanlines are horizontal only. Screen curvature is not used.
+A single progress-slider scales the original Aged CRT treatment from off to full strength. Zero means disabled and any non-zero intensity means enabled. Scanlines span the full screen horizontally; no vertical or diagonal scanlines are used. Screen curvature is not used.
 
 Avoid:
 

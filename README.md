@@ -20,13 +20,15 @@ All UI text uses the bundled [Abel font](https://github.com/google/fonts/tree/ma
 
 `GameThemes.DeepDrive.Spacing` supplies `Xs`, `Sm`, `Md`, `Lg`, and `Xl` for gaps, padding, and margins. `BorderRadius` supplies `Zero`, `Xs`, `Sm`, `Md`, `Lg`, `Xl`, and `Full`; full rounding is limited to half the shorter side. Global defaults live in `Engine/UI/Theming/UITokens.cs`; each theme can override them. `RoundedRectangleBrush` renders these values for fills and borders.
 
+`GameThemes.DeepDrive.MenuButton` is the component-level contract for menu-button layout and responsive sizing. It owns horizontal and vertical padding, leading-icon-to-text and text-to-trailing-icon gaps, the `Compact`, `Default`, and `Prominent` text sizes and minimums, plus leading and trailing icon sizes and minimums. All three text variants use Abel Regular; a variant selects semantic size and role, not a different weight or style. Individual button constructors can select `textVariant` and override `iconSize` or, when needed, `trailingIconSize`; spacing continues to come from the component theme.
+
 The main menu uses [Lucide](https://lucide.dev/) icons, bundled as SVG sources and 96 px PNGs in `Content/Icons/Lucide` with their license and source revision. Normal builds use the PNGs. Menu spacing and type scale with the window. Continue, New Operation, and Load Operation remain disabled while gameplay is being rebuilt.
 
-Settings expose only one fullscreen CRT progress-slider from `NO` (0%) to a more pronounced `FULL` (100%). Zero disables processing and every non-zero value enables it; no separate checkbox or boolean is stored. The only treatment is the Aged profile with horizontal scanlines. There is no direction selector or screen curvature. Menu buttons use ordinary Myra hover/focus states rather than per-button shader materials.
+Settings expose only one fullscreen CRT progress-slider from `NO` (0%) to `FULL` (100%). Zero disables processing and every non-zero value enables it; no separate checkbox or boolean is stored. The treatment is the original Aged profile: subtle horizontal scanlines, faint two-dimensional screen-space noise, radial falloff, and bloom. There is no direction selector or screen curvature. The CRT is a game-wide final-frame pass over the scene and UI, so the same preference remains active during gameplay. Menu buttons use ordinary Myra hover/focus states rather than per-button shader materials.
 
 ## Persistence
 
-Use the static engine APIs from any scene. `GameHost` initializes storage and loads preferences before calling `Startup.Initialize` and constructing the first scene. The game startup callback installs its theme, interaction styles, and audio preferences; bootstrap then opens the main menu.
+Use the static engine APIs from any scene. `GameHost` initializes storage and loads preferences before calling `Startup.Initialize` and constructing the first scene. The game startup callback installs its theme, interaction styles, audio preferences, and final-frame CRT; bootstrap then opens the main menu.
 
 ```csharp
 using Graphite.Engine.Persistence;
@@ -90,19 +92,18 @@ Dependencies: MonoGame DesktopGL 3.8.5.1, Myra 1.6.5, and .NET 8 with newer-runt
 
 ## UI materials and animation
 
-Wrap a Myra control before adding it to a layout. The host owns its outer position, size, alignment, margin, and visibility; keep the original control for text, events, enabled state, and focus. Material passes include the control's background, border, and children, and run in list order.
+Wrap a Myra control before adding it to a layout. The host owns its outer position, size, alignment, margin, and visibility; keep the original control for text, events, enabled state, and focus. Material passes include the control's background, border, and children, and run in list order. These widget materials are separate from the game-wide CRT post-process.
 
 Material captures preserve the back buffer while compositing, then restore its original usage policy. When drawing UI into a custom `RenderTarget2D`, create that destination with `RenderTargetUsage.PreserveContents` so nested material passes retain previously drawn content.
 
 ```csharp
-var screenRoot = new Panel(styleName: "root");
-var host = new UIMaterialHost(screenRoot, [MenuPresentation.Crt], MenuPresentation.FadeStyle);
-CrtMaterial.Configure(host.Animation.BaseParameters, intensity: 1f);
+var button = new Button();
+var host = new UIMaterialHost(button, interactions: MenuPresentation.FadeStyle);
 ```
 
 The menu has no assigned sound assets. `UI.Audio` supports volume and mute; configure an alternative service with `UI.SetAudioService` before constructing hosts.
 
-Apply CRT materials to fullscreen screen roots, not individual controls. Buttons use standard background, border, text, and icon states for hover, focus, press, and disabled feedback.
+`Startup.Initialize` registers `CrtFilter` with `PostProcessing`; `GameHost` captures the complete scene and UI at backbuffer resolution, applies it once, and then presents the final frame. `CrtFilter` uses the dedicated graphics `ShaderScreenFilter` API and has no dependency on UI materials. Do not attach CRT to a widget or screen root. Buttons use standard background, border, text, and icon states for hover, focus, press, and disabled feedback.
 
 Register type defaults through `UI.Interactions.Set<T>()` in `Startup.Initialize`. More specific types and individual bindings override inherited bindings. `UIInteractionBinding.Empty` disables an inherited binding. Custom trigger names use `host.Trigger(name)`; explicit playback uses `host.Play(animation)` and its cancellation/completion handle. Hover runs once per entry and settles on exit; set `Repeat = 0` for continuous playback. Sounds run once per playback, with their delay relative to the animation start; looping voices stop when cancelled.
 

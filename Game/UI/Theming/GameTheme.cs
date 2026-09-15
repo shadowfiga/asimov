@@ -7,6 +7,7 @@ public sealed class GameTheme
 {
     public UISpacing Spacing { get; init; } = UISpacing.Default;
     public UIBorderRadii BorderRadius { get; init; } = UIBorderRadii.Default;
+    public MenuButtonTokens MenuButton { get; init; } = MenuButtonTokens.Default;
 
     // Monochrome terminal surfaces
     public required Color DeepBlack { get; init; }

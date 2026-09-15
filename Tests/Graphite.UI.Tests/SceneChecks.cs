@@ -1,4 +1,5 @@
 using Graphite.Engine.Scenes;
+using Microsoft.Xna.Framework;
 
 namespace Graphite.UI.Tests;
 
@@ -21,6 +22,8 @@ internal static class SceneChecks
             SceneManager.Update(.25f);
             Program.Near(_elapsed, .25f, "Active scene receives elapsed time");
             Program.Check(Events[^1] == "menu update", "Only the active scene updates");
+            SceneManager.Draw(new GameTime(TimeSpan.FromSeconds(.25), TimeSpan.FromSeconds(.25)));
+            Program.Check(Events[^1] == "menu draw", "Only the active scene draws");
 
             SceneManager.Load<MenuScene>();
             SceneManager.CommitPendingChanges();
@@ -67,6 +70,8 @@ internal static class SceneChecks
             _elapsed = dt;
             Events.Add("menu update");
         }
+
+        protected internal override void Draw(GameTime gameTime) => Events.Add("menu draw");
 
         protected internal override void OnUnload() => Events.Add("menu unload");
     }

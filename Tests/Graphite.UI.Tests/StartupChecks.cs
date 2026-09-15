@@ -1,10 +1,13 @@
 using Graphite.Engine.Configuration;
 using Graphite.Engine.Core;
+using Graphite.Engine.Graphics;
 using Graphite.Engine.Persistence;
 using Graphite.Engine.Scenes;
 using Graphite.Game;
 using Graphite.Game.Configuration;
+using Graphite.Game.Graphics;
 using Graphite.Game.Sessions;
+using Microsoft.Xna.Framework;
 
 namespace Graphite.UI.Tests;
 
@@ -24,6 +27,7 @@ internal static class StartupChecks
         {
             Preferences.Initialize(root);
             Preferences.Set(PlayerPreferences.MasterVolume, .25f);
+            Preferences.Set(PlayerPreferences.CrtIntensity, .35f);
             Storage.Initialize(Path.Combine(root, "saves"));
             var session = new Session();
             session.AddPlayTime(12);
@@ -39,12 +43,20 @@ internal static class StartupChecks
                     Program.Check(Preferences.Get(PlayerPreferences.MasterVolume) == .25f
                         && Storage.Load<Session>().PlayTimeSeconds == ExpectedTime, "Engine persistence is ready before game initialization");
                     Startup.Initialize();
+                    Program.Check(PostProcessing.IsActive,
+                        "Game startup installs the global CRT before the first scene");
+                    Program.Near(PostProcessing.Parameters.Get(CrtFilter.Scanlines), .035f,
+                        "Game startup restores the persisted global CRT intensity");
                     Configured = true;
                 }))
                 {
                     game.Run();
                 }
-                Program.Check(Constructed && Loaded && Unloaded, "First scene uses persistence throughout its lifecycle");
+                Program.Check(Constructed && Loaded && Unloaded,
+                    "First scene uses persistence throughout its lifecycle");
+                Program.Check(!PostProcessing.IsActive && PostProcessing.AllocatedTargets == 0
+                    && PostProcessing.TargetSize == Point.Zero,
+                    "Game shutdown releases the global CRT and its frame targets");
                 try { Storage.Load<Session>(); throw new Exception("Storage was not shut down"); }
                 catch (InvalidOperationException) { }
                 try { Preferences.Get(PlayerPreferences.MasterVolume); throw new Exception("Preferences were not shut down"); }
@@ -85,6 +97,7 @@ public sealed class StartupProbeScene : Scene
             && Storage.Load<Session>().PlayTimeSeconds == StartupChecks.ExpectedTime,
             "All initialization finishes before the first scene is constructed");
         Program.Near(Graphite.Engine.UI.UI.Audio.Volume, .25f, "Loaded audio preferences apply before the first scene");
+        Program.Check(PostProcessing.IsActive, "Global CRT is available when the first scene is constructed");
         StartupChecks.Constructed = true;
     }
 

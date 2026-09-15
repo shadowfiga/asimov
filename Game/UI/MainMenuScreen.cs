@@ -1,10 +1,12 @@
 using Graphite.Engine.Configuration;
 using Graphite.Engine.Core;
+using Graphite.Engine.Graphics;
 using Graphite.Engine.Persistence;
 using Graphite.Engine.UI;
 using Graphite.Engine.UI.Animation;
 using Graphite.Engine.UI.Theming;
 using Graphite.Game.Configuration;
+using Graphite.Game.Graphics;
 using Graphite.Game.UI.Materials;
 using Graphite.Game.UI.Theming;
 using Microsoft.Xna.Framework;
@@ -45,7 +47,6 @@ public sealed class MainMenuScreen : UIScreen
     internal bool CrtEnabled => _crtIntensity.Value > 0;
     internal HorizontalSlider CrtIntensityControl => _crtIntensity;
     internal bool CrtControlVisible => _crtIntensity.Visible;
-    internal UIMaterialHost ScreenHost => _screen;
     internal bool SettingsVisible => _settings.Visible;
 
     protected override Widget Build()
@@ -124,7 +125,7 @@ public sealed class MainMenuScreen : UIScreen
             _root.Widgets.Add(_staging);
         }
 
-        _screen = new UIMaterialHost(_root, [MenuPresentation.Crt], MenuPresentation.FadeStyle);
+        _screen = new UIMaterialHost(_root, interactions: MenuPresentation.FadeStyle);
         ApplyCrtSettings();
         Resize();
         return _screen;
@@ -171,7 +172,13 @@ public sealed class MainMenuScreen : UIScreen
             VerticalAlignment = VerticalAlignment.Center
         };
         content.Widgets.Add(IntensityControl(theme));
-        _settingsBackButton = new MenuButton(_assets, "BACK", "arrow-left", arrow: false)
+        _settingsBackButton = new MenuButton(
+            _assets,
+            "BACK",
+            "arrow-left",
+            arrow: false,
+            textVariant: MenuButtonTextVariant.Compact,
+            iconSize: 28)
         {
             Width = 240,
             Height = 54,
@@ -238,7 +245,13 @@ public sealed class MainMenuScreen : UIScreen
         {
             content.Widgets.Add(new Label { Text = entry, HorizontalAlignment = HorizontalAlignment.Left });
         }
-        _creditsBackButton = new MenuButton(_assets, "BACK", "arrow-left", arrow: false)
+        _creditsBackButton = new MenuButton(
+            _assets,
+            "BACK",
+            "arrow-left",
+            arrow: false,
+            textVariant: MenuButtonTextVariant.Compact,
+            iconSize: 28)
         {
             Width = 240,
             Height = 54,
@@ -302,7 +315,7 @@ public sealed class MainMenuScreen : UIScreen
         {
             button.Width = width;
             button.Height = Math.Max(34, (int)(68 * scale));
-            button.Resize(scale, 30);
+            button.Resize(scale);
         }
 
         var dialogWidth = Math.Max(360, Math.Min(620, size.BackBufferWidth - edge * 2));
@@ -388,7 +401,7 @@ public sealed class MainMenuScreen : UIScreen
     private static string IntensityLabel(float intensity) => $"{intensity:P0}";
 
     private void ApplyCrtSettings()
-        => CrtMaterial.Configure(_screen.Animation.BaseParameters, Preferences.Get(PlayerPreferences.CrtIntensity));
+        => CrtFilter.Configure(PostProcessing.Parameters, Preferences.Get(PlayerPreferences.CrtIntensity));
 
     private void BackClicked(object sender, MyraEventArgs args) => BackToMenu();
     private static void Quit(object sender, MyraEventArgs args) => Application.Quit();

@@ -1,4 +1,5 @@
 using Graphite.Engine.Configuration;
+using Graphite.Engine.Graphics;
 using Graphite.Engine.Platform;
 using Graphite.Engine.Persistence;
 using Graphite.Engine.Scenes;
@@ -49,6 +50,7 @@ public sealed class GameHost : Microsoft.Xna.Framework.Game
         }
 
         Graphite.Engine.UI.UI.Initialize(this);
+        PostProcessing.Initialize(GraphicsDevice);
         Application.Reset();
         var directory = PersistencePaths.ForGame(_settings.Game.Id, _settings.Environment);
         Storage.Initialize(Path.Combine(directory, "saves"));
@@ -80,11 +82,14 @@ public sealed class GameHost : Microsoft.Xna.Framework.Game
 
     protected override void Draw(GameTime gameTime)
     {
-        GraphicsDevice.Clear(_clearColor);
+        PostProcessing.Render(gameTime, _clearColor, DrawFrame);
+    }
 
-        Graphite.Engine.UI.UI.Draw();
-
+    private void DrawFrame(GameTime gameTime)
+    {
+        SceneManager.Draw(gameTime);
         base.Draw(gameTime);
+        Graphite.Engine.UI.UI.Draw();
     }
 
     protected override void Dispose(bool disposing)
@@ -98,6 +103,7 @@ public sealed class GameHost : Microsoft.Xna.Framework.Game
             }
             finally
             {
+                PostProcessing.Shutdown();
                 Preferences.Shutdown();
                 Storage.Shutdown();
             }

@@ -10,6 +10,7 @@ public static class GameThemes
     {
         Spacing = UISpacing.Default,
         BorderRadius = UIBorderRadii.Default,
+        MenuButton = MenuButtonTokens.Default,
         DeepBlack = Hex("#050505"),
         Background = Hex("#090A09"),
         RaisedSurface = Hex("#111211"),

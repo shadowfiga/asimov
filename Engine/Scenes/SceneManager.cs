@@ -1,4 +1,5 @@
 using System.Reflection;
+using Microsoft.Xna.Framework;
 
 namespace Graphite.Engine.Scenes;
 
@@ -80,6 +81,7 @@ public static class SceneManager
             ?? throw new InvalidOperationException($"Could not create scene '{sceneType.FullName}'."));
 
     internal static void Update(float dt) => _activeScene?.Update(dt);
+    internal static void Draw(GameTime gameTime) => _activeScene?.Draw(gameTime);
 
     internal static void CommitPendingChanges()
     {

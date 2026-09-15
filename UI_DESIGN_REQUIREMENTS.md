@@ -96,6 +96,24 @@ The family is fixed to Abel Regular, but the size scale still requires approval.
 
 The current menu uses sizes from approximately 14-48 px. These are working implementation values, not a complete type system.
 
+### Menu button
+
+Menu buttons have a component-level token group so their internal geometry is not derived from unrelated global spacing values or hidden widget constants. The designer must approve the following tokens:
+
+| Token | Current value | Controls |
+| --- | ---: | --- |
+| `HorizontalPadding` | 24 px | Space inside the button's left and right edges |
+| `VerticalPadding` | 0 px | Space inside the button's top and bottom edges |
+| `IconTextSpacing` | 24 px | Gap between the leading icon and label |
+| `TextTrailingIconSpacing` | 24 px | Gap between the label and optional trailing icon |
+| `CompactFontSize` / `CompactMinimumFontSize` | 24 / 17 px | Compact control-label size and its responsive floor |
+| `DefaultFontSize` / `DefaultMinimumFontSize` | 30 / 17 px | Standard control-label size and its responsive floor |
+| `ProminentFontSize` / `ProminentMinimumFontSize` | 34 / 19 px | High-emphasis control-label size and its responsive floor |
+| `IconSize` / `MinimumIconSize` | 34 / 22 px | Default leading-icon size and its responsive floor |
+| `TrailingIconSize` / `MinimumTrailingIconSize` | 20 / 14 px | Default trailing-icon size and its responsive floor |
+
+Every variant remains Abel Regular. `Compact`, `Default`, and `Prominent` are semantic text-variant choices for size and role; they never imply bold, italic, or another font file. A button's constructor may select `textVariant`, override its leading `iconSize`, and optionally override `trailingIconSize`. Those overrides participate in responsive scaling and must meet the matching theme minimums. Internal padding and both icon gaps remain theme-owned so buttons stay aligned across screens. The Settings and Credits BACK buttons currently select `Compact` and a 28 px leading-icon override.
+
 ## 4. Required interaction states
 
 Every interactive component requires:
@@ -153,11 +171,11 @@ Lightweight supporting UI:
 
 ## 7. CRT presentation
 
-CRT is a fullscreen screen treatment, never a per-control hover effect.
+CRT is a game-wide final-frame treatment, never a widget, screen-root, or per-control effect. The renderer captures the complete scene followed by the UI at backbuffer resolution, applies CRT once, and presents that result. The same setting therefore affects menus and gameplay.
 
-The implementation exposes only one progress-meter slider labelled from `NO` to a deliberately pronounced `FULL`. At 0%, processing is disabled; every non-zero intensity enables it. No separate checkbox or boolean is stored. Scanlines are horizontal only; there is no direction selector, alternative profile, or screen curvature.
+The implementation exposes only one progress-meter slider labelled from `NO` to `FULL`. At 0%, processing is disabled; every non-zero intensity enables it. No separate checkbox or boolean is stored. Scanlines are horizontal only; there is no direction selector, alternative profile, or screen curvature.
 
-The Aged treatment combines scanlines, faint noise, vignette, and bloom. Its 50% point matches the earlier full-strength Aged look; the upper half becomes visibly more weathered. White text must remain sharp. Orange may bloom more visibly than green, but neither should become blurry.
+The original Aged treatment combines subtle horizontal scanlines, faint two-dimensional screen-space noise, mild radial falloff, and bloom. Scanline phase comes from the full-screen vertical coordinate, so every line spans the entire display horizontally; noise varies across both dimensions but must not resolve into directional bands. The slider scales the complete recipe proportionally, reaching the original full Aged strengths at 100%. White text must remain sharp. Orange may bloom more visibly than green, but neither should become blurry.
 
 Avoid aggressive distortion, constant flicker, excessive chromatic aberration, or effects that obscure terminal data. Reduced-bloom/flashing accessibility behavior still needs a final product setting.
 
@@ -174,7 +192,7 @@ Substantially themed now:
 - list boxes,
 - combo-box dropdowns,
 - tab controls,
-- custom menu buttons,
+- custom menu buttons with theme-driven spacing, semantic text variants, and icon sizing,
 - tintable PNG icons,
 - rounded fills and borders,
 - responsive sizing,
@@ -198,7 +216,7 @@ Available sound parameters:
 
 - Keep future content and terminology aligned with the DEEP // DRIVE GDD.
 - Add semantic checkbox, radio, slider, and scroll-view styling before the full Settings screen expands.
-- Add centralized typography, border-width, component-height, and icon-size tokens.
+- Extend centralized typography and icon-size tokens beyond the menu-button component; add border-width and component-height tokens.
 - Implement controller navigation and controller glyph switching.
 - Implement full input remapping.
 - Implement UI scale, text-size, reduced-bloom/flashing, and damage-number settings.
