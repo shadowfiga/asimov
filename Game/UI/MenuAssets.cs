@@ -8,7 +8,7 @@ using Myra.Graphics2D.UI;
 
 namespace Graphite.Game.UI;
 
-internal sealed class MenuAssets : IBrush, IDisposable
+internal sealed class MenuAssets : IDisposable
 {
     private readonly Dictionary<string, Texture2D> _textures = [];
 
@@ -40,17 +40,6 @@ internal sealed class MenuAssets : IBrush, IDisposable
             IsAnisotropicFiltering = true,
             VerticalAlignment = VerticalAlignment.Center
         };
-    }
-
-    public void Draw(RenderContext context, Rectangle dest, Color color)
-    {
-        if (dest.Width <= 0 || dest.Height <= 0)
-        {
-            return;
-        }
-
-        var theme = GameThemes.DeepDrive;
-        context.FillRectangle(dest, theme.Background);
     }
 
     public void Dispose()

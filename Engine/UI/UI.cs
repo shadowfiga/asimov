@@ -27,8 +27,6 @@ public static class UI
     }
     /// <summary>Effective physical pixels per UI unit, including RuntimePreferences.UiScale.</summary>
     public static float Scale { get; private set; } = 1;
-    /// <summary>Raised on the game thread before layout/input when viewport or UI scale changes.</summary>
-    public static event Action? LayoutChanged;
     /// <summary>Preference bindings refresh on the UI thread, independently of resizing.</summary>
     public static event Action? PreferencesChanged;
     private static readonly List<UIMaterialHost> Hosts = [];
@@ -210,7 +208,6 @@ public static class UI
             {
                 screen.NotifyLayoutChanged();
             }
-            LayoutChanged?.Invoke();
         }
         if (preferencesChanged)
         {
@@ -282,7 +279,6 @@ public static class UI
         _viewportSize = LayoutSize = Point.Zero;
         _preferencesRevision = -1;
         _userScale = Scale = 1;
-        LayoutChanged = null;
         PreferencesChanged = null;
         _fontResolver = null;
     }

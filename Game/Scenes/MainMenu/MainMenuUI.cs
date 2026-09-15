@@ -24,7 +24,6 @@ public sealed class MainMenuUI : UIScreen
     {
         get; private set;
     }
-    internal MenuButton SettingsButton => _settingsButton;
 
     protected override Widget Build()
     {
@@ -70,7 +69,6 @@ public sealed class MainMenuUI : UIScreen
         }, interactions: MenuPresentation.FadeStyle);
         var root = new Panel(styleName: "root")
         {
-            Background = _assets,
             Padding = new Thickness(spacing.Xl * 2, spacing.Xl)
         };
         root.Widgets.Add(menu);

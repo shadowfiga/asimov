@@ -54,6 +54,8 @@ Font rasterization follows the effective screen scale, independently of logical 
 
 `GameThemes.DeepDrive.Spacing` supplies `Xs`, `Sm`, `Md`, `Lg`, and `Xl` for gaps, padding, and margins. The game uses `UIBorderRadii.Square`: every `BorderRadius` token (`Zero` through `Full`) resolves to zero. All buttons, dialogs, dropdowns, fields, and interaction states have square corners. Shared tokens live in `Engine/UI/Theming/UITokens.cs`. Axis-aligned zero-radius surfaces snap their borders to physical pixels with a one-screen-pixel minimum, using the current drawing transform (including nested widgets and popup lists). This prevents thin edges disappearing at fractional UI scales; fills and borders remain non-overlapping so transparency is preserved.
 
+Progress controls are borderless: `DeepBlack` supplies the empty track and `Selection` supplies the orange fill. Their overlaid drag slider has no background or outline in any state; the flat handle retains themed hover/focus/pressed feedback. CRT intensity and all volume controls share this styling.
+
 `GameThemes.DeepDrive.MenuButton` defines complete `Standard`, `Menu`, `Dialog`, and `Confirmation` size presets. Each preset owns preferred width/height, padding, icon gaps, `Compact`/`Default`/`Prominent` font sizes, and leading/trailing icon metrics. `MenuButton` resolves the selected preset once; parent layout and the global desktop transform handle subsequent resizing. There is no component scale multiplier or `Resize` call. Individual constructors can still select `textVariant`, `iconSize`, and `trailingIconSize`, or explicitly override normal widget dimensions when needed. All text variants use Abel Regular.
 
 ```csharp
@@ -67,6 +69,15 @@ Preferred screen dimensions and sidebar breakpoints live in `GameThemes.DeepDriv
 `MenuButton` icons are optional. Omit `icon` for centered text with no icon columns or spacing; set `arrow: true` explicitly if only a trailing chevron is wanted. Existing icon buttons retain their default chevron unless `arrow: false` is supplied. `tone: MenuButtonTone.Danger` uses the theme's `Danger` and `DangerHighlight` reds for explicit cancel/destructive actions, including hover/focus. Other buttons keep their normal monochrome/orange states.
 
 `Game/UI/Dialog.cs` provides the game modal container: it fills its parent with the translucent `DialogScrim`, centers its single child, consumes pointer hits outside that child, and takes keyboard focus while visible. Settings and Credits use this component so the main menu remains visible but inactive beneath the overlay.
+
+`Game/UI/ConfirmationDialog.cs` adds a reusable confirmation prompt with a title, optional live `Message`, configurable action captions, and confirm/cancel callbacks. It uses themed sizing, text-only buttons, and a red Cancel button. Add its `Overlay` to the screen's root once, call `Show()` when needed, and dispose it with the screen; the caller retains ownership of the supplied `MenuAssets`. A choice hides the prompt before invoking its action, while `Hide()` dismisses it without invoking either action. `Game/UI/Settings/DisplayConfirmation.cs` only binds this component to the display-preview countdown and Keep/Revert actions; the shared component has no display-settings dependency.
+
+```csharp
+var confirmation = new ConfirmationDialog(assets, "CONFIRM ACTION?", onConfirm, onCancel,
+    message: "Optional message", confirmText: "CONFIRM", cancelText: "CANCEL");
+root.Widgets.Add(confirmation.Overlay);
+confirmation.Show();
+```
 
 The main menu uses [Lucide](https://lucide.dev/) icons, bundled as SVG sources and 96 px PNGs in `Content/Icons/Lucide` with their license and source revision. Normal builds use the PNGs. Menu spacing and type scale with the window. Continue, New Operation, and Load Operation remain disabled while gameplay is being rebuilt.
 

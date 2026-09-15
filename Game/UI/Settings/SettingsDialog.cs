@@ -19,7 +19,7 @@ public sealed class SettingsDialog : UIScreen
     private ScrollViewer _pageScroll = null!;
     private MenuButton _back = null!;
     private Dialog _overlay = null!;
-    private DisplayConfirmationDialog _confirmation = null!;
+    private DisplayConfirmation _confirmation = null!;
     private AccessibilitySettingsPage _accessibility = null!;
     private VideoSettingsPage _video = null!;
     private AudioSettingsPage _audio = null!;
@@ -31,7 +31,6 @@ public sealed class SettingsDialog : UIScreen
     internal Widget Frame => _frame;
     internal Dialog Overlay => _overlay;
     internal MenuButton BackButton => _back;
-    internal ScrollViewer PageScroll => _pageScroll;
     internal ComboView UiScaleControl => _accessibility.ScaleControl;
     internal HorizontalSlider CrtIntensityControl => _accessibility.Crt;
     internal ComboView ResolutionControl => _video.Resolution;
@@ -39,9 +38,9 @@ public sealed class SettingsDialog : UIScreen
     internal HorizontalSlider VolumeControl => _audio.Volume;
     internal HorizontalSlider MusicVolumeControl => _audio.Music;
     internal HorizontalSlider FxVolumeControl => _audio.Fx;
-    internal Dialog DisplayConfirmation => _confirmation.Overlay;
-    internal MenuButton KeepDisplayButton => _confirmation.Keep;
-    internal MenuButton RevertDisplayButton => _confirmation.Revert;
+    internal Dialog DisplayConfirmation => _confirmation.Dialog.Overlay;
+    internal MenuButton KeepDisplayButton => _confirmation.Dialog.ConfirmButton;
+    internal MenuButton RevertDisplayButton => _confirmation.Dialog.CancelButton;
 
     protected override Widget Build()
     {
@@ -114,10 +113,10 @@ public sealed class SettingsDialog : UIScreen
         };
         AddToFrame(_back, 4);
         _overlay = new Dialog(new UIMaterialHost(_frame, interactions: MenuPresentation.FadeStyle));
-        _confirmation = new DisplayConfirmationDialog(_assets);
+        _confirmation = new DisplayConfirmation(_assets);
         var root = new Panel(styleName: "root") { Background = null };
         root.Widgets.Add(_overlay);
-        root.Widgets.Add(_confirmation.Overlay);
+        root.Widgets.Add(_confirmation.Dialog.Overlay);
         SelectPage(0);
         return root;
     }

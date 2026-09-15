@@ -74,8 +74,10 @@ internal sealed class GraphicsChecks : Microsoft.Xna.Framework.Game
         FullscreenPostProcessChecks();
         RoundedSurfaceChecks();
         SquareSurfaceChecks();
+        ProgressSurfaceChecks.Run(GraphicsDevice, _output);
         MenuButtonThemeChecks();
         DialogChecks();
+        ConfirmationDialogChecks.Run();
         DeclarativeLayoutChecks.Run();
         GlobalScaleChecks();
         SettingsBorderChecks();
@@ -714,7 +716,7 @@ internal sealed class GraphicsChecks : Microsoft.Xna.Framework.Game
     {
         using (var menu = Ui.Open<MainMenuUI>())
         {
-            menu.SettingsButton.DoClick();
+            SettingsButton(menu).DoClick();
             menu.Settings!.SelectPage(2);
             foreach (var (width, height, preference, name) in new[]
             {
@@ -758,10 +760,10 @@ internal sealed class GraphicsChecks : Microsoft.Xna.Framework.Game
                 var panelEnd = panel.ToGlobal(new Vector2(panel.Bounds.Width, panel.Bounds.Height));
                 Program.Check(Math.Abs(panelEnd.X - panelStart.X - Math.Min(1080, Ui.LayoutSize.X - GameThemes.DeepDrive.Spacing.Xl * 2) * expectedScale) <= 2,
                     "Dialog content grows with the same global scale as the rest of the UI");
-                var (_, icon, label, _) = Inspect(menu.SettingsButton);
+                var (_, icon, label, _) = Inspect(SettingsButton(menu));
                 var iconStart = icon.ToGlobal(Vector2.Zero);
                 var iconEnd = icon.ToGlobal(new Vector2(icon.Bounds.Width, icon.Bounds.Height));
-                Program.Check(menu.SettingsButton.Width == 416 && menu.SettingsButton.Height == 54,
+                Program.Check(SettingsButton(menu).Width == 416 && SettingsButton(menu).Height == 54,
                     "Main-menu buttons use compact dimensions without changing the global scale");
                 Program.Check(Math.Abs(iconEnd.X - iconStart.X - GameThemes.DeepDrive.MenuButton.Menu.IconSize * expectedScale) <= 1
                     && Math.Abs((iconEnd.X - iconStart.X) - (iconEnd.Y - iconStart.Y)) <= 1,
@@ -834,7 +836,7 @@ internal sealed class GraphicsChecks : Microsoft.Xna.Framework.Game
         }
         using (var reopened = Ui.Open<MainMenuUI>())
         {
-            reopened.SettingsButton.DoClick();
+            SettingsButton(reopened).DoClick();
             Program.Check(reopened.Settings!.UiScaleControl.SelectedIndex == 2, "New settings controls restore the saved scale");
         }
 
@@ -968,7 +970,7 @@ internal sealed class GraphicsChecks : Microsoft.Xna.Framework.Game
         var initial = DisplaySettings.Current;
         using (var menu = Ui.Open<MainMenuUI>())
         {
-            menu.SettingsButton.DoClick();
+            SettingsButton(menu).DoClick();
             Ui.Update(1);
             var dropdown = menu.Settings!.ResolutionControl;
             var sizes = DisplaySettings.Resolutions(WindowMode.Windowed);
@@ -1053,7 +1055,7 @@ internal sealed class GraphicsChecks : Microsoft.Xna.Framework.Game
         DisplaySettings.Update(0);
         using (var reopened = Ui.Open<MainMenuUI>())
         {
-            reopened.SettingsButton.DoClick();
+            SettingsButton(reopened).DoClick();
             Program.Check(DisplaySettings.Current.Resolution == new Point(1024, 768)
                 && reopened.Settings!.ResolutionControl.SelectedIndex is not null,
                 "New screens inherit and display the global resolution");
@@ -1074,7 +1076,7 @@ internal sealed class GraphicsChecks : Microsoft.Xna.Framework.Game
             Ui.Update(1);
             Program.Check(settings.Navigation.Count == 3 && settings.SelectedPage == 0,
                 "Reusable settings opens on Video with only three functional submenus");
-            ClickAt(menu.SettingsButton);
+            ClickAt(SettingsButton(menu));
             Program.Check(menu.Settings is null, "A standalone settings dialog blocks the underlying main menu");
             foreach (var index in new[] { 2, 1, 0, 1 })
             {
@@ -1179,6 +1181,15 @@ internal sealed class GraphicsChecks : Microsoft.Xna.Framework.Game
         capture.SaveAsPng(output, capture.Width, capture.Height);
     }
 
+    private static MenuButton SettingsButton(MainMenuUI menu)
+    {
+        // Inspect the rendered widget tree in tests without exposing controls through the game API.
+        var root = typeof(UIScreen).GetField("_root", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)
+            ?.GetValue(menu) as Widget ?? throw new InvalidOperationException("The menu must be open.");
+        return root.GetChildren(true).OfType<MenuButton>().Single(button =>
+            button.GetChildren(true).OfType<Label>().Any(label => label.Text == "SETTINGS"));
+    }
+
     private void ClickAt(Widget widget, Vector2? localPoint = null)
     {
         _mouse.Position = widget.ToGlobal(localPoint ?? new Vector2(widget.Bounds.Width / 2f, widget.Bounds.Height / 2f)).ToPoint();
@@ -1195,7 +1206,7 @@ internal sealed class GraphicsChecks : Microsoft.Xna.Framework.Game
         switch (_frame)
         {
             case 1:
-                _menu.SettingsButton.DoClick();
+                SettingsButton(_menu).DoClick();
                 DisplaySettings.Preview(WindowMode.BorderlessFullscreen, DisplaySettings.DesktopResolution);
                 break;
             case 2:
@@ -1208,10 +1219,10 @@ internal sealed class GraphicsChecks : Microsoft.Xna.Framework.Game
                 Ui.Update(1);
                 break;
             case 6:
-                _mouse.Position = _menu.SettingsButton.ToGlobal(new Vector2(40, 20)).ToPoint();
+                _mouse.Position = SettingsButton(_menu).ToGlobal(new Vector2(40, 20)).ToPoint();
                 break;
             case 8:
-                Program.Check(_menu.SettingsButton.IsContentHighlighted,
+                Program.Check(SettingsButton(_menu).IsContentHighlighted,
                     "Menu hover colors the button text, icon, and arrow");
                 break;
             case 10:
@@ -1219,7 +1230,7 @@ internal sealed class GraphicsChecks : Microsoft.Xna.Framework.Game
                 break;
             case 14:
                 _mouse.Position = new Point(2, 2);
-                _menu.SettingsButton.DoClick();
+                SettingsButton(_menu).DoClick();
                 _menu.Settings!.SelectPage(2);
                 break;
             case 19:

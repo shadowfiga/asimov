@@ -115,8 +115,6 @@ internal sealed class MenuButton : Button
         RefreshContentState();
     }
 
-    internal void SetText(string text) => _label.Text = text;
-
     private static int? SizeOverride(int? value, int minimum, string parameter)
     {
         if (value is not null && value < minimum)

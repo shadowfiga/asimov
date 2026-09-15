@@ -223,6 +223,7 @@ Substantially themed now:
 - modal fullscreen dialogs with a themed translucent scrim and centered child,
 - tintable PNG icons,
 - square fills and borders in all states; thin outlines remain at least one physical screen pixel at fractional UI scales, including dropdown popup lists,
+- borderless progress/volume tracks: `DeepBlack` empty track, `Selection` orange fill, no inset or outline on either the progress bar or its overlaid slider in any state,
 - global reactive viewport/UI scaling, including open dialogs and pointer hitboxes,
 - fullscreen CRT processing,
 - show/hide animation,

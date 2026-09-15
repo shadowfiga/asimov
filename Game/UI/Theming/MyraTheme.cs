@@ -127,16 +127,17 @@ public static class MyraTheme
 
     private static void Progress(ProgressBarStyle style, GameTheme theme)
     {
-        Surface(style, theme.ControlSurface, theme);
+        FlatSurface(style, Brush(theme.DeepBlack));
         style.Filler = Brush(theme.Selection);
     }
 
     private static void Slider(SliderStyle style, GameTheme theme)
     {
-        Surface(style, Color.Transparent, theme);
+        // The progress bar underneath owns the track; this layer only supplies drag input and a handle.
+        FlatSurface(style, null);
         style.Height = 20;
-        Button(style.KnobStyle, theme);
-        style.KnobStyle.Background = Brush(theme.SecondaryText);
+        FlatSurface(style.KnobStyle, Brush(theme.SecondaryText));
+        style.KnobStyle.DisabledBackground = Brush(theme.Disabled);
         style.KnobStyle.OverBackground = style.KnobStyle.FocusedBackground = Brush(theme.PrimaryText);
         style.KnobStyle.PressedBackground = Brush(theme.SelectionHighlight);
         style.KnobStyle.Width = 10;
@@ -144,5 +145,13 @@ public static class MyraTheme
         var knobImage = style.KnobStyle.ImageStyle;
         knobImage.Image = knobImage.DisabledImage = knobImage.OverImage = null;
         knobImage.FocusedImage = knobImage.PressedImage = null;
+    }
+
+    private static void FlatSurface(WidgetStyle style, IBrush? background)
+    {
+        style.Background = style.DisabledBackground = style.OverBackground = style.FocusedBackground = style.PressedBackground = background;
+        style.Border = style.DisabledBorder = style.OverBorder = style.FocusedBorder = style.PressedBorder = null;
+        style.BorderThickness = new Thickness(0);
+        style.Padding = new Thickness(0);
     }
 }
