@@ -53,6 +53,7 @@ public sealed class GameHost : Microsoft.Xna.Framework.Game
 
         Graphite.Engine.UI.UI.Initialize(this);
         PostProcessing.Initialize(GraphicsDevice);
+        EnvironmentOverlay.Initialize(GraphicsDevice, _settings.Environment);
         Application.Reset();
         var directory = PersistencePaths.ForGame(_settings.Game.Id, _settings.Environment);
         Storage.Initialize(Path.Combine(directory, "saves"));
@@ -90,6 +91,7 @@ public sealed class GameHost : Microsoft.Xna.Framework.Game
     protected override void Draw(GameTime gameTime)
     {
         PostProcessing.Render(gameTime, _clearColor, DrawFrame);
+        EnvironmentOverlay.Draw();
     }
 
     private void DrawFrame(GameTime gameTime)
@@ -110,6 +112,7 @@ public sealed class GameHost : Microsoft.Xna.Framework.Game
             }
             finally
             {
+                EnvironmentOverlay.Shutdown();
                 PostProcessing.Shutdown();
                 DisplaySettings.Shutdown();
                 Preferences.Shutdown();

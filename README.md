@@ -10,7 +10,7 @@ On macOS, double-click `Play DEEP DRIVE.command`. Alternatively, use `./run.sh` 
 
 `Game/Configuration/StagingSettings.cs` and `ProductionSettings.cs` inherit the shared `GameSettings` contract in `RuntimeSettings.cs`. Read values through `GameSettings.Instance`. Menu settings belong to the game layer; window, graphics, and runtime settings belong to the engine.
 
-Debug defaults to staging; Release defaults to production. Override with `DEEP_DRIVE_ENVIRONMENT=staging` or `production`. Rebuild after editing settings. The main menu shows the STAGING badge only in staging.
+Debug defaults to staging; Release defaults to production. Override with `DEEP_DRIVE_ENVIRONMENT=staging` or `production`. Rebuild after editing settings. A host-owned `EnvironmentOverlay` prints the active environment (STAGING or PRODUCTION) in the bottom-left corner across all scenes and dialogs. It is drawn directly after the scene/UI and CRT pass, not as a UI widget: its 18px Abel text and 16px margin stay fixed when the window or UI scale changes.
 
 Staging defaults to **2560×1440 borderless fullscreen**; production retains **1280×720 windowed**. Borderless fills the current desktop at its native resolution (1440p on a 1440p desktop); it does not change the monitor's mode. Confirmed player settings override these environment defaults on subsequent launches.
 

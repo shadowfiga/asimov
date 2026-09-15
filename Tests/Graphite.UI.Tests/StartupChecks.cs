@@ -63,6 +63,8 @@ internal static class StartupChecks
                     Program.Check(Preferences.Get(PlayerPreferences.MasterVolume) == .25f
                         && Storage.Load<Session>().PlayTimeSeconds == ExpectedTime, "Engine persistence is ready before game initialization");
                     Startup.Initialize();
+                    Program.Check(EnvironmentOverlay.IsInitialized && EnvironmentOverlay.Text == "STAGING",
+                        "The host initializes its environment print before the first scene");
                     Program.Check(DisplaySettings.Current == new DisplayConfiguration(WindowMode.Windowed, new Point(1280, 720)),
                         "Saved display settings override staging defaults before game initialization");
                     Program.Check(PostProcessing.IsActive,
@@ -77,6 +79,7 @@ internal static class StartupChecks
                 Program.Check(Constructed && Loaded && Unloaded,
                     "First scene uses persistence throughout its lifecycle");
                 Program.Check(!DisplaySettings.IsInitialized, "Display service releases the game on shutdown");
+                Program.Check(!EnvironmentOverlay.IsInitialized, "The host releases its environment renderer on shutdown");
                 Program.Check(ThemeAssets.ResolutionFontCount == 0, "Shutdown releases all resolution-specific font systems");
                 Program.Check(!PostProcessing.IsActive && PostProcessing.AllocatedTargets == 0
                     && PostProcessing.TargetSize == Point.Zero,

@@ -51,6 +51,7 @@ internal sealed class GraphicsChecks : Microsoft.Xna.Framework.Game
         base.Initialize();
         Ui.Initialize(this);
         PostProcessing.Initialize(GraphicsDevice);
+        EnvironmentOverlay.Initialize(GraphicsDevice, Graphite.Engine.Configuration.SettingsEnvironment.Staging);
         Preferences.Initialize(Path.Combine(_output, "preferences"));
         Preferences.Remove(RuntimePreferences.UiScale);
         Preferences.Remove(RuntimePreferences.Display);
@@ -66,6 +67,7 @@ internal sealed class GraphicsChecks : Microsoft.Xna.Framework.Game
         Startup.Initialize();
         MyraEnvironment.MouseInfoGetter = () => _mouse;
         Directory.CreateDirectory(_output);
+        EnvironmentOverlayChecks.Run(GraphicsDevice, _output);
         FontRenderingChecks();
         NativeAudioCheck();
         CrtShaderChecks();
@@ -1183,6 +1185,7 @@ internal sealed class GraphicsChecks : Microsoft.Xna.Framework.Game
     private void CaptureDisplay(string name)
     {
         PostProcessing.Render(new GameTime(), GameThemes.DeepDrive.Background, _ => Ui.Draw());
+        EnvironmentOverlay.Draw();
         Program.Check(PostProcessing.TargetSize == new Point(Ui.ViewportWidth, Ui.ViewportHeight),
             "Display changes resize the whole-game CRT render targets");
         var pixels = new Color[Ui.ViewportWidth * Ui.ViewportHeight];
@@ -1370,6 +1373,7 @@ internal sealed class GraphicsChecks : Microsoft.Xna.Framework.Game
                 _menu.Dispose();
                 var renderer = Ui.MaterialRenderer;
                 Ui.Shutdown();
+                EnvironmentOverlay.Shutdown();
                 PostProcessing.Shutdown();
                 DisplaySettings.Shutdown();
                 Preferences.Shutdown();
@@ -1400,6 +1404,7 @@ internal sealed class GraphicsChecks : Microsoft.Xna.Framework.Game
 
         var usage = GraphicsDevice.PresentationParameters.RenderTargetUsage;
         PostProcessing.Render(gameTime, GameThemes.DeepDrive.Background, _ => Ui.Draw());
+        EnvironmentOverlay.Draw();
         Program.Check(GraphicsDevice.GetRenderTargets().Length == 0,
             "Fullscreen rendering restores the back buffer");
         Program.Check(GraphicsDevice.PresentationParameters.RenderTargetUsage == usage,
@@ -1419,6 +1424,9 @@ internal sealed class GraphicsChecks : Microsoft.Xna.Framework.Game
             capture.SetData(pixels);
             capture.SaveAsPng(file, capture.Width, capture.Height);
             Program.Check(pixels.Any(pixel => pixel.R > 150 && pixel.G > 150), "Rendered UI retains readable text");
+            Program.Check(Enumerable.Range(Ui.ViewportHeight - 60, 60)
+                .Any(y => pixels.AsSpan(y * Ui.ViewportWidth, 200).ToArray().Any(pixel => pixel.R > 100)),
+                "The bottom-left environment print survives dialogs, scene changes, CRT, and resizing");
             if (_frame == 42)
             {
                 var rawPixels = new Color[target.Width * target.Height];

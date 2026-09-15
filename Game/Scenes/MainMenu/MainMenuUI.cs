@@ -1,7 +1,5 @@
-using Graphite.Engine.Configuration;
 using Graphite.Engine.Core;
 using Graphite.Engine.UI;
-using Graphite.Engine.UI.Theming;
 using Graphite.Game.Configuration;
 using Graphite.Game.UI;
 using Graphite.Game.UI.Materials;
@@ -25,7 +23,6 @@ public sealed class MainMenuUI : UIScreen
     private MenuButton _quitButton = null!;
     private UIMaterialHost _menu = null!;
     private MenuTitle _title = null!;
-    private Label? _staging;
     private CreditsDialog? _credits;
     internal SettingsDialog? Settings
     {
@@ -52,20 +49,7 @@ public sealed class MainMenuUI : UIScreen
         var spacing = theme.Spacing;
         _title = new MenuTitle();
         var brand = new VerticalStackPanel { Spacing = spacing.Sm };
-        brand.Widgets.Add(new Label
-        {
-            Text = "K-01 INDUSTRIES // FIELD TERMINAL",
-            Font = ThemeAssets.Font(15),
-            TextColor = theme.Selection,
-            HorizontalAlignment = HorizontalAlignment.Left
-        });
         brand.Widgets.Add(_title);
-        brand.Widgets.Add(new Label
-        {
-            Text = "RESOURCES TODAY. A BRIGHTER TOMORROW.",
-            StyleName = "secondary",
-            Font = ThemeAssets.Font(16)
-        });
         var buttons = new VerticalStackPanel { Spacing = spacing.Sm };
         AddRow(buttons, "CONTINUE", "play", enabled: false, primary: true, arrow: false);
         AddRow(buttons, "NEW OPERATION", "play", enabled: false);
@@ -90,20 +74,6 @@ public sealed class MainMenuUI : UIScreen
         }, interactions: MenuPresentation.FadeStyle);
         var root = new Panel(styleName: "root") { Background = _assets };
         root.Widgets.Add(_menu);
-        if (GameSettings.Instance.Environment == SettingsEnvironment.Staging)
-        {
-            _staging = new Label
-            {
-                Text = "STAGING",
-                Font = ThemeAssets.Font(14),
-                TextColor = theme.DeepBlack,
-                Background = new RoundedRectangleBrush(theme.Selection, theme.BorderRadius.Xs),
-                HorizontalAlignment = HorizontalAlignment.Left,
-                VerticalAlignment = VerticalAlignment.Top,
-                Padding = new Thickness(spacing.Sm, spacing.Xs)
-            };
-            root.Widgets.Add(_staging);
-        }
         Resize();
         return new UIMaterialHost(root, interactions: MenuPresentation.FadeStyle);
     }
@@ -131,10 +101,6 @@ public sealed class MainMenuUI : UIScreen
             button.Width = Math.Min((int)(520 * ButtonScale), availableWidth);
             button.Height = (int)(68 * ButtonScale);
             button.Resize(ButtonScale);
-        }
-        if (_staging is not null)
-        {
-            _staging.Margin = new Thickness(edge, spacing.Lg);
         }
     }
 
