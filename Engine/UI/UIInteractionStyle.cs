@@ -14,7 +14,10 @@ public static class UITrigger
 public sealed record UIInteractionBinding
 {
     public static UIInteractionBinding Empty { get; } = new();
-    public UIAnimation? Animation { get; init; }
+    public UIAnimation? Animation
+    {
+        get; init;
+    }
     public IReadOnlyList<UISoundCue> Sounds { get; init; } = [];
     public float SettleSeconds { get; init; } = .1f;
 
@@ -26,7 +29,10 @@ public sealed record UIInteractionBinding
         }
 
         var animation = Animation ?? new UIAnimation { Duration = .001f };
-        return animation with { Sounds = animation.Sounds.Concat(Sounds).ToArray() };
+        return animation with
+        {
+            Sounds = animation.Sounds.Concat(Sounds).ToArray()
+        };
     }
 }
 

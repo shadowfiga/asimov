@@ -6,7 +6,10 @@ namespace Graphite.Game.Sessions;
 public sealed class Session : ISaveValidatable
 {
     [SaveMember("playTimeSeconds")]
-    public double PlayTimeSeconds { get; private set; }
+    public double PlayTimeSeconds
+    {
+        get; private set;
+    }
 
     [SaveMember("clearedSectors")]
     private HashSet<string> _clearedSectors = [];

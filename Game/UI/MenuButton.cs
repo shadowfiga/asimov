@@ -9,33 +9,47 @@ namespace Graphite.Game.UI;
 internal sealed class MenuButton : Button
 {
     private readonly Label _label;
-    private readonly Image _icon;
+    private readonly Image? _icon;
     private readonly Image? _arrow;
     private readonly Grid _layout;
+    private readonly Proportion? _iconTextSpacing;
+    private readonly Proportion? _textTrailingIconSpacing;
     private readonly MenuButtonTokens _tokens;
     private readonly int _fontSize;
     private readonly int _minimumFontSize;
     private readonly int _iconSize;
     private readonly int _trailingIconSize;
-    private readonly (IImage Normal, IImage Highlight, IImage Pressed, IImage Disabled) _iconImages;
+    private readonly Color _normalTextColor;
+    private readonly Color _highlightColor;
+    private readonly (IImage Normal, IImage Highlight, IImage Pressed, IImage Disabled)? _iconImages;
     private readonly (IImage Normal, IImage Highlight, IImage Pressed, IImage Disabled)? _arrowImages;
 
     internal bool IsContentHighlighted
-        => _label.TextColor == GameThemes.DeepDrive.SelectionHighlight &&
-           ReferenceEquals(_icon.Renderable, _iconImages.Highlight) &&
+        => _label.TextColor == _highlightColor &&
+           (_icon is null || ReferenceEquals(_icon.Renderable, _iconImages!.Value.Highlight)) &&
            (_arrow is null || ReferenceEquals(_arrow.Renderable, _arrowImages!.Value.Highlight));
 
     internal MenuButton(
         MenuAssets assets,
         string text,
-        string icon,
+        string? icon = null,
         bool primary = false,
-        bool arrow = true,
+        bool? arrow = null,
         MenuButtonTextVariant textVariant = MenuButtonTextVariant.Default,
         int? iconSize = null,
-        int? trailingIconSize = null)
+        int? trailingIconSize = null,
+        MenuButtonTone tone = MenuButtonTone.Default)
     {
         var theme = GameThemes.DeepDrive;
+        if (!Enum.IsDefined(tone))
+        {
+            throw new ArgumentOutOfRangeException(nameof(tone));
+        }
+        var danger = tone == MenuButtonTone.Danger;
+        var accent = danger ? theme.Danger : theme.Selection;
+        _normalTextColor = danger ? theme.Danger : theme.SecondaryText;
+        _highlightColor = danger ? theme.DangerHighlight : theme.SelectionHighlight;
+        var showArrow = arrow ?? icon is not null;
         _tokens = theme.MenuButton;
         _fontSize = _tokens.FontSize(textVariant);
         _minimumFontSize = _tokens.MinimumFontSize(textVariant);
@@ -45,15 +59,15 @@ internal sealed class MenuButton : Button
             _tokens.MinimumTrailingIconSize,
             nameof(trailingIconSize)) ?? _tokens.TrailingIconSize;
         var radius = theme.BorderRadius.Xs;
-        var fill = primary ? Color.Lerp(theme.ControlSurface, theme.Selection, .09f) : theme.DeepBlack;
-        var border = primary ? theme.Selection : theme.Border;
+        var fill = primary || danger ? Color.Lerp(theme.ControlSurface, accent, .09f) : theme.DeepBlack;
+        var border = primary || danger ? accent : theme.Border;
         Background = new RoundedRectangleBrush(fill, radius, border, 1);
         DisabledBackground = new RoundedRectangleBrush(theme.DeepBlack, radius, theme.Border, 1);
         OverBackground = new RoundedRectangleBrush(
-            Color.Lerp(theme.ControlSurface, theme.Selection, .16f), radius, theme.SelectionHighlight, 2);
+            Color.Lerp(theme.ControlSurface, accent, .16f), radius, _highlightColor, 2);
         FocusedBackground = new RoundedRectangleBrush(
-            Color.Lerp(theme.ControlSurface, theme.Selection, .1f), radius, theme.SelectionHighlight, 2);
-        PressedBackground = new RoundedRectangleBrush(theme.Selection, radius, theme.SelectionHighlight, 1);
+            Color.Lerp(theme.ControlSurface, accent, .1f), radius, _highlightColor, 2);
+        PressedBackground = new RoundedRectangleBrush(accent, radius, _highlightColor, 1);
         Border = OverBorder = FocusedBorder = PressedBorder = DisabledBorder = null;
         BorderThickness = new Thickness(theme.BorderRadius.Zero);
 
@@ -63,32 +77,39 @@ internal sealed class MenuButton : Button
             HorizontalAlignment = HorizontalAlignment.Stretch,
             VerticalAlignment = VerticalAlignment.Stretch
         };
-        _layout.ColumnsProportions.Add(Proportion.Auto);
+        if (icon is not null)
+        {
+            _layout.ColumnsProportions.Add(Proportion.Auto);
+            _iconTextSpacing = new Proportion(ProportionType.Pixels, _tokens.IconTextSpacing);
+            _layout.ColumnsProportions.Add(_iconTextSpacing);
+            _icon = assets.Icon(icon, _iconSize, _normalTextColor, _highlightColor);
+            _iconImages = IconImages(_icon);
+            _layout.Widgets.Add(_icon);
+        }
         _layout.ColumnsProportions.Add(new Proportion(ProportionType.Fill));
         _layout.RowsProportions.Add(new Proportion(ProportionType.Fill));
-        _icon = assets.Icon(icon, _iconSize, theme.SecondaryText);
-        _iconImages = IconImages(_icon);
-        _layout.Widgets.Add(_icon);
         _label = new Label
         {
             Text = text,
             Font = ThemeAssets.Font(_fontSize),
-            TextColor = theme.SecondaryText,
+            TextColor = _normalTextColor,
             DisabledTextColor = theme.Disabled,
-            OverTextColor = theme.SelectionHighlight,
-            FocusedTextColor = theme.SelectionHighlight,
+            OverTextColor = _highlightColor,
+            FocusedTextColor = _highlightColor,
             PressedTextColor = theme.DeepBlack,
-            HorizontalAlignment = HorizontalAlignment.Left,
+            HorizontalAlignment = icon is null && !showArrow ? HorizontalAlignment.Center : HorizontalAlignment.Left,
             VerticalAlignment = VerticalAlignment.Center
         };
-        Grid.SetColumn(_label, 1);
+        Grid.SetColumn(_label, _layout.ColumnsProportions.Count - 1);
         _layout.Widgets.Add(_label);
-        if (arrow)
+        if (showArrow)
         {
+            _textTrailingIconSpacing = new Proportion(ProportionType.Pixels, _tokens.TextTrailingIconSpacing);
+            _layout.ColumnsProportions.Add(_textTrailingIconSpacing);
             _layout.ColumnsProportions.Add(Proportion.Auto);
-            _arrow = assets.Icon("chevron-right", _trailingIconSize, theme.Disabled);
+            _arrow = assets.Icon("chevron-right", _trailingIconSize, danger ? theme.Danger : theme.Disabled, _highlightColor);
             _arrowImages = IconImages(_arrow);
-            Grid.SetColumn(_arrow, 2);
+            Grid.SetColumn(_arrow, _layout.ColumnsProportions.Count - 1);
             _layout.Widgets.Add(_arrow);
         }
 
@@ -112,12 +133,18 @@ internal sealed class MenuButton : Button
         var horizontalPadding = ScaleSpacing(_tokens.HorizontalPadding, scale);
         var verticalPadding = ScaleSpacing(_tokens.VerticalPadding, scale);
         _layout.Padding = new Thickness(horizontalPadding, verticalPadding);
-        _icon.Margin = new Thickness(0, 0, ScaleSpacing(_tokens.IconTextSpacing, scale), 0);
+        if (_iconTextSpacing is not null)
+        {
+            _iconTextSpacing.Value = ScaleSpacing(_tokens.IconTextSpacing, scale);
+        }
         _label.Font = ThemeAssets.Font(ScaleDimension(_fontSize, _minimumFontSize, scale));
-        _icon.Width = _icon.Height = ScaleDimension(_iconSize, _tokens.MinimumIconSize, scale);
+        if (_icon is not null)
+        {
+            _icon.Width = _icon.Height = ScaleDimension(_iconSize, _tokens.MinimumIconSize, scale);
+        }
         if (_arrow is not null)
         {
-            _arrow.Margin = new Thickness(ScaleSpacing(_tokens.TextTrailingIconSpacing, scale), 0, 0, 0);
+            _textTrailingIconSpacing!.Value = ScaleSpacing(_tokens.TextTrailingIconSpacing, scale);
             _arrow.Width = _arrow.Height = ScaleDimension(_trailingIconSize, _tokens.MinimumTrailingIconSize, scale);
         }
     }
@@ -162,9 +189,12 @@ internal sealed class MenuButton : Button
             : IsPressed
                 ? theme.DeepBlack
                 : highlighted
-                    ? theme.SelectionHighlight
-                    : theme.SecondaryText;
-        _icon.Renderable = Select(_iconImages, highlighted);
+                    ? _highlightColor
+                    : _normalTextColor;
+        if (_icon is not null && _iconImages is { } iconImages)
+        {
+            _icon.Renderable = Select(iconImages, highlighted);
+        }
         if (_arrow is not null && _arrowImages is { } arrowImages)
         {
             _arrow.Renderable = Select(arrowImages, highlighted);

@@ -51,6 +51,27 @@ public static class MyraTheme
         Text(styles.ComboBoxStyle.LabelStyle, theme);
         Surface(styles.ComboBoxStyle.ListBoxStyle, theme.RaisedSurface, theme);
         Button(styles.ComboBoxStyle.ListBoxStyle.ListItemStyle, theme);
+        var scaleSelector = new ComboBoxStyle(styles.ComboBoxStyle)
+        {
+            Padding = new Thickness(theme.Spacing.Md, 0)
+        };
+        scaleSelector.PressedBackground = scaleSelector.OverBackground;
+        scaleSelector.ListBoxStyle = new ListBoxStyle(styles.ComboBoxStyle.ListBoxStyle)
+        {
+            Padding = new Thickness(theme.Spacing.Xs),
+            ListItemStyle = new ButtonStyle(styles.ComboBoxStyle.ListBoxStyle.ListItemStyle)
+            {
+                Height = 32,
+                Padding = new Thickness(theme.Spacing.Sm, theme.Spacing.Xs),
+                Background = Brush(Color.Transparent),
+                DisabledBackground = Brush(Color.Transparent),
+                OverBackground = new RoundedRectangleBrush(
+                    Color.Lerp(theme.ControlSurface, theme.Selection, .1f), theme.BorderRadius.Xs)
+            }
+        };
+        scaleSelector.ListBoxStyle.ListItemStyle.PressedBackground = new RoundedRectangleBrush(
+            Color.Lerp(theme.ControlSurface, theme.Selection, .16f), theme.BorderRadius.Xs, theme.SelectionHighlight, 1);
+        styles.ComboBoxStyles["settings-dropdown"] = scaleSelector;
         Button(styles.TabControlStyle.TabItemStyle, theme);
         Text(styles.TabControlStyle.TabItemStyle.LabelStyle, theme);
         Surface(styles.TabControlStyle.ContentStyle, theme.RaisedSurface, theme);
@@ -112,12 +133,7 @@ public static class MyraTheme
 
     private static void Slider(SliderStyle style, GameTheme theme)
     {
-        var transparent = Brush(Color.Transparent);
-        style.Background = style.DisabledBackground = transparent;
-        style.OverBackground = style.FocusedBackground = style.PressedBackground = transparent;
-        style.Border = style.DisabledBorder = style.OverBorder = style.PressedBorder = Brush(theme.Border);
-        style.FocusedBorder = Brush(theme.SelectionHighlight);
-        style.BorderThickness = new Thickness(1);
+        Surface(style, Color.Transparent, theme);
         style.Height = 20;
         Button(style.KnobStyle, theme);
         style.KnobStyle.Background = Brush(theme.SecondaryText);

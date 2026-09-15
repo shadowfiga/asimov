@@ -24,7 +24,7 @@ internal sealed class MenuAssets : IBrush, IDisposable
         return texture;
     }
 
-    internal Image Icon(string name, int size, Color color)
+    internal Image Icon(string name, int size, Color color, Color? highlightColor = null)
     {
         var region = new TextureRegion(Texture(Path.Combine("Icons", "Lucide", $"{name}.png")));
         var theme = GameThemes.DeepDrive;
@@ -32,8 +32,8 @@ internal sealed class MenuAssets : IBrush, IDisposable
         {
             Renderable = new TintedRegion(region, color),
             DisabledRenderable = new TintedRegion(region, theme.Disabled),
-            OverRenderable = new TintedRegion(region, theme.SelectionHighlight),
-            FocusedRenderable = new TintedRegion(region, theme.SelectionHighlight),
+            OverRenderable = new TintedRegion(region, highlightColor ?? theme.SelectionHighlight),
+            FocusedRenderable = new TintedRegion(region, highlightColor ?? theme.SelectionHighlight),
             PressedRenderable = new TintedRegion(region, theme.DeepBlack),
             Width = size,
             Height = size,

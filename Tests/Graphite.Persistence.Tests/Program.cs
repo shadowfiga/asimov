@@ -74,7 +74,8 @@ internal static class Program
         Throws<NotSupportedException>(() => serializer.Serialize(new Dictionary<int, string> { [1] = "value" }));
         Throws<NotSupportedException>(() => serializer.Serialize<BaseFixture>(new DerivedFixture()));
         Throws<NotSupportedException>(() => serializer.Serialize(new List<BaseFixture> { new DerivedFixture() }));
-        var cycle = new Cycle(); cycle.Next = cycle;
+        var cycle = new Cycle();
+        cycle.Next = cycle;
         Throws<JsonException>(() => serializer.Serialize(cycle));
         Throws<InvalidDataException>(() => serializer.Deserialize<Fixture>("{\"score\":-1}"u8));
         Throws<InvalidDataException>(() => serializer.Deserialize<GuardedProperty>("{\"value\":-1}"u8));
@@ -92,7 +93,8 @@ internal static class Program
         Check((Storage.TryLoad<Fixture>(id)).Status == SaveStatus.NotFound, "Missing save is distinct");
         Check((Storage.ListSlots<Fixture>()).Count == 0, "An empty store lists no slots");
         Throws<FileNotFoundException>(() => Storage.Load<Fixture>(id));
-        var value = new Fixture(); value.SetScore(5);
+        var value = new Fixture();
+        value.SetScore(5);
         var first = Storage.Save(value, id, "Coast");
         Check(first.Name == "Coast", "Slot metadata is written");
         value.SetScore(8);
@@ -126,7 +128,8 @@ internal static class Program
         Storage.Delete(id);
         Check(Storage.TryLoad<Fixture>(id).Status == SaveStatus.NotFound, "Delete removes primary and backup");
         Storage.Delete(id);
-        var blocked = Path.Combine(root, "not-a-directory"); File.WriteAllText(blocked, "x");
+        var blocked = Path.Combine(root, "not-a-directory");
+        File.WriteAllText(blocked, "x");
         Storage.Initialize(blocked);
         Throws<IOException>(() => Storage.Save(value));
         Storage.Initialize(root);
@@ -154,7 +157,9 @@ internal static class Program
         Check(Storage.TryLoad<Profile>(id).Status == SaveStatus.Incompatible, "Missing migration is incompatible");
         var migration = new SaveMigration("test.profile", 1, data =>
         {
-            data["displayName"] = data["oldName"]!.DeepClone(); data.Remove("oldName"); return data;
+            data["displayName"] = data["oldName"]!.DeepClone();
+            data.Remove("oldName");
+            return data;
         });
         Storage.RegisterMigration(migration);
         Check(Storage.Load<Profile>(id).DisplayName == "Ada", "Migrations run before deserialization");
@@ -173,7 +178,8 @@ internal static class Program
     private static void InterruptedWrites(string root)
     {
         Storage.Initialize(root);
-        var source = new Fixture(); source.SetScore(1);
+        var source = new Fixture();
+        source.SetScore(1);
         Storage.Save(source);
         source.SetScore(2);
         var path = Path.Combine(root, "default.json");
@@ -191,12 +197,63 @@ internal static class Program
     private static void PreferenceChecks(string root)
     {
         var volume = PlayerPreferences.MasterVolume;
-        var muted = PlayerPreferences.Muted;
+        var muted = new PreferenceKey<bool>("fixture.boolean", false);
+        var music = PlayerPreferences.MusicVolume;
+        var fx = PlayerPreferences.FxVolume;
         Check(Preferences.Initialize(root).Status == SaveStatus.NotFound && Preferences.Get(volume) == 1, "Missing preferences use typed defaults");
         Check(Preferences.Get(PlayerPreferences.CrtIntensity) == 1f, "Display preferences default to full aged CRT");
+        Check(Preferences.Get(music) == 1 && Preferences.Get(fx) == 1, "Music and FX default to full volume");
+        Preferences.Set(music, .3f);
+        Preferences.Set(fx, .6f);
+        foreach (var key in new[] { music, fx })
+        {
+            Throws<ArgumentOutOfRangeException>(() => Preferences.Set(key, -1f));
+            Throws<ArgumentOutOfRangeException>(() => Preferences.Set(key, 2f));
+            Throws<ArgumentOutOfRangeException>(() => Preferences.Set(key, float.NaN));
+        }
+        Check(Preferences.Get(RuntimePreferences.UiScale) == 1f, "Engine UI scale defaults to 100 percent");
+        Check(RuntimePreferences.UiScaleOptions.SequenceEqual(new[] { .75f, 1f, 1.25f, 1.5f, 1.75f }),
+            "UI scale supports exactly the five requested presets");
+        foreach (var scale in RuntimePreferences.UiScaleOptions)
+        {
+            Preferences.Set(RuntimePreferences.UiScale, scale);
+            Check(Preferences.Get(RuntimePreferences.UiScale) == scale, "Every UI-scale preset is accepted");
+        }
+        foreach (var scale in new[] { .5f, .74f, 1.1f, 1.76f, 2f })
+        {
+            Throws<ArgumentOutOfRangeException>(() => Preferences.Set(RuntimePreferences.UiScale, scale));
+        }
+        foreach (var (legacy, expected) in new[] { (.5f, .75f), (2f, 1.75f), (1.31f, 1.25f), (1.375f, 1.5f) })
+        {
+            Preferences.Set(RuntimePreferences.UiScale.Name, legacy);
+            Preferences.Initialize(root);
+            Check(RuntimePreferences.GetUiScale() == expected, "Legacy UI scale clamps and snaps to the nearest preset");
+            Preferences.Initialize(root);
+            Check(Preferences.Get(RuntimePreferences.UiScale) == expected, "Normalized UI scale is saved across reloads");
+        }
+        Check(Preferences.Get(RuntimePreferences.Display) == "", "Display defaults come from the selected environment");
+        Preferences.Set(RuntimePreferences.Display, "BorderlessFullscreen:2560x1440");
+        Throws<ArgumentOutOfRangeException>(() => Preferences.Set(RuntimePreferences.Display, "Unknown:2560x1440"));
+        Throws<ArgumentOutOfRangeException>(() => Preferences.Set(RuntimePreferences.Display, "Windowed:0x720"));
+        Throws<ArgumentOutOfRangeException>(() => Preferences.Set(RuntimePreferences.Display, "Fullscreen:1920x-1"));
+        Throws<ArgumentOutOfRangeException>(() => Preferences.Set(RuntimePreferences.Display, "Windowed:1920x1080:extra"));
+        var staging = new StagingSettings().Window;
+        Check(staging.Width == 2560 && staging.Height == 1440 && staging.Fullscreen && staging.Borderless,
+            "Staging defaults to 1440p borderless fullscreen");
+        var production = new ProductionSettings().Window;
+        Check(production.Width == 1280 && production.Height == 720 && !production.Fullscreen,
+            "Production retains its original windowed defaults");
+        Preferences.Set(RuntimePreferences.UiScale, 1.25f);
+        Throws<ArgumentOutOfRangeException>(() => Preferences.Set(RuntimePreferences.UiScale, 0f));
+        Throws<ArgumentOutOfRangeException>(() => Preferences.Set(RuntimePreferences.UiScale, 2.1f));
+        Throws<ArgumentOutOfRangeException>(() => Preferences.Set(RuntimePreferences.UiScale, float.NaN));
         Preferences.Set(PlayerPreferences.CrtIntensity, .35f);
         Preferences.Initialize(root);
         Check(Preferences.Get(PlayerPreferences.CrtIntensity) == .35f, "CRT intensity persists immediately");
+        Check(Preferences.Get(music) == .3f && Preferences.Get(fx) == .6f, "Music and FX volume persist independently");
+        Check(Preferences.Get(RuntimePreferences.UiScale) == 1.25f, "Engine UI scale persists across reloads");
+        Check(Preferences.Get(RuntimePreferences.Display) == "BorderlessFullscreen:2560x1440",
+            "Display mode and resolution persist together across reloads");
         Check(Preferences.Get<string>("name") == "" && Preferences.Get<int>("quality") == 0
             && !Preferences.Get<bool>("muted") && Preferences.Get<float>("scale") == 0f
             && Preferences.Get<long>("count") == 0L && Preferences.Get<double>("time") == 0d, "String keys have correctly typed defaults");
@@ -281,7 +338,8 @@ internal static class Program
 
     private static void Rewrite(string path, Action<JsonObject> edit, bool updateChecksum = false)
     {
-        var node = JsonNode.Parse(File.ReadAllText(path))!.AsObject(); edit(node);
+        var node = JsonNode.Parse(File.ReadAllText(path))!.AsObject();
+        edit(node);
         if (updateChecksum)
         {
             node["Checksum"] = Convert.ToHexString(SHA256.HashData(JsonSerializer.SerializeToUtf8Bytes(node["Data"])));
@@ -293,17 +351,35 @@ internal static class Program
     private static void Check(bool condition, string message)
     {
         _checks++;
-        if (!condition) { throw new InvalidOperationException(message); }
+        if (!condition)
+        {
+            throw new InvalidOperationException(message);
+        }
     }
     private static void Throws<T>(Action action) where T : Exception
     {
-        try { action(); } catch (T) { _checks++; return; }
+        try
+        {
+            action();
+        }
+        catch (T)
+        {
+            _checks++;
+            return;
+        }
         throw new InvalidOperationException($"Expected {typeof(T).Name}.");
     }
     private static void ThrowsFileFailure(Action action)
     {
-        try { action(); }
-        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException) { _checks++; return; }
+        try
+        {
+            action();
+        }
+        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
+        {
+            _checks++;
+            return;
+        }
         throw new InvalidOperationException("Expected a file-system failure.");
     }
     [SaveContract("test.fixture")]
@@ -318,36 +394,87 @@ internal static class Program
         [SaveMember("array")] public int[] Array { get; private set; } = [];
         [SaveMember("readOnly")] public IReadOnlyList<string> ReadOnly { get; private set; } = [];
         public void SetScore(int value) => _score = value;
-        public void Validate() { if (_score < 0) { throw new InvalidDataException("Score cannot be negative."); } }
+        public void Validate()
+        {
+            if (_score < 0)
+            {
+                throw new InvalidDataException("Score cannot be negative.");
+            }
+        }
     }
     [SaveContract("test.item")]
     private sealed class Item
     {
         [SaveMember("name")] public string Name { get; set; } = "";
-        [SaveMember("amount")] public int Amount { get; set; }
+        [SaveMember("amount")]
+        public int Amount
+        {
+            get; set;
+        }
     }
     [SaveContract("test.fixture")]
-    private sealed class RenamedFixture { [SaveMember("score")] public int Points { get; private set; } }
+    private sealed class RenamedFixture
+    {
+        [SaveMember("score")]
+        public int Points
+        {
+            get; private set;
+        }
+    }
     [SaveContract("test.unsupported")]
-    private sealed class UnsupportedFixture { [SaveMember("callback")] public Action Callback { get; set; } = () => { }; }
+    private sealed class UnsupportedFixture
+    {
+        [SaveMember("callback")] public Action Callback { get; set; } = () => { };
+    }
     [SaveContract("test.duplicate")]
     private sealed class DuplicateNames
     {
-        [SaveMember("value")] public int First { get; set; }
-        [SaveMember("value")] public int Second { get; set; }
+        [SaveMember("value")]
+        public int First
+        {
+            get; set;
+        }
+        [SaveMember("value")]
+        public int Second
+        {
+            get; set;
+        }
     }
     [SaveContract("test.readonly")]
-    private sealed class ReadonlyFixture { [SaveMember("value")] public readonly int Value = 1; }
+    private sealed class ReadonlyFixture
+    {
+        [SaveMember("value")] public readonly int Value = 1;
+    }
     [SaveContract("test.base")]
-    private class BaseFixture { [SaveMember("value")] public int Value { get; set; } }
+    private class BaseFixture
+    {
+        [SaveMember("value")]
+        public int Value
+        {
+            get; set;
+        }
+    }
     [SaveContract("test.derived")]
     private sealed class DerivedFixture : BaseFixture;
     [SaveContract("test.cycle")]
-    private sealed class Cycle { [SaveMember("next")] public Cycle? Next { get; set; } }
+    private sealed class Cycle
+    {
+        [SaveMember("next")]
+        public Cycle? Next
+        {
+            get; set;
+        }
+    }
     [SaveContract("test.profile", Version = 1)]
-    private sealed class OldProfile { [SaveMember("oldName")] public string Name { get; set; } = ""; }
+    private sealed class OldProfile
+    {
+        [SaveMember("oldName")] public string Name { get; set; } = "";
+    }
     [SaveContract("test.profile", Version = 2)]
-    private sealed class Profile { [SaveMember("displayName")] public string DisplayName { get; set; } = ""; }
+    private sealed class Profile
+    {
+        [SaveMember("displayName")] public string DisplayName { get; set; } = "";
+    }
     [SaveContract("test.guard")]
     private sealed class GuardedProperty
     {
@@ -371,7 +498,8 @@ internal static class Program
     {
         public override Coordinate Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
         {
-            var parts = reader.GetString()!.Split(','); return new(int.Parse(parts[0]), int.Parse(parts[1]));
+            var parts = reader.GetString()!.Split(',');
+            return new(int.Parse(parts[0]), int.Parse(parts[1]));
         }
         public override void Write(Utf8JsonWriter writer, Coordinate value, JsonSerializerOptions options)
             => writer.WriteStringValue($"{value.X},{value.Y}");

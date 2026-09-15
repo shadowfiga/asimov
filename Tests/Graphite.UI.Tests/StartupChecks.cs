@@ -8,16 +8,32 @@ using Graphite.Game.Configuration;
 using Graphite.Game.Graphics;
 using Graphite.Game.Sessions;
 using Microsoft.Xna.Framework;
+using Graphite.Game.UI.Theming;
 
 namespace Graphite.UI.Tests;
 
 internal static class StartupChecks
 {
-    internal static bool Configured { get; private set; }
-    internal static bool Constructed { get; set; }
-    internal static bool Loaded { get; set; }
-    internal static bool Unloaded { get; set; }
-    internal static double ExpectedTime { get; private set; }
+    internal static bool Configured
+    {
+        get; private set;
+    }
+    internal static bool Constructed
+    {
+        get; set;
+    }
+    internal static bool Loaded
+    {
+        get; set;
+    }
+    internal static bool Unloaded
+    {
+        get; set;
+    }
+    internal static double ExpectedTime
+    {
+        get; private set;
+    }
 
     public static void Run()
     {
@@ -27,7 +43,11 @@ internal static class StartupChecks
         {
             Preferences.Initialize(root);
             Preferences.Set(PlayerPreferences.MasterVolume, .25f);
+            Preferences.Set(PlayerPreferences.MusicVolume, .4f);
+            Preferences.Set(PlayerPreferences.FxVolume, .6f);
             Preferences.Set(PlayerPreferences.CrtIntensity, .35f);
+            Preferences.Set(RuntimePreferences.UiScale, 1.25f);
+            Preferences.Set(RuntimePreferences.Display, "Windowed:1280x720");
             Storage.Initialize(Path.Combine(root, "saves"));
             var session = new Session();
             session.AddPlayTime(12);
@@ -43,6 +63,8 @@ internal static class StartupChecks
                     Program.Check(Preferences.Get(PlayerPreferences.MasterVolume) == .25f
                         && Storage.Load<Session>().PlayTimeSeconds == ExpectedTime, "Engine persistence is ready before game initialization");
                     Startup.Initialize();
+                    Program.Check(DisplaySettings.Current == new DisplayConfiguration(WindowMode.Windowed, new Point(1280, 720)),
+                        "Saved display settings override staging defaults before game initialization");
                     Program.Check(PostProcessing.IsActive,
                         "Game startup installs the global CRT before the first scene");
                     Program.Near(PostProcessing.Parameters.Get(CrtFilter.Scanlines), .035f,
@@ -54,12 +76,22 @@ internal static class StartupChecks
                 }
                 Program.Check(Constructed && Loaded && Unloaded,
                     "First scene uses persistence throughout its lifecycle");
+                Program.Check(!DisplaySettings.IsInitialized, "Display service releases the game on shutdown");
+                Program.Check(ThemeAssets.ResolutionFontCount == 0, "Shutdown releases all resolution-specific font systems");
                 Program.Check(!PostProcessing.IsActive && PostProcessing.AllocatedTargets == 0
                     && PostProcessing.TargetSize == Point.Zero,
                     "Game shutdown releases the global CRT and its frame targets");
-                try { Storage.Load<Session>(); throw new Exception("Storage was not shut down"); }
+                try
+                {
+                    Storage.Load<Session>();
+                    throw new Exception("Storage was not shut down");
+                }
                 catch (InvalidOperationException) { }
-                try { Preferences.Get(PlayerPreferences.MasterVolume); throw new Exception("Preferences were not shut down"); }
+                try
+                {
+                    Preferences.Get(PlayerPreferences.MasterVolume);
+                    throw new Exception("Preferences were not shut down");
+                }
                 catch (InvalidOperationException) { }
             }
         }
@@ -68,7 +100,10 @@ internal static class StartupChecks
             Preferences.Shutdown();
             Storage.Shutdown();
             var directory = Path.GetDirectoryName(root)!;
-            if (Directory.Exists(directory)) { Directory.Delete(directory, recursive: true); }
+            if (Directory.Exists(directory))
+            {
+                Directory.Delete(directory, recursive: true);
+            }
         }
     }
 
@@ -76,7 +111,10 @@ internal static class StartupChecks
     {
         private readonly StagingSettings _defaults = new();
         public override SettingsEnvironment Environment => SettingsEnvironment.Staging;
-        public override GameIdentitySettings Game { get; } = new()
+        public override GameIdentitySettings Game
+        {
+            get;
+        } = new()
         {
             Id = id,
             Name = "Startup checks",
@@ -96,8 +134,12 @@ public sealed class StartupProbeScene : Scene
         Program.Check(StartupChecks.Configured && Preferences.Get(PlayerPreferences.MasterVolume) == .25f
             && Storage.Load<Session>().PlayTimeSeconds == StartupChecks.ExpectedTime,
             "All initialization finishes before the first scene is constructed");
-        Program.Near(Graphite.Engine.UI.UI.Audio.Volume, .25f, "Loaded audio preferences apply before the first scene");
+        Program.Near(Microsoft.Xna.Framework.Audio.SoundEffect.MasterVolume, .15f, "Loaded master and FX apply before the first scene");
+        Program.Near(Microsoft.Xna.Framework.Media.MediaPlayer.Volume, .1f, "Loaded master and music apply before the first scene");
         Program.Check(PostProcessing.IsActive, "Global CRT is available when the first scene is constructed");
+        Program.Near(Graphite.Engine.UI.UI.Scale,
+            Math.Min(Graphite.Engine.UI.UI.ViewportWidth / 1600f, Graphite.Engine.UI.UI.ViewportHeight / 900f) * 1.25f,
+            "Engine restores global UI scale before constructing the first scene");
         StartupChecks.Constructed = true;
     }
 

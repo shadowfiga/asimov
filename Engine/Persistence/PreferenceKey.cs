@@ -2,9 +2,18 @@ namespace Graphite.Engine.Persistence;
 
 public sealed class PreferenceKey<T>
 {
-    public string Name { get; }
-    public T DefaultValue { get; }
-    internal string TypeTag { get; }
+    public string Name
+    {
+        get;
+    }
+    public T DefaultValue
+    {
+        get;
+    }
+    internal string TypeTag
+    {
+        get;
+    }
     private readonly Func<T, bool> _validate;
 
     public PreferenceKey(string name, T defaultValue, Func<T, bool>? validate = null)

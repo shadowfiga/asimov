@@ -125,7 +125,10 @@ public static class Storage
         }
 
         var backup = ReadValue<T>(filename + ".bak", slotId, contract);
-        return backup.IsSuccess ? backup with { RecoveredFromBackup = true }
+        return backup.IsSuccess ? backup with
+        {
+            RecoveredFromBackup = true
+        }
             : backup.Status == SaveStatus.NotFound ? result : backup;
     }
 
@@ -188,7 +191,10 @@ public static class Storage
             }
 
             var document = StoredDocument.Read(Files, Filename(id) + (result.RecoveredFromBackup ? ".bak" : ""));
-            slots.Add(document.Value is { } value ? Info(value, result.Status, result.RecoveredFromBackup) with { Id = id }
+            slots.Add(document.Value is { } value ? Info(value, result.Status, result.RecoveredFromBackup) with
+            {
+                Id = id
+            }
                 : new SaveSlotInfo(id, "", null, null, 0, result.Status));
         }
 

@@ -6,10 +6,16 @@ public abstract class UIScreen : IDisposable
 {
     private Widget? _root;
     private Task<Animation.UIPlaybackState>[] _exits = [];
-    public bool IsClosing { get; private set; }
+    public bool IsClosing
+    {
+        get; private set;
+    }
     internal event Action<UIScreen>? Closed;
 
-    public bool IsOpen { get; private set; }
+    public bool IsOpen
+    {
+        get; private set;
+    }
 
     protected abstract Widget Build();
 
@@ -43,7 +49,11 @@ public abstract class UIScreen : IDisposable
             return;
         }
 
-        if (immediate) { CompleteClose(); return; }
+        if (immediate)
+        {
+            CompleteClose();
+            return;
+        }
         if (IsClosing)
         {
             return;
@@ -81,13 +91,19 @@ public abstract class UIScreen : IDisposable
         finally
         {
             ReleaseRoot();
-            IsOpen = false; IsClosing = false; _exits = [];
+            IsOpen = false;
+            IsClosing = false;
+            _exits = [];
             Closed?.Invoke(this);
         }
     }
 
-    protected virtual void Awake() { }
-    protected virtual void OnDestroy() { }
+    protected virtual void Awake()
+    {
+    }
+    protected virtual void OnDestroy()
+    {
+    }
 
     public void Dispose() => CloseInternal(true);
 

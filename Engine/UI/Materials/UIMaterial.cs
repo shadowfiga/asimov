@@ -35,7 +35,9 @@ public abstract class UIMaterialInstance : IDisposable
 {
     public virtual bool IsActive(UIParameters parameters) => true;
     public abstract void Render(UIMaterialContext context);
-    public virtual void Dispose() { }
+    public virtual void Dispose()
+    {
+    }
 }
 
 /// <summary>A single pass; Source and Destination are always distinct.</summary>
@@ -57,8 +59,14 @@ public sealed class UIMaterialContext(
         GraphicsDevice.Clear(Color.Transparent);
         SpriteBatch.Begin(SpriteSortMode.Immediate, BlendState.AlphaBlend, SamplerState.LinearClamp,
             DepthStencilState.None, RasterizerState.CullNone, effect);
-        try { SpriteBatch.Draw(Source, Destination.Bounds, Color.White); }
-        finally { SpriteBatch.End(); }
+        try
+        {
+            SpriteBatch.Draw(Source, Destination.Bounds, Color.White);
+        }
+        finally
+        {
+            SpriteBatch.End();
+        }
     }
 }
 

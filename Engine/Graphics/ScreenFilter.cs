@@ -39,7 +39,9 @@ public abstract class ScreenFilterInstance : IDisposable
 {
     public virtual bool IsActive(ScreenFilterParameters parameters) => true;
     public abstract void Render(ScreenFilterContext context);
-    public virtual void Dispose() { }
+    public virtual void Dispose()
+    {
+    }
 }
 
 /// <summary>A single full-screen pass whose source and destination are always distinct.</summary>

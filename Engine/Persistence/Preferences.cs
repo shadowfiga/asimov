@@ -9,6 +9,11 @@ public static class Preferences
     private const string ContractId = "graphite.preferences";
     private static AtomicFileStorage? _storage;
     private static Dictionary<string, Entry> _values = [];
+    internal static bool IsInitialized => _storage is not null;
+    internal static long Revision
+    {
+        get; private set;
+    }
     private static AtomicFileStorage Files => _storage ?? throw new InvalidOperationException("Preferences are not initialized. Start the game host first.");
     public static string FilePath => Files.PathFor(Filename);
 
@@ -32,6 +37,7 @@ public static class Preferences
     {
         _storage = null;
         _values = [];
+        Revision++;
     }
 
     public static T Get<T>(string key) => Get(new PreferenceKey<T>(key, Default<T>()));
@@ -136,6 +142,7 @@ public static class Preferences
         };
         Files.Write(Filename, JsonSerializer.SerializeToUtf8Bytes(document), previous.Status == SaveStatus.Success && !previous.Recovered);
         _values = values;
+        Revision++;
     }
 
     private static ReadResult Read()
@@ -147,7 +154,10 @@ public static class Preferences
         }
 
         var backup = ReadFile(Filename + ".bak");
-        return backup.Status == SaveStatus.Success ? backup with { Recovered = true }
+        return backup.Status == SaveStatus.Success ? backup with
+        {
+            Recovered = true
+        }
             : backup.Status == SaveStatus.NotFound ? primary : backup;
     }
 
@@ -156,13 +166,19 @@ public static class Preferences
         var result = StoredDocument.Read(Files, filename);
         if (!result.IsSuccess)
         {
-            return new(result.Status) { Error = result.Error };
+            return new(result.Status)
+            {
+                Error = result.Error
+            };
         }
 
         var document = result.Value!;
         if (document.ContractId != ContractId || document.SchemaVersion != 1 || document.SlotId != Guid.Empty)
         {
-            return new(SaveStatus.Incompatible) { Error = "Unsupported preferences schema." };
+            return new(SaveStatus.Incompatible)
+            {
+                Error = "Unsupported preferences schema."
+            };
         }
 
         try
@@ -170,14 +186,24 @@ public static class Preferences
             var values = document.Data.Deserialize<Dictionary<string, Entry>>() ?? [];
             if (values.Any(pair => string.IsNullOrWhiteSpace(pair.Key) || pair.Value is null || !ValidEntry(pair.Value)))
             {
-                return new(SaveStatus.Corrupt) { Error = "Invalid preference entry." };
+                return new(SaveStatus.Corrupt)
+                {
+                    Error = "Invalid preference entry."
+                };
             }
 
-            return new(SaveStatus.Success) { Document = document, Values = values };
+            return new(SaveStatus.Success)
+            {
+                Document = document,
+                Values = values
+            };
         }
         catch (JsonException exception)
         {
-            return new(SaveStatus.Corrupt) { Error = exception.Message };
+            return new(SaveStatus.Corrupt)
+            {
+                Error = exception.Message
+            };
         }
     }
 
@@ -196,8 +222,17 @@ public static class Preferences
     private sealed record ReadResult(SaveStatus Status)
     {
         public Dictionary<string, Entry> Values { get; init; } = [];
-        public StoredDocument? Document { get; init; }
-        public string? Error { get; init; }
-        public bool Recovered { get; init; }
+        public StoredDocument? Document
+        {
+            get; init;
+        }
+        public string? Error
+        {
+            get; init;
+        }
+        public bool Recovered
+        {
+            get; init;
+        }
     }
 }

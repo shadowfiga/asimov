@@ -8,7 +8,10 @@ public abstract class GameSettings : Settings
         SelectEnvironment(System.Environment.GetEnvironmentVariable("DEEP_DRIVE_ENVIRONMENT"))));
 
     public static GameSettings Instance => Shared.Value;
-    public abstract MenuSettings Menu { get; }
+    public abstract MenuSettings Menu
+    {
+        get;
+    }
 
     internal static GameSettings Create(SettingsEnvironment environment)
     {

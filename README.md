@@ -12,19 +12,55 @@ On macOS, double-click `Play DEEP DRIVE.command`. Alternatively, use `./run.sh` 
 
 Debug defaults to staging; Release defaults to production. Override with `DEEP_DRIVE_ENVIRONMENT=staging` or `production`. Rebuild after editing settings. The main menu shows the STAGING badge only in staging.
 
+Staging defaults to **2560×1440 borderless fullscreen**; production retains **1280×720 windowed**. Borderless fills the current desktop at its native resolution (1440p on a 1440p desktop); it does not change the monitor's mode. Confirmed player settings override these environment defaults on subsequent launches.
+
+Settings uses a wide modal with sidebar navigation and one active page: **Video** (display mode and resolution), **Audio** (master, music, and FX volume sliders), and **Accessibility** (UI scale and CRT intensity). There is no Mute setting; zero master volume silences both channels. There are no placeholder Gameplay/Controls pages or unsupported switches. Settings apply and persist live; the footer only needs Back. The page area scrolls when necessary while the header and Back button stay visible.
+
+Video offers Windowed, Borderless Fullscreen, and Fullscreen modes plus a resolution dropdown. Windowed resolutions fit the desktop; exclusive fullscreen lists the graphics adapter's supported modes. Borderless displays its desktop resolution with the selector disabled. Mode/resolution changes are previewed immediately, then require **Keep** within 15 seconds or automatically revert; the red **Cancel** button restores the prior configuration immediately. Both confirmation buttons are text-only. Escape/Back first reverts an open display confirmation, otherwise it closes Settings.
+
+`Game/Scenes/MainMenu/MainMenuScene.cs` owns `MainMenuUI.cs`; the menu only builds its own content and opens independently scoped dialogs. `CreditsDialog.cs` is alongside the menu. The reusable `Game/UI/Settings/SettingsDialog.cs` lives outside the scene, with separate Video, Audio, Accessibility, and display-confirmation files. Any scene can open it with its `UI.Open<SettingsDialog>()` scope. Dialogs own their preference bindings and unsubscribe/release their resources on close; the menu closes any dialogs it opened when its scene is destroyed.
+
+Display configuration is engine-wide, independent of scenes:
+
+```csharp
+DisplaySettings.Preview(WindowMode.Windowed, new Point(1920, 1080));
+DisplaySettings.KeepChanges(); // After the preview is applied and the player confirms
+DisplaySettings.Revert();      // Cancel a preview
+Preferences.Remove(RuntimePreferences.Display); // Restore environment defaults live
+```
+
+`DisplaySettings` lives in `Graphite.Engine.Graphics`. The host applies queued previews before UI input, exposes `Current`, `Resolutions(mode)`, `NeedsConfirmation`, `SecondsRemaining`, and `Changed`, and restores confirmed settings before the first scene. `RuntimePreferences.Display` stores mode and resolution together as one validated preference. UI layout and whole-game CRT targets follow the actual backbuffer size.
+
+UI scaling is an engine-wide runtime preference, not a main-menu setting:
+
+```csharp
+Preferences.Set(RuntimePreferences.UiScale, 1.25f); // 125%, saved immediately
+Preferences.Remove(RuntimePreferences.UiScale);  // Restore 100%
+```
+
+`RuntimePreferences` lives in `Graphite.Engine.Persistence`. `UiScale` accepts exactly 0.75, 1.00, 1.25, 1.50, and 1.75, and defaults to 1. `UiScaleOptions` defines the shared presets for validation and the settings dropdown. The shared Myra desktop automatically scales every screen, dialog, font, icon, control, and pointer coordinate. Its effective scale is `min(windowWidth / 1600, windowHeight / 900) * UiScale`. Changes apply before the next UI layout/input/render pass, including already-open dialogs; new scenes inherit the preference, and startup restores it before constructing the first scene. Fullscreen/window resizing uses the same path. CRT remains an independent physical-screen filter.
+
+Author widget dimensions and theme spacing in logical units. Use `UI.LayoutSize` for responsive layout and `UI.LayoutChanged` for custom reflow (unsubscribe when the screen closes); do not multiply widget sizes by `UI.Scale` again. `UI.Scale` is the effective pixels-per-unit conversion for screen-space integrations. The menu scrolls when magnification makes it taller than the viewport. Settings includes a dropdown from 0.75× to 1.75× in 0.25 increments; choosing a preset applies and saves the global scale immediately. Older saved values clamp to the new limits and snap to the nearest preset globally before layout, without requiring Settings to open.
+
 ## Theme
 
 `Game/UI/Theming/GameThemes.cs` defines the monochrome industrial-terminal palette. `Startup.Initialize` applies `MyraTheme` before the first scene is constructed. Ordinary UI uses black, charcoal, gray, and off-white. Orange is reserved for selection, focus, important action, and immediate attention. Green is reserved for successful, completed, purchased, valid, or confirmed state. Use the `secondary` label style for muted text and the `nested` panel style for nested surfaces.
 
 All UI text uses the bundled [Abel font](https://github.com/google/fonts/tree/main/ofl/abel). Its SIL Open Font License is included in `Content/Fonts/Abel/OFL.txt`.
 
-`GameThemes.DeepDrive.Spacing` supplies `Xs`, `Sm`, `Md`, `Lg`, and `Xl` for gaps, padding, and margins. `BorderRadius` supplies `Zero`, `Xs`, `Sm`, `Md`, `Lg`, `Xl`, and `Full`; full rounding is limited to half the shorter side. Global defaults live in `Engine/UI/Theming/UITokens.cs`; each theme can override them. `RoundedRectangleBrush` renders these values for fills and borders.
+Font rasterization follows the effective screen scale, independently of logical font sizes. `ThemeAssets` caches whole-resolution glyph atlases (1× for small text, 3× at 1440p/175%, 5× at 4K/175%) using [FontStashSharp's resolution-factor support](https://github.com/FontStashSharp/FontStashSharp/wiki/Making-Fonts-Sharper-And-Better-At-Scaling). The shared UI pass refreshes Label/TextBox fonts before layout, including existing dialogs and newly opened dropdowns. This avoids magnifying low-resolution glyph images at large scales and undersampling oversized atlases at small scales. Custom-drawn text obtains its font through `ThemeAssets.Font` when recalculating layout. Font systems are reused across resizes and released with the game; no CRT or font-family change is involved.
+
+`GameThemes.DeepDrive.Spacing` supplies `Xs`, `Sm`, `Md`, `Lg`, and `Xl` for gaps, padding, and margins. The game uses `UIBorderRadii.Square`: every `BorderRadius` token (`Zero` through `Full`) resolves to zero. All buttons, dialogs, dropdowns, fields, and interaction states have square corners. Shared tokens live in `Engine/UI/Theming/UITokens.cs`. Axis-aligned zero-radius surfaces snap their borders to physical pixels with a one-screen-pixel minimum, using the current drawing transform (including nested widgets and popup lists). This prevents thin edges disappearing at fractional UI scales; fills and borders remain non-overlapping so transparency is preserved.
 
 `GameThemes.DeepDrive.MenuButton` is the component-level contract for menu-button layout and responsive sizing. It owns horizontal and vertical padding, leading-icon-to-text and text-to-trailing-icon gaps, the `Compact`, `Default`, and `Prominent` text sizes and minimums, plus leading and trailing icon sizes and minimums. All three text variants use Abel Regular; a variant selects semantic size and role, not a different weight or style. Individual button constructors can select `textVariant` and override `iconSize` or, when needed, `trailingIconSize`; spacing continues to come from the component theme.
 
+`MenuButton` icons are optional. Omit `icon` for centered text with no icon columns or spacing; set `arrow: true` explicitly if only a trailing chevron is wanted. Existing icon buttons retain their default chevron unless `arrow: false` is supplied. `tone: MenuButtonTone.Danger` uses the theme's `Danger` and `DangerHighlight` reds for explicit cancel/destructive actions, including hover/focus. Other buttons keep their normal monochrome/orange states.
+
+`Game/UI/Dialog.cs` provides the game modal container: it fills its parent with the translucent `DialogScrim`, centers its single child, consumes pointer hits outside that child, and takes keyboard focus while visible. Settings and Credits use this component so the main menu remains visible but inactive beneath the overlay.
+
 The main menu uses [Lucide](https://lucide.dev/) icons, bundled as SVG sources and 96 px PNGs in `Content/Icons/Lucide` with their license and source revision. Normal builds use the PNGs. Menu spacing and type scale with the window. Continue, New Operation, and Load Operation remain disabled while gameplay is being rebuilt.
 
-Settings expose only one fullscreen CRT progress-slider from `NO` (0%) to `FULL` (100%). Zero disables processing and every non-zero value enables it; no separate checkbox or boolean is stored. The treatment is the original Aged profile: subtle horizontal scanlines, faint two-dimensional screen-space noise, radial falloff, and bloom. There is no direction selector or screen curvature. The CRT is a game-wide final-frame pass over the scene and UI, so the same preference remains active during gameplay. Menu buttons use ordinary Myra hover/focus states rather than per-button shader materials.
+The fullscreen CRT progress-slider runs from 0% to 100%, with its label, bar, and percentage inline. Zero disables processing and every non-zero value enables it; no separate checkbox or boolean is stored. The treatment is the original Aged profile: subtle horizontal scanlines, faint two-dimensional screen-space noise, radial falloff, and bloom. There is no direction selector or screen curvature. The CRT is a game-wide final-frame pass over the scene and UI, so the same preference remains active during gameplay. Menu buttons use ordinary Myra hover/focus states rather than per-button shader materials.
 
 ## Persistence
 
@@ -101,7 +137,7 @@ var button = new Button();
 var host = new UIMaterialHost(button, interactions: MenuPresentation.FadeStyle);
 ```
 
-The menu has no assigned sound assets. `UI.Audio` supports volume and mute; configure an alternative service with `UI.SetAudioService` before constructing hosts.
+The menu has no assigned sound assets. `Engine/Audio/AudioMixer.cs` applies game-wide master × FX gain to MonoGame `SoundEffect` playback (including UI cues) and master × music gain to `MediaPlayer` songs. Music and FX levels are independent 0–100% preferences, defaulting to 100%, and changes affect existing playback. The legacy mute preference migrates once to zero master volume. `UI.Audio` retains its engine-level per-service volume/mute API; game settings leave that service at unity gain so master is not applied twice. Alternative audio services must honor the same mixer routing.
 
 `Startup.Initialize` registers `CrtFilter` with `PostProcessing`; `GameHost` captures the complete scene and UI at backbuffer resolution, applies it once, and then presents the final frame. `CrtFilter` uses the dedicated graphics `ShaderScreenFilter` API and has no dependency on UI materials. Do not attach CRT to a widget or screen root. Buttons use standard background, border, text, and icon states for hover, focus, press, and disabled feedback.
 

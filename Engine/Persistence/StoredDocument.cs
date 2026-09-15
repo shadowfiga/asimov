@@ -7,12 +7,27 @@ internal sealed class StoredDocument
 {
     public int FormatVersion { get; init; } = 1;
     public string ContractId { get; init; } = "";
-    public int SchemaVersion { get; init; }
-    public Guid SlotId { get; init; }
+    public int SchemaVersion
+    {
+        get; init;
+    }
+    public Guid SlotId
+    {
+        get; init;
+    }
     public string Name { get; init; } = "";
-    public DateTimeOffset CreatedUtc { get; init; }
-    public DateTimeOffset UpdatedUtc { get; init; }
-    public JsonElement Data { get; init; }
+    public DateTimeOffset CreatedUtc
+    {
+        get; init;
+    }
+    public DateTimeOffset UpdatedUtc
+    {
+        get; init;
+    }
+    public JsonElement Data
+    {
+        get; init;
+    }
     public string Checksum { get; init; } = "";
 
     public static string Hash(JsonElement data) => Convert.ToHexString(SHA256.HashData(JsonSerializer.SerializeToUtf8Bytes(data)));

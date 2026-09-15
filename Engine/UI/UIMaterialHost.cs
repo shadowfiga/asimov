@@ -20,9 +20,18 @@ public sealed class UIMaterialHost : Panel, IDisposable
     private bool _enabledBeforeHide;
     private UIPlayback? _exit;
     private TaskCompletionSource<UIPlaybackState>? _hiding;
-    public Widget Content { get; }
-    public UIAnimationPlayer Animation { get; }
-    public int OverflowPadding { get; init; }
+    public Widget Content
+    {
+        get;
+    }
+    public UIAnimationPlayer Animation
+    {
+        get;
+    }
+    public int OverflowPadding
+    {
+        get; init;
+    }
     public bool IsHiding => _hiding is not null;
     public bool IsDisposed => _disposed;
 
@@ -58,14 +67,23 @@ public sealed class UIMaterialHost : Panel, IDisposable
         }
         Animation = new UIAnimationPlayer(UI.Audio);
         // The outer layout belongs to the host. The original control fills that slot.
-        Width = content.Width; Height = content.Height;
-        MinWidth = content.MinWidth; MinHeight = content.MinHeight; MaxWidth = content.MaxWidth; MaxHeight = content.MaxHeight;
-        HorizontalAlignment = content.HorizontalAlignment; VerticalAlignment = content.VerticalAlignment;
-        Margin = content.Margin; Left = content.Left; Top = content.Top;
+        Width = content.Width;
+        Height = content.Height;
+        MinWidth = content.MinWidth;
+        MinHeight = content.MinHeight;
+        MaxWidth = content.MaxWidth;
+        MaxHeight = content.MaxHeight;
+        HorizontalAlignment = content.HorizontalAlignment;
+        VerticalAlignment = content.VerticalAlignment;
+        Margin = content.Margin;
+        Left = content.Left;
+        Top = content.Top;
         Visible = content.Visible;
         content.Width = content.Height = content.MinWidth = content.MinHeight = content.MaxWidth = content.MaxHeight = null;
-        content.HorizontalAlignment = HorizontalAlignment.Stretch; content.VerticalAlignment = VerticalAlignment.Stretch;
-        content.Margin = new Thickness(0); content.Left = content.Top = 0;
+        content.HorizontalAlignment = HorizontalAlignment.Stretch;
+        content.VerticalAlignment = VerticalAlignment.Stretch;
+        content.Margin = new Thickness(0);
+        content.Left = content.Top = 0;
         content.Visible = true;
         Widgets.Add(content);
         content.MouseEntered += Hover;
@@ -163,7 +181,8 @@ public sealed class UIMaterialHost : Panel, IDisposable
         }
         else
         {
-            StopBinding(UITrigger.Focus); if (CanInteract)
+            StopBinding(UITrigger.Focus);
+            if (CanInteract)
             {
                 Trigger(UITrigger.Blur);
             }
@@ -252,8 +271,10 @@ public sealed class UIMaterialHost : Panel, IDisposable
         ObjectDisposedException.ThrowIf(_disposed, this);
         if (IsHiding)
         {
-            _exit?.Cancel(); _exit = null;
-            _hiding!.TrySetResult(UIPlaybackState.Cancelled); _hiding = null;
+            _exit?.Cancel();
+            _exit = null;
+            _hiding!.TrySetResult(UIPlaybackState.Cancelled);
+            _hiding = null;
             Enabled = _enabledBeforeHide;
             _presented = false;
         }
@@ -279,8 +300,10 @@ public sealed class UIMaterialHost : Panel, IDisposable
 
         _hiding = new TaskCompletionSource<UIPlaybackState>();
         var task = _hiding.Task;
-        _enabledBeforeHide = Enabled; Enabled = false;
-        Animation.CancelAll(); _bindings.Clear();
+        _enabledBeforeHide = Enabled;
+        Enabled = false;
+        Animation.CancelAll();
+        _bindings.Clear();
         _exit = Trigger(UITrigger.Hide);
         if (_exit is null)
         {
@@ -291,15 +314,18 @@ public sealed class UIMaterialHost : Panel, IDisposable
     }
     private void FinishHide(UIPlaybackState state)
     {
-        Animation.CancelAll(); _bindings.Clear();
-        Visible = false; _presented = false;
+        Animation.CancelAll();
+        _bindings.Clear();
+        Visible = false;
+        _presented = false;
         if (_hiding is not null)
         {
             Enabled = _enabledBeforeHide;
         }
 
         _exit = null;
-        var pending = _hiding; _hiding = null;
+        var pending = _hiding;
+        _hiding = null;
         ReleaseGraphics();
         pending?.TrySetResult(state);
     }
@@ -329,7 +355,9 @@ public sealed class UIMaterialHost : Panel, IDisposable
             }
             else if (_presented)
             {
-                Animation.CancelAll(); _bindings.Clear(); _presented = false;
+                Animation.CancelAll();
+                _bindings.Clear();
+                _presented = false;
                 ReleaseGraphics();
             }
 
@@ -346,7 +374,11 @@ public sealed class UIMaterialHost : Panel, IDisposable
             _previousEnabled = enabled;
             if (!IsHiding)
             {
-                if (!enabled) { Animation.CancelAll(); _bindings.Clear(); }
+                if (!enabled)
+                {
+                    Animation.CancelAll();
+                    _bindings.Clear();
+                }
                 Trigger(enabled ? UITrigger.Enabled : UITrigger.Disabled);
             }
         }
@@ -380,7 +412,11 @@ public sealed class UIMaterialHost : Panel, IDisposable
 
                 _initialized = true;
             }
-            catch { ReleaseGraphics(); throw; }
+            catch
+            {
+                ReleaseGraphics();
+                throw;
+            }
         }
         UI.MaterialRenderer.Render(this, context, _surface, _materials, Animation);
     }
@@ -392,7 +428,8 @@ public sealed class UIMaterialHost : Panel, IDisposable
             material.Dispose();
         }
 
-        _materials.Clear(); _initialized = false;
+        _materials.Clear();
+        _initialized = false;
         UI.MaterialRenderer.Release(_surface);
     }
     public void Dispose()
@@ -404,8 +441,10 @@ public sealed class UIMaterialHost : Panel, IDisposable
 
         _disposed = true;
         FinishHide(UIPlaybackState.Cancelled);
-        Content.MouseEntered -= Hover; Content.MouseLeft -= HoverExit;
-        Content.KeyboardFocusChanged -= FocusChanged; Content.PressedChanged -= HandlePressedChanged;
+        Content.MouseEntered -= Hover;
+        Content.MouseLeft -= HoverExit;
+        Content.KeyboardFocusChanged -= FocusChanged;
+        Content.PressedChanged -= HandlePressedChanged;
         if (Content is ButtonBase button)
         {
             button.Click -= Click;
@@ -431,6 +470,7 @@ public sealed class UIMaterialHost : Panel, IDisposable
             tree.SelectionChanged -= SelectionChanged;
         }
 
-        Animation.Dispose(); UI.Unregister(this);
+        Animation.Dispose();
+        UI.Unregister(this);
     }
 }

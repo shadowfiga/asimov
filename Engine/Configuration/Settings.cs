@@ -10,11 +10,26 @@ public enum SettingsEnvironment
 
 public abstract class Settings
 {
-    public abstract SettingsEnvironment Environment { get; }
-    public abstract GameIdentitySettings Game { get; }
-    public abstract WindowSettings Window { get; }
-    public abstract GraphicsSettings Graphics { get; }
-    public abstract RuntimeSettings Runtime { get; }
+    public abstract SettingsEnvironment Environment
+    {
+        get;
+    }
+    public abstract GameIdentitySettings Game
+    {
+        get;
+    }
+    public abstract WindowSettings Window
+    {
+        get;
+    }
+    public abstract GraphicsSettings Graphics
+    {
+        get;
+    }
+    public abstract RuntimeSettings Runtime
+    {
+        get;
+    }
 
     public string? IconPath => Game.Icon is null ? null : Path.GetFullPath(Game.Icon, AppContext.BaseDirectory);
 

@@ -48,7 +48,9 @@ internal static class SceneChecks
 
     private sealed class StartupScene : Scene
     {
-        public StartupScene() { }
+        public StartupScene()
+        {
+        }
 
         protected internal override void OnLoad()
         {
@@ -61,7 +63,9 @@ internal static class SceneChecks
 
     private sealed class MenuScene : Scene
     {
-        public MenuScene() { }
+        public MenuScene()
+        {
+        }
 
         protected internal override void OnLoad() => Events.Add("menu load");
 

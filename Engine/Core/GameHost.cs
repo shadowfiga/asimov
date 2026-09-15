@@ -13,6 +13,8 @@ public sealed class GameHost : Microsoft.Xna.Framework.Game
     private readonly Settings _settings;
     private readonly Color _clearColor;
     private readonly Action? _initialize;
+    private readonly System.Diagnostics.Stopwatch _displayClock = System.Diagnostics.Stopwatch.StartNew();
+    private TimeSpan _lastDisplayUpdate;
 
     public GameHost(Settings settings, Action? initialize = null)
     {
@@ -60,7 +62,9 @@ public sealed class GameHost : Microsoft.Xna.Framework.Game
             Console.Error.WriteLine($"Could not load preferences: {preferences.Error}");
         }
 
+        DisplaySettings.Initialize(this, _graphics, _settings.Window);
         _initialize?.Invoke();
+        Graphite.Engine.UI.UI.RefreshLayout();
         SceneManager.Load(_settings.Game.StartupScene);
         SceneManager.CommitPendingChanges();
     }
@@ -73,6 +77,9 @@ public sealed class GameHost : Microsoft.Xna.Framework.Game
         }
 
         var dt = (float)gameTime.ElapsedGameTime.TotalSeconds;
+        var displayTime = _displayClock.Elapsed;
+        DisplaySettings.Update((float)(displayTime - _lastDisplayUpdate).TotalSeconds);
+        _lastDisplayUpdate = displayTime;
         Graphite.Engine.UI.UI.Update(dt);
         SceneManager.Update(dt);
         SceneManager.CommitPendingChanges();
@@ -104,6 +111,7 @@ public sealed class GameHost : Microsoft.Xna.Framework.Game
             finally
             {
                 PostProcessing.Shutdown();
+                DisplaySettings.Shutdown();
                 Preferences.Shutdown();
                 Storage.Shutdown();
             }

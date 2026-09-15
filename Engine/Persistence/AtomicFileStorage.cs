@@ -29,8 +29,14 @@ internal sealed class AtomicFileStorage(string directory)
             stream.ReadExactly(bytes);
             return bytes;
         }
-        catch (FileNotFoundException) { return null; }
-        catch (DirectoryNotFoundException) { return null; }
+        catch (FileNotFoundException)
+        {
+            return null;
+        }
+        catch (DirectoryNotFoundException)
+        {
+            return null;
+        }
     }
 
     public void Write(string name, byte[] bytes, bool backupCurrent)

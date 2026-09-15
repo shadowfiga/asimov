@@ -7,12 +7,21 @@ public enum MenuButtonTextVariant
     Prominent
 }
 
+public enum MenuButtonTone
+{
+    Default,
+    Danger
+}
+
 public sealed record MenuButtonTokens
 {
     public static MenuButtonTokens Default { get; } = new();
 
     public int HorizontalPadding { get; init; } = 24;
-    public int VerticalPadding { get; init; }
+    public int VerticalPadding
+    {
+        get; init;
+    }
     public int IconTextSpacing { get; init; } = 24;
     public int TextTrailingIconSpacing { get; init; } = 24;
 

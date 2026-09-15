@@ -5,6 +5,7 @@ using Myra;
 using Myra.Graphics2D.UI.Styles;
 using FontStashSharp;
 using System.Globalization;
+using Ui = Graphite.Engine.UI.UI;
 
 namespace Graphite.Game.UI.Theming;
 
@@ -13,6 +14,10 @@ internal static class ThemeAssets
     private const string FontFile = "Abel-Regular.ttf";
     private const string StylesheetFile = "default_ui_skin.xmms";
     private static AssetManager? _assets;
+    private static readonly HashSet<FontSystem> ThemeFontSystems = [];
+    private static readonly Dictionary<int, FontSystem> ResolutionFonts = [];
+    private static byte[] _fontData = [];
+    internal static int ResolutionFontCount => ResolutionFonts.Count;
 
     internal static Stylesheet LoadStylesheet()
     {
@@ -22,13 +27,63 @@ internal static class ThemeAssets
             MyraEnvironment.Game.Disposed += Release;
         }
 
-        return _assets.LoadStylesheet(StylesheetFile);
+        var stylesheet = _assets.LoadStylesheet(StylesheetFile);
+        foreach (var font in _assets.Cache.Values.OfType<DynamicSpriteFont>())
+        {
+            ThemeFontSystems.Add(font.FontSystem);
+        }
+        foreach (var system in _assets.Cache.Values.OfType<FontSystem>())
+        {
+            ThemeFontSystems.Add(system);
+        }
+        Ui.SetFontResolver(ResolveFont);
+        return stylesheet;
     }
 
     internal static SpriteFontBase Font(int size)
     {
         _ = LoadStylesheet();
-        return _assets!.LoadFont($"{FontFile}:{size.ToString(CultureInfo.InvariantCulture)}");
+        var font = _assets!.LoadFont($"{FontFile}:{size.ToString(CultureInfo.InvariantCulture)}");
+        if (font is DynamicSpriteFont dynamicFont)
+        {
+            ThemeFontSystems.Add(dynamicFont.FontSystem);
+        }
+        return ResolveFont(font, Ui.Scale);
+    }
+
+    internal static SpriteFontBase ResolveFont(SpriteFontBase font, float scale)
+    {
+        if (font is not DynamicSpriteFont dynamicFont || !ThemeFontSystems.Contains(dynamicFont.FontSystem))
+        {
+            return font;
+        }
+        // Whole-density buckets prevent new atlases on every resize pixel. Small UI uses 1x;
+        // 1440p at 175% uses 3x, and 4K at 175% uses 5x. Logical font sizes stay unchanged.
+        var density = Math.Max(1, (int)MathF.Ceiling(scale));
+        if (!ResolutionFonts.TryGetValue(density, out var system))
+        {
+            if (_fontData.Length == 0)
+            {
+                _fontData = File.ReadAllBytes(Path.Combine(AppContext.BaseDirectory, "Content", "Fonts", "Abel", FontFile));
+            }
+            system = new FontSystem(new FontSystemSettings { FontResolutionFactor = density });
+            try
+            {
+                system.AddFont(_fontData);
+            }
+            catch
+            {
+                system.Dispose();
+                throw;
+            }
+            ResolutionFonts.Add(density, system);
+            ThemeFontSystems.Add(system);
+        }
+        if (ReferenceEquals(dynamicFont.FontSystem, system))
+        {
+            return font;
+        }
+        return system.GetFont(font.FontSize);
     }
 
     private static void Release(object? sender, EventArgs args)
@@ -50,6 +105,13 @@ internal static class ThemeAssets
 
         _assets.Unload();
         _assets = null;
+        foreach (var system in ResolutionFonts.Values)
+        {
+            system.Dispose();
+        }
+        ResolutionFonts.Clear();
+        ThemeFontSystems.Clear();
+        _fontData = [];
     }
 
     private sealed class Accessor : IAssetAccessor

@@ -12,7 +12,10 @@ internal sealed class UIMaterialRenderer(GraphicsDevice device) : IDisposable
     private readonly Stack<RenderTarget2D> _captures = [];
     private readonly Stack<RenderContext> _contexts = [];
     private readonly RasterizerState _scissorState = new() { CullMode = CullMode.None, ScissorTestEnable = true };
-    public int AllocatedTargets { get; private set; }
+    public int AllocatedTargets
+    {
+        get; private set;
+    }
 
     private RenderTarget2D Create(int width, int height)
     {
@@ -28,7 +31,8 @@ internal sealed class UIMaterialRenderer(GraphicsDevice device) : IDisposable
                 return target;
             }
 
-            target.Dispose(); AllocatedTargets--;
+            target.Dispose();
+            AllocatedTargets--;
         }
         return Create(width, height);
     }
@@ -37,7 +41,12 @@ internal sealed class UIMaterialRenderer(GraphicsDevice device) : IDisposable
     {
         internal RenderTarget2D? First;
         internal RenderTarget2D? Second;
-        public void Dispose() { First?.Dispose(); Second?.Dispose(); First = Second = null; }
+        public void Dispose()
+        {
+            First?.Dispose();
+            Second?.Dispose();
+            First = Second = null;
+        }
     }
 
     internal void Render(UIMaterialHost host, RenderContext context, Surface surface,
@@ -45,10 +54,15 @@ internal sealed class UIMaterialRenderer(GraphicsDevice device) : IDisposable
     {
         var frame = animation.Frame;
         var active = materials.Where(material => material.IsActive(animation.Parameters)).ToArray();
-        if (active.Length == 0 && frame.IsIdentity) { host.Content.Render(context); return; }
+        if (active.Length == 0 && frame.IsIdentity)
+        {
+            host.Content.Render(context);
+            return;
+        }
 
         var bounds = GlobalBounds(host.Content);
-        bounds.Inflate(host.OverflowPadding, host.OverflowPadding);
+        var overflow = (int)MathF.Ceiling(host.OverflowPadding * UI.Scale);
+        bounds.Inflate(overflow, overflow);
         if (bounds.Width <= 0 || bounds.Height <= 0)
         {
             return;
@@ -82,10 +96,19 @@ internal sealed class UIMaterialRenderer(GraphicsDevice device) : IDisposable
                 childContext.Begin();
                 childContext.Scissor = Rectangle.Intersect(context.Scissor, capture.Bounds);
                 childContext.Opacity = 1;
-                try { host.Content.Render(childContext); }
-                finally { childContext.End(); }
+                try
+                {
+                    host.Content.Render(childContext);
+                }
+                finally
+                {
+                    childContext.End();
+                }
             }
-            finally { _contexts.Push(childContext); }
+            finally
+            {
+                _contexts.Push(childContext);
+            }
 
             EnsureSurface(surface, bounds.Width, bounds.Height);
             var first = surface.First!;
@@ -101,7 +124,10 @@ internal sealed class UIMaterialRenderer(GraphicsDevice device) : IDisposable
                     _batch.Draw(capture, new Rectangle(source.X - bounds.X, source.Y - bounds.Y, source.Width, source.Height), source, Color.White);
                 }
             }
-            finally { _batch.End(); }
+            finally
+            {
+                _batch.End();
+            }
 
             foreach (var material in active)
             {
@@ -117,11 +143,14 @@ internal sealed class UIMaterialRenderer(GraphicsDevice device) : IDisposable
             try
             {
                 var origin = new Vector2(bounds.Width, bounds.Height) / 2;
-                _batch.Draw(first, new Vector2(bounds.X, bounds.Y) + origin + frame.Translation, null,
+                _batch.Draw(first, new Vector2(bounds.X, bounds.Y) + origin + frame.Translation * UI.Scale, null,
                     Color.White * (context.Opacity * frame.Opacity), MathHelper.ToRadians(frame.Rotation),
                     origin, frame.Scale, SpriteEffects.None, 0);
             }
-            finally { _batch.End(); }
+            finally
+            {
+                _batch.End();
+            }
         }
         finally
         {
@@ -175,13 +204,19 @@ internal sealed class UIMaterialRenderer(GraphicsDevice device) : IDisposable
     }
     public void Dispose()
     {
-        foreach (var target in _captures) { target.Dispose(); AllocatedTargets--; }
+        foreach (var target in _captures)
+        {
+            target.Dispose();
+            AllocatedTargets--;
+        }
         _captures.Clear();
         foreach (var context in _contexts)
         {
             context.Dispose();
         }
 
-        _contexts.Clear(); _batch.Dispose(); _scissorState.Dispose();
+        _contexts.Clear();
+        _batch.Dispose();
+        _scissorState.Dispose();
     }
 }

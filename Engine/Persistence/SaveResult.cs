@@ -1,6 +1,9 @@
 namespace Graphite.Engine.Persistence;
 
-public enum SaveStatus { Success, NotFound, Corrupt, Incompatible, IoError }
+public enum SaveStatus
+{
+    Success, NotFound, Corrupt, Incompatible, IoError
+}
 
 public sealed record SaveResult(SaveStatus Status, string? Error = null, bool RecoveredFromBackup = false)
 {

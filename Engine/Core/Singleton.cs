@@ -8,7 +8,9 @@ public abstract class Singleton<T> where T : Singleton<T>
 
     public static T Instance => LazyInstance.Value;
 
-    protected Singleton() { }
+    protected Singleton()
+    {
+    }
 
     private static T CreateInstance()
     {

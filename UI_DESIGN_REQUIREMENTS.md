@@ -27,7 +27,8 @@ Designers do not need to provide C#, Myra `.xmms` files, or compiled shaders. A 
 - No blue resource language and no rainbow-coded research branches.
 - No interaction or status may rely on color alone.
 - All game text uses the bundled Abel Regular font. Do not depend on multiple weights or italics.
-- Baseline resolution is 1280x720. The window is resizable.
+- Text keeps its logical theme size while glyph rasterization adapts to effective screen scale. Inspect high-scale sharpness with CRT at 0%; labels, text inputs, and dropdown rows update globally on resize without requiring dialogs to reopen.
+- Validate layouts at 1280x720 and 2560x1440. Staging defaults to 2560x1440 borderless fullscreen; production defaults to 1280x720 windowed. Windowed mode is resizable; borderless follows the native desktop resolution. The logical UI authoring reference remains 1600x900.
 - Mouse and keyboard are first priority; controller is second priority.
 - Controls must not require pixel-perfect pointing.
 - Copy must be concise and functional.
@@ -40,6 +41,7 @@ Designers do not need to provide C#, Myra `.xmms` files, or compiled shaders. A 
 | --- | --- | --- |
 | `DeepBlack` | `#050505` | Deepest terminal/background value |
 | `Background` | `#090A09` | Root screen background |
+| `DialogScrim` | `#050505B8` | Modal fullscreen overlay behind centered dialog content |
 | `RaisedSurface` | `#111211` | Panels, dialogs, raised regions |
 | `ControlSurface` | `#181918` | Buttons, fields, selectable controls |
 | `Border` | `#393B39` | Ordinary boundaries, dividers, grids |
@@ -49,6 +51,8 @@ Designers do not need to provide C#, Myra `.xmms` files, or compiled shaders. A 
 | `Selection` | `#E9943A` | Selection, focus, action, immediate attention |
 | `SelectionHighlight` | `#FFA143` | Bright edge/glow for focused interactive state |
 | `Success` | `#79C98B` | Success, completion, purchase, validity, confirmation |
+| `Danger` | `#D96A66` | Explicit cancel/destructive action text and border |
+| `DangerHighlight` | `#FF8B85` | Hover/focus on those red actions |
 
 Every use of orange or green requires an accompanying label, icon, border treatment, shape, or stable position. Ordinary text should target at least 4.5:1 contrast; large text and essential control boundaries should target at least 3:1.
 
@@ -69,14 +73,14 @@ Use the scale for gaps, padding, and margins. Any revision must replace the toke
 | Token | Value |
 | --- | ---: |
 | `Zero` | 0 px |
-| `Xs` | 2 px |
-| `Sm` | 4 px |
-| `Md` | 8 px |
-| `Lg` | 12 px |
-| `Xl` | 16 px |
-| `Full` | Half of the shorter side |
+| `Xs` | 0 px |
+| `Sm` | 0 px |
+| `Md` | 0 px |
+| `Lg` | 0 px |
+| `Xl` | 0 px |
+| `Full` | 0 px |
 
-The severe terminal direction should normally use `Zero`, `Xs`, or `Sm`. Larger radii need a specific reason.
+All game UI corners are square. Use the shared `UIBorderRadii.Square` theme profile; do not reintroduce rounding for hover, focus, selected states, dialogs, or dropdowns.
 
 ### Typography
 
@@ -114,6 +118,8 @@ Menu buttons have a component-level token group so their internal geometry is no
 
 Every variant remains Abel Regular. `Compact`, `Default`, and `Prominent` are semantic text-variant choices for size and role; they never imply bold, italic, or another font file. A button's constructor may select `textVariant`, override its leading `iconSize`, and optionally override `trailingIconSize`. Those overrides participate in responsive scaling and must meet the matching theme minimums. Internal padding and both icon gaps remain theme-owned so buttons stay aligned across screens. The Settings and Credits BACK buttons currently select `Compact` and a 28 px leading-icon override.
 
+Icons are optional. Text-only buttons center their label and reserve no icon space; a trailing arrow can be requested independently. The graphics confirmation uses text-only KEEP and CANCEL buttons. CANCEL uses the red `Danger` tone (including hover/focus) and still reverts the preview; ordinary buttons retain their existing palette.
+
 ## 4. Required interaction states
 
 Every interactive component requires:
@@ -148,6 +154,18 @@ Lightweight supporting UI:
 - confirmation dialog,
 - tooltip,
 - autosave message.
+
+### Settings implementation
+
+Use the reference's wide modal, left sidebar, active-page content, separators, and fixed Back footer. Keep the current theme; do not copy decorative logos, HUD data, background scenes, angled frames, or extra copy. Only one submenu is visible at a time.
+
+- Video: display mode and resolution, with the existing 15-second Keep/Cancel confirmation.
+- Audio: master, music, and FX volume sliders (0–100%), applied live and saved immediately. Master multiplies both channel levels; 0% silences them without a separate Mute control. Music uses streamed song playback; FX includes game effects and UI cues.
+- Accessibility: UI scale (0.75×, 1.00×, 1.25×, 1.50×, 1.75×) and CRT strength (0–100%).
+
+Do not add empty Gameplay/Controls pages or inert settings. Input remapping, text size, reduced shake, reduced bloom/flashing, and damage-number visibility remain required future work once their backing systems exist; this pass does not implement them or the reference's unrelated options. Current controls save live, so there is no redundant Apply button. The header/sidebar/Back remain usable while longer page content scrolls.
+
+Main-menu composition and Credits live in separate files under `Game/Scenes/MainMenu`. The reusable Settings dialog and its page/control files live in `Game/UI/Settings`; keep preference and display logic out of the main-menu composition.
 
 ## 6. Required gameplay components
 
@@ -193,9 +211,10 @@ Substantially themed now:
 - combo-box dropdowns,
 - tab controls,
 - custom menu buttons with theme-driven spacing, semantic text variants, and icon sizing,
+- modal fullscreen dialogs with a themed translucent scrim and centered child,
 - tintable PNG icons,
-- rounded fills and borders,
-- responsive sizing,
+- square fills and borders in all states; thin outlines remain at least one physical screen pixel at fractional UI scales, including dropdown popup lists,
+- global reactive viewport/UI scaling, including open dialogs and pointer hitboxes,
 - fullscreen CRT processing,
 - show/hide animation,
 - UI sound cues.
@@ -219,15 +238,16 @@ Available sound parameters:
 - Extend centralized typography and icon-size tokens beyond the menu-button component; add border-width and component-height tokens.
 - Implement controller navigation and controller glyph switching.
 - Implement full input remapping.
-- Implement UI scale, text-size, reduced-bloom/flashing, and damage-number settings.
-- Define complete aspect-ratio reflow rules; the current layout primarily scales by window height.
+- The UI-scale dropdown uses `RuntimePreferences.UiScaleOptions` (0.75×–1.75× in 0.25 increments, default 1.00×) and `RuntimePreferences.UiScale`, with live global resizing and immediate persistence. Older saved values clamp to the new limits and snap to the nearest preset before layout, including outside Settings. Implement the remaining text-size, reduced-bloom/flashing, and damage-number settings.
+- Display mode and resolution dropdowns are implemented globally through `DisplaySettings` and the confirmed `RuntimePreferences.Display` preference. Modes are Windowed, Borderless Fullscreen, and Fullscreen. Borderless locks the resolution selector to the native desktop size; exclusive fullscreen offers adapter-supported resolutions. A centered Keep/Cancel dialog automatically reverts unconfirmed changes after 15 seconds. Saved settings override environment defaults and survive scene changes/restarts.
+- Define screen-specific aspect-ratio reflow rules in logical UI units. The engine scales from a 1600x900 authoring reference using the smaller viewport ratio, multiplied by the UI-scale preference. `UI.LayoutSize` and `UI.LayoutChanged` expose live layout dimensions; do not scale individual widgets a second time. Use scrolling for content that exceeds the available logical viewport.
 - Build a component-gallery screen for review before producing the Command Center and technology trees.
 
 ## 10. Screen delivery checklist
 
 For every screen or overlay, provide:
 
-- 1280x720 reference layout,
+- 1280x720 and 2560x1440 layouts,
 - narrow and ultrawide behavior,
 - maximum expected text/data lengths,
 - controller focus order and initial focus,

@@ -31,7 +31,10 @@ public sealed class SaveSerializer
         ArgumentNullException.ThrowIfNull(value);
         CheckType(typeof(T), []);
         CheckRuntimeType(typeof(T), value);
-        try { return JsonSerializer.SerializeToUtf8Bytes(value, _options); }
+        try
+        {
+            return JsonSerializer.SerializeToUtf8Bytes(value, _options);
+        }
         catch (TargetInvocationException exception) when (exception.InnerException is not null)
         {
             ExceptionDispatchInfo.Capture(exception.InnerException).Throw();

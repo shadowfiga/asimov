@@ -9,10 +9,11 @@ public static class GameThemes
     public static readonly GameTheme DeepDrive = new()
     {
         Spacing = UISpacing.Default,
-        BorderRadius = UIBorderRadii.Default,
+        BorderRadius = UIBorderRadii.Square,
         MenuButton = MenuButtonTokens.Default,
         DeepBlack = Hex("#050505"),
         Background = Hex("#090A09"),
+        DialogScrim = WithAlpha(Hex("#050505"), 184),
         RaisedSurface = Hex("#111211"),
         ControlSurface = Hex("#181918"),
         Border = Hex("#393B39"),
@@ -21,7 +22,9 @@ public static class GameThemes
         PrimaryText = Hex("#E8EAE7"),
         Selection = Hex("#E9943A"),
         SelectionHighlight = Hex("#FFA143"),
-        Success = Hex("#79C98B")
+        Success = Hex("#79C98B"),
+        Danger = Hex("#D96A66"),
+        DangerHighlight = Hex("#FF8B85")
     };
 
     private static Color Hex(string value)
@@ -34,4 +37,6 @@ public static class GameThemes
 
         return new Color((int)(rgb >> 16), (int)((rgb >> 8) & 255), (int)(rgb & 255));
     }
+
+    private static Color WithAlpha(Color color, byte alpha) => new(color.R, color.G, color.B, alpha);
 }

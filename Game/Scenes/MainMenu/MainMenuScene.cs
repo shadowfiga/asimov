@@ -1,17 +1,16 @@
 using Graphite.Engine.Scenes;
-using Graphite.Game.UI;
 using Microsoft.Xna.Framework.Input;
 
 namespace Graphite.Game.Scenes;
 
 public sealed class MainMenuScene : Scene
 {
-    private MainMenuScreen _screen = null!;
+    private MainMenuUI _screen = null!;
     private KeyboardState _previous;
 
     protected internal override void OnLoad()
     {
-        _screen = UI.Open<MainMenuScreen>();
+        _screen = UI.Open<MainMenuUI>();
         _previous = Keyboard.GetState();
     }
 

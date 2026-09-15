@@ -4,24 +4,48 @@ namespace Graphite.Engine.UI.Audio;
 
 public sealed record UISoundCue
 {
-    public required string Asset { get; init; }
-    public float Delay { get; init; }
+    public required string Asset
+    {
+        get; init;
+    }
+    public float Delay
+    {
+        get; init;
+    }
     public float Volume { get; init; } = 1;
-    public float Pitch { get; init; }
-    public float Pan { get; init; }
-    public bool Loop { get; init; }
+    public float Pitch
+    {
+        get; init;
+    }
+    public float Pan
+    {
+        get; init;
+    }
+    public bool Loop
+    {
+        get; init;
+    }
 }
 
 public interface IUIAudioVoice : IDisposable
 {
-    bool IsPlaying { get; }
+    bool IsPlaying
+    {
+        get;
+    }
     void Stop();
 }
 
 public interface IUIAudioService : IDisposable
 {
-    float Volume { get; set; }
-    bool Muted { get; set; }
+    float Volume
+    {
+        get; set;
+    }
+    bool Muted
+    {
+        get; set;
+    }
     IUIAudioVoice Play(UISoundCue cue);
     void Update();
 }
@@ -31,8 +55,14 @@ public sealed class UIAudioService : IUIAudioService
     private readonly Dictionary<string, SoundEffect> _assets = [];
     private readonly List<Voice> _voices = [];
     private float _volume = 1;
-    public float Volume { get => _volume; set => _volume = Math.Clamp(value, 0, 1); }
-    public bool Muted { get; set; }
+    public float Volume
+    {
+        get => _volume; set => _volume = Math.Clamp(value, 0, 1);
+    }
+    public bool Muted
+    {
+        get; set;
+    }
 
     public IUIAudioVoice Play(UISoundCue cue)
     {
@@ -54,14 +84,22 @@ public sealed class UIAudioService : IUIAudioService
             _voices.Add(voice);
             return voice;
         }
-        catch { instance.Dispose(); throw; }
+        catch
+        {
+            instance.Dispose();
+            throw;
+        }
     }
 
     public void Update()
     {
         foreach (var voice in _voices.ToArray())
         {
-            if (!voice.IsPlaying) { voice.Dispose(); _voices.Remove(voice); }
+            if (!voice.IsPlaying)
+            {
+                voice.Dispose();
+                _voices.Remove(voice);
+            }
             else
             {
                 voice.SetVolume(Muted ? 0 : Math.Clamp(voice.Volume * Volume, 0, 1));
@@ -111,7 +149,9 @@ public sealed class UIAudioService : IUIAudioService
                 return;
             }
 
-            instance.Stop(); instance.Dispose(); _disposed = true;
+            instance.Stop();
+            instance.Dispose();
+            _disposed = true;
         }
     }
 }

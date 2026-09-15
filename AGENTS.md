@@ -6,6 +6,12 @@
 - Keep UI text limited to what is necessary to identify the screen, operate controls, or communicate essential state.
 - Keep responses concise; do not add filler.
 
+# C# formatting
+
+- Put opening and closing braces on their own lines for code blocks (Allman style).
+- Never inline `if`, `else`, loops, `try`, `catch`, `finally`, or method bodies inside `{ ... }`, even for one statement.
+- Follow `.editorconfig`; do not preserve single-line blocks or put multiple statements on one line.
+
 # Collections
 
 - Arrays, lists, dictionaries, sets, and other collection-like fields and properties must default to an empty collection of the appropriate type, never `null` or `null!`.
