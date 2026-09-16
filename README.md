@@ -85,7 +85,9 @@ The fullscreen CRT progress-slider runs from 0% to 100%, with its label, bar, an
 
 ## Persistence
 
-Use the static engine APIs from any scene. `GameHost` initializes storage and loads preferences before calling `Startup.Initialize` and constructing the first scene. The game startup callback installs its theme, interaction styles, audio preferences, and final-frame CRT; bootstrap then opens the main menu.
+Use the static engine APIs from any scene. `GameHost` initializes storage and loads preferences before calling `Startup.Initialize` and constructing the first scene. The game startup callback installs its theme, interaction styles, audio preferences, and final-frame CRT. `Game/Scenes/Bootstrap` presents a centered loading view with a themed, borderless progress bar, prepares UI font sizes and caches bundled icon file data one resource per rendered frame, then opens the main menu. Cached icon data is reused by menu assets and released with the game; GPU textures retain their existing per-screen ownership. Bootstrap does not load or create a session.
+
+`SessionManager.ActiveSession` in `Game/Sessions/SessionManager.cs` holds the in-memory session shared across scenes. Its getter returns a non-null `Session` or throws `InvalidOperationException` if none is set. Assign a session to activate it or `null` to clear it; `[AllowNull]` permits null assignment without making reads nullable. It has no save-slot limit, disk operations, last-active-ID preference, or Continue logic; those workflows remain unimplemented.
 
 ```csharp
 using Graphite.Engine.Persistence;
@@ -158,7 +160,7 @@ var button = new Button();
 var host = new UIMaterialHost(button, interactions: MenuPresentation.FadeStyle);
 ```
 
-The menu has no assigned sound assets. `Engine/Audio/AudioMixer.cs` applies game-wide master × FX gain to MonoGame `SoundEffect` playback (including UI cues) and master × music gain to `MediaPlayer` songs. Music and FX levels are independent 0–100% preferences, defaulting to 100%, and changes affect existing playback. The legacy mute preference migrates once to zero master volume. `UI.Audio` retains its engine-level per-service volume/mute API; game settings leave that service at unity gain so master is not applied twice. Alternative audio services must honor the same mixer routing.
+The menu has no assigned sound assets. The engine-wide `AudioManager.Current` owns Master, Music, FX, Ambience and UI buses, reactive persisted volume controls, cached WAV assets, 2D positional effects, ambience snapshots and adaptive music. `UI.Audio` delegates to its UI bus; scenes get an automatically disposed `AudioScope`. `GameHost` updates audio independently of UI. The old mute preference migrates to zero master volume. See [engine audio](Engine/Audio/README.md) for routing, examples, supplied-plugin analysis, tests and current limitations.
 
 `Startup.Initialize` registers `CrtFilter` with `PostProcessing`; `GameHost` captures the complete scene and UI at backbuffer resolution, applies it once, and then presents the final frame. `CrtFilter` uses the dedicated graphics `ShaderScreenFilter` API and has no dependency on UI materials. Do not attach CRT to a widget or screen root. Buttons use standard background, border, text, and icon states for hover, focus, press, and disabled feedback.
 

@@ -140,7 +140,7 @@ There is a subtle satirical edge, but the game should not constantly tell jokes.
 
 # 5. Visual Theme
 
-The game uses two deliberately different visual languages.
+The world and interface use deliberately different visual languages, with illustrated pilot portraits providing the human face of the machinery.
 
 ## The World
 
@@ -172,6 +172,18 @@ The base geometry and sprites should remain slightly simplified.
 The effects make the game look expensive.
 
 This lets the Blender asset workflow remain fast while combat still becomes visually spectacular.
+
+## Mech Pilot Portraits
+
+Mech portraits depict **adult anime-style female pilots**, not just pictures of the chassis.
+
+The art direction combines expressive, recognizable faces with industrial flight suits, workwear, headsets and mining-corporation equipment. Use restrained colors and lighting that sit comfortably beside the dark world and monochrome terminal UI; portraits are character artwork, not a replacement for the UI's semantic color palette.
+
+Design portraits for readable head-and-shoulders crops at small HUD sizes. Keep framing, lighting and illustration style consistent across the portrait set. Supply clean, high-resolution source artwork with a transparent background so the shared UI can handle framing and scaling.
+
+Use the pilot portrait in the existing mech-status HUD and mission presentation where appropriate. Do not introduce a separate crew screen.
+
+For 1.0, pilot identity is **presentation only**. The game still has one playable Miner-01 chassis and one shared gameplay ruleset. Portraits do not imply character classes, pilot stats, crew management or dialogue trees. Start with one production-ready portrait; the final portrait count remains an art-budget decision.
 
 ---
 
@@ -354,6 +366,8 @@ The core loop is:
 # 10. Player Robot
 
 The player directly controls **Miner-01**.
+
+Miner-01 is the industrial mech; its human pilot is represented through the portrait direction in Section 5. Pilot presentation does not change the chassis or its abilities.
 
 The robot gives the player something active to do while the base operates automatically.
 
@@ -1184,6 +1198,8 @@ Never color alone.
 
 The soundscape should feel industrial and oppressive.
 
+## Machinery, Combat and Interface
+
 Important sounds:
 
 * drill machinery;
@@ -1197,11 +1213,71 @@ Important sounds:
 * terminal clicks;
 * CRT/relay sounds.
 
-Music should remain relatively restrained so that the battle soundscape can escalate.
-
 Terminal UI interactions should sound tactile:
 
 relay click, key chirp, confirmation tone, warning pulse.
+
+## Music Identity
+
+The soundtrack is **heavy rock / industrial metal with a deliberate ramp-up**: a restrained mechanical pulse during preparation, driving riffs as the swarm develops, and a full, hard-hitting arrangement at peak pressure. Orchestral rock can give major encounters an additional sense of scale.
+
+Intensity should come from the arrangement and rhythm, not simply turning up the volume. Quiet stretches make the heavy sections land. Prefer instrumental tracks and preserve the audibility of weapons, incoming attacks and critical alarms.
+
+## Ovani Sound Audition Shortlist
+
+These are catalog-based candidates, not final track selections or listening-verified recommendations. Audition the versions available in the team's licensed library before locking individual cues. Research checked on 2026-09-16.
+
+| Candidate | Proposed role |
+| --- | --- |
+| [Metal Music Pack Vol. 1](https://ovanisound.com/products/metal-music-pack-vol-1) | First audition for the core combat sound: aggressive, high-energy metal. |
+| [Industrial Music Pack Vol. 1](https://ovanisound.com/products/industrial-music-pack-vol-1) | First audition for mechanical tension, preparation and the transition into combat. |
+| [Orchestral Rock Music Pack Vol. 1](https://ovanisound.com/products/orchestral-rock-music-pack-vol-1) | First audition for Matriarch encounters and major wave climaxes; guitars and drums with orchestral weight. |
+
+Each linked pack advertises ten compositions with three intensity versions per composition, plus short edits. Those versions are promising material for the ramp-up, but their timing and loop compatibility must be checked in the actual files. The shortlist does not require purchasing or using all three packs.
+
+Choose a small, coherent set of cues with satisfying low, medium and high arrangements. Test them against real combat SFX and repeated loops, not just a standalone preview. Record the source pack, track name and license provenance for every selected asset.
+
+## Adaptive Music System — Engine Foundation Implemented
+
+Build an original, reusable music system for the MonoGame runtime. Ovani's [Music Plugin](https://ovanisound.com/products/unity-audio-plugin) is the functional reference for intensity changes, song selection and seamless looping; beat/bar scheduling and the enemy rules below are our own requirements, not assumptions about that plugin's internals.
+
+The engine now supplies Master, Music, FX, Ambience and UI volume controls, 2D positional effects, gain-based ambience zones, and sample-synchronized intensity/cue playback. See the [engine audio implementation notes](Engine/Audio/README.md). The selected soundtrack, authored musical metadata and game-side enemy/threat director remain **planned work**. This foundation does not include environmental reverb/occlusion DSP or disk-streamed music.
+
+Separate two responsibilities:
+
+* **Engine audio playback:** shared audio timeline, looping, synchronized playback, scheduled crossfades and channel gains. This lives independently of scenes and UI.
+* **Game music director:** chooses the cue and target intensity from operation phase, sustained enemy pressure and encounter type. Scenes report gameplay state; they do not implement their own music players or transition timing.
+
+Support two distinct kinds of change:
+
+1. **Intensity ramp within a cue:** move between its low, medium and high versions while preserving the musical position. A rise in pressure should build the arrangement without restarting the song. Smooth the requested intensity and use separate rise/fall thresholds so it does not chatter between versions.
+2. **Transition between cues:** change musical identity for a different encounter. Schedule the change at an authored bar or phrase boundary with a suitable crossfade, bridge or short transition accent. Boss arrival may trigger an immediate warning accent while the music waits for its transition point.
+
+Treat Ovani intensity versions as alternate mixes unless the supplied assets explicitly contain additive stems. Do not simply stack three full mixes at full gain. Verify matching tempo, downbeat alignment and loop spans before attempting same-position crossfades. Unrelated tracks are not automatically compatible: use an authored transition or fade where tempo or musical phrasing differs. Automatic time-stretching is not required for 1.0.
+
+### Encounter Selection
+
+| Encounter context | Music response |
+| --- | --- |
+| Preparation / low threat | Low-intensity arrangement or a restrained preparation cue. |
+| Swarmers and Spitters | Normal combat cue; ramp with sustained swarm pressure. |
+| Brute or Brood Carrier-led encounter | Heavy encounter cue when these enemies define the wave, rather than for every individual spawn. |
+| Burrower breach | Short breach accent and temporary intensity rise; do not interrupt a boss cue. |
+| Matriarch | Highest-priority boss cue, held until the encounter ends. |
+| Wave cleared / extraction / defeat | Resolve the encounter, then transition to the appropriate low-intensity or ending cue. |
+
+The director evaluates encounter state, not whichever enemy is nearest or currently targeted. In mixed waves, the boss cue takes priority over heavy and normal combat cues. Use a minimum cue hold time, transition cooldown and slower release after danger passes; author their values per cue/encounter during tuning. Cancel stale queued transitions if the relevant encounter has already ended.
+
+Enemy types share these few musical roles. A bespoke soundtrack for every enemy or sector is not required.
+
+### Playback and Acceptance Requirements
+
+* Define cues as data: stable ID, audio assets, intensity variants, tempo, beats per bar, first downbeat, loop boundaries, allowed transition points and encounter tags. Validate required assets and metadata when loading.
+* Synchronize against one audio-sample clock, not frame time or separate timers. Start aligned versions at the same musical position and keep them aligned through loops and transitions.
+* Preload the audio needed for the next transition. Looping and crossfades must not produce gaps, clicks, doubled beats or accidental loudness spikes.
+* Pause/resume must preserve musical position and alignment. Opening settings must not restart playback; if gameplay is paused, the music transport follows that pause. Scene changes must not leave duplicate players running.
+* Keep Master, Music and FX gains independent and reactive, including during transitions. Music volume at zero must not lose synchronization. Any temporary ducking must leave the saved volume preference unchanged.
+* First validate one low/medium/high cue set and a transition into one second cue, including a boss-priority test. Test repeated loops, fluctuating threat, pause/resume and frame-rate stalls before expanding the soundtrack.
 
 ---
 
@@ -1225,6 +1301,8 @@ For 1.0:
 | Command Center tabs      |                        **2** |
 | Endgame mode             |     **Endless continuation** |
 | Narrative cinematics     |                        **0** |
+
+Approved presentation/audio additions: anime-style female pilot portraits for the existing mech, and one shared adaptive music system with a small encounter-based cue set. These do not increase the chassis, enemy or screen counts. Final portrait and track counts are pending asset selection; begin with one portrait and the two-cue audio validation described above.
 
 Anything outside this table should be treated with suspicion.
 
@@ -1251,7 +1329,7 @@ No:
 * second prestige currency;
 * New Game+ progression layer;
 * huge boss roster;
-* multiple player characters.
+* multiple mechanically distinct player characters (cosmetic pilot portraits are allowed).
 
 ---
 

@@ -1,4 +1,5 @@
 using Graphite.Engine.Configuration;
+using Graphite.Engine.Audio;
 using Graphite.Engine.Graphics;
 using Graphite.Engine.Platform;
 using Graphite.Engine.Persistence;
@@ -63,6 +64,7 @@ public sealed class GameHost : Microsoft.Xna.Framework.Game
             Console.Error.WriteLine($"Could not load preferences: {preferences.Error}");
         }
 
+        AudioManager.Current.SynchronizePreferences(force: true);
         DisplaySettings.Initialize(this, _graphics, _settings.Window);
         _initialize?.Invoke();
         Graphite.Engine.UI.UI.RefreshLayout();
@@ -84,6 +86,7 @@ public sealed class GameHost : Microsoft.Xna.Framework.Game
         Graphite.Engine.UI.UI.Update(dt);
         SceneManager.Update(dt);
         SceneManager.CommitPendingChanges();
+        AudioManager.Current.Update(dt);
 
         base.Update(gameTime);
     }
@@ -112,6 +115,7 @@ public sealed class GameHost : Microsoft.Xna.Framework.Game
             }
             finally
             {
+                AudioManager.Shutdown();
                 EnvironmentOverlay.Shutdown();
                 PostProcessing.Shutdown();
                 DisplaySettings.Shutdown();

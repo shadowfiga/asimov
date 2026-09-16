@@ -18,8 +18,6 @@ using Graphite.Game.UI.Materials;
 using Graphite.Game.UI.Theming;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
-using Microsoft.Xna.Framework.Audio;
-using Microsoft.Xna.Framework.Media;
 using Myra;
 using Myra.Graphics2D;
 using Myra.Graphics2D.Brushes;
@@ -83,12 +81,7 @@ internal sealed class GraphicsChecks : Microsoft.Xna.Framework.Game
         SettingsBorderChecks();
         DisplayChecks();
         SettingsDialogChecks();
-        SceneManager.Load<BootstrapScene>();
-        SceneManager.CommitPendingChanges();
-        Program.Check(Ui.HostCount > 0, "Bootstrap opens the main menu");
-        SceneManager.Update(0);
-        SceneManager.Shutdown();
-        Program.Check(Ui.HostCount == 0, "Scene teardown releases the menu's material hosts");
+        BootstrapChecks.Run(GraphicsDevice, _output);
         var hostCount = Ui.HostCount;
         try
         {
@@ -159,7 +152,7 @@ internal sealed class GraphicsChecks : Microsoft.Xna.Framework.Game
         var savedMaster = Preferences.Get(PlayerPreferences.MasterVolume);
         Preferences.Set("audio.muted", true);
         PlayerPreferences.ApplyAudio();
-        Program.Check(Preferences.Get(PlayerPreferences.MasterVolume) == 0 && SoundEffect.MasterVolume == 0 && MediaPlayer.Volume == 0,
+        Program.Check(Preferences.Get(PlayerPreferences.MasterVolume) == 0 && AudioManager.Current.Master.Volume == 0,
             "Legacy mute migrates to a visible zero master level");
         Preferences.Initialize(Path.Combine(_output, "preferences"));
         Program.Check(!Preferences.Remove<bool>("audio.muted"), "Legacy mute key is retired on disk");
@@ -1089,24 +1082,24 @@ internal sealed class GraphicsChecks : Microsoft.Xna.Framework.Game
                 CaptureDisplay($"settings-page-{index}");
             }
             DragVolume(settings.VolumeControl, .75f);
-            Program.Check(AudioMixer.MasterVolume is > .65f and < .85f,
+            Program.Check(AudioManager.Current.Master.Volume is > .65f and < .85f,
                 "Audio volume responds to dragging and applies immediately to the runtime mixer");
-            Program.Near(Preferences.Get(PlayerPreferences.MasterVolume), AudioMixer.MasterVolume, "Audio volume is persisted immediately");
+            Program.Near(Preferences.Get(PlayerPreferences.MasterVolume), AudioManager.Current.Master.Volume, "Audio volume is persisted immediately");
             DragVolume(settings.MusicVolumeControl, .35f);
-            Program.Check(AudioMixer.MusicVolume is > .25f and < .45f, "Music slider responds to dragging");
+            Program.Check(AudioManager.Current.Music.Volume is > .25f and < .45f, "Music slider responds to dragging");
             DragVolume(settings.FxVolumeControl, .6f);
-            Program.Check(AudioMixer.FxVolume is > .5f and < .7f, "FX slider responds to dragging");
-            Program.Near(MediaPlayer.Volume, AudioMixer.MasterVolume * AudioMixer.MusicVolume,
+            Program.Check(AudioManager.Current.Fx.Volume is > .5f and < .7f, "FX slider responds to dragging");
+            Program.Near(AudioManager.Current.Music.EffectiveVolume, AudioManager.Current.Master.Volume * AudioManager.Current.Music.Volume,
                 "Music receives master times music gain");
-            Program.Near(SoundEffect.MasterVolume, AudioMixer.MasterVolume * AudioMixer.FxVolume,
+            Program.Near(AudioManager.Current.Fx.EffectiveVolume, AudioManager.Current.Master.Volume * AudioManager.Current.Fx.Volume,
                 "All game and UI effects receive master times FX gain");
             Program.Check(!Ui.Audio.Muted && Ui.Audio.Volume == 1, "UI cues are not muted or double-attenuated");
             settings.VolumeControl.Value = 0;
-            Program.Check(MediaPlayer.Volume == 0 && SoundEffect.MasterVolume == 0, "Zero master silences both channels");
+            Program.Check(AudioManager.Current.Music.EffectiveVolume == 0 && AudioManager.Current.Fx.EffectiveVolume == 0, "Zero master silences both channels");
             settings.VolumeControl.Value = .75f;
             Preferences.Initialize(Path.Combine(_output, "preferences"));
-            Program.Near(Preferences.Get(PlayerPreferences.MusicVolume), AudioMixer.MusicVolume, "Music volume survives disk reload");
-            Program.Near(Preferences.Get(PlayerPreferences.FxVolume), AudioMixer.FxVolume, "FX volume survives disk reload");
+            Program.Near(Preferences.Get(PlayerPreferences.MusicVolume), AudioManager.Current.Music.Volume, "Music volume survives disk reload");
+            Program.Near(Preferences.Get(PlayerPreferences.FxVolume), AudioManager.Current.Fx.Volume, "FX volume survives disk reload");
             CaptureDisplay("settings-audio-sliders");
 
             settings.SelectPage(0);

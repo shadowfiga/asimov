@@ -137,8 +137,8 @@ public sealed class StartupProbeScene : Scene
         Program.Check(StartupChecks.Configured && Preferences.Get(PlayerPreferences.MasterVolume) == .25f
             && Storage.Load<Session>().PlayTimeSeconds == StartupChecks.ExpectedTime,
             "All initialization finishes before the first scene is constructed");
-        Program.Near(Microsoft.Xna.Framework.Audio.SoundEffect.MasterVolume, .15f, "Loaded master and FX apply before the first scene");
-        Program.Near(Microsoft.Xna.Framework.Media.MediaPlayer.Volume, .1f, "Loaded master and music apply before the first scene");
+        Program.Near(Graphite.Engine.Audio.AudioManager.Current.Fx.EffectiveVolume, .15f, "Loaded master and FX apply before the first scene");
+        Program.Near(Graphite.Engine.Audio.AudioManager.Current.Music.EffectiveVolume, .1f, "Loaded master and music apply before the first scene");
         Program.Check(PostProcessing.IsActive, "Global CRT is available when the first scene is constructed");
         Program.Near(Graphite.Engine.UI.UI.Scale,
             Math.Min(Graphite.Engine.UI.UI.ViewportWidth / 1600f, Graphite.Engine.UI.UI.ViewportHeight / 900f) * 1.25f,

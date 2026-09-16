@@ -10,13 +10,42 @@ namespace Graphite.Game.UI;
 
 internal sealed class MenuAssets : IDisposable
 {
+    private static readonly Dictionary<string, byte[]> Preloaded = [];
+    private static bool _releaseRegistered;
     private readonly Dictionary<string, Texture2D> _textures = [];
+
+    internal static void PreloadIcon(string name) => IconData(Path.Combine("Icons", "Lucide", $"{name}.png"));
+
+    private static byte[] IconData(string asset)
+    {
+        if (!Preloaded.TryGetValue(asset, out var data))
+        {
+            data = File.ReadAllBytes(Path.Combine(AppContext.BaseDirectory, "Content", asset));
+            Preloaded.Add(asset, data);
+            if (!_releaseRegistered)
+            {
+                MyraEnvironment.Game.Disposed += ReleasePreloaded;
+                _releaseRegistered = true;
+            }
+        }
+        return data;
+    }
+
+    private static void ReleasePreloaded(object? sender, EventArgs args)
+    {
+        if (sender is Microsoft.Xna.Framework.Game game)
+        {
+            game.Disposed -= ReleasePreloaded;
+        }
+        Preloaded.Clear();
+        _releaseRegistered = false;
+    }
 
     private Texture2D Texture(string asset)
     {
         if (!_textures.TryGetValue(asset, out var texture))
         {
-            using var stream = File.OpenRead(Path.Combine(AppContext.BaseDirectory, "Content", asset));
+            using var stream = new MemoryStream(IconData(asset), writable: false);
             texture = Texture2D.FromStream(MyraEnvironment.GraphicsDevice, stream, DefaultColorProcessors.PremultiplyAlpha);
             _textures.Add(asset, texture);
         }

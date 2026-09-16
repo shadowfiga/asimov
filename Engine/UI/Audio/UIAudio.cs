@@ -1,4 +1,4 @@
-using Microsoft.Xna.Framework.Audio;
+using Graphite.Engine.Audio;
 
 namespace Graphite.Engine.UI.Audio;
 
@@ -52,106 +52,90 @@ public interface IUIAudioService : IDisposable
 
 public sealed class UIAudioService : IUIAudioService
 {
-    private readonly Dictionary<string, SoundEffect> _assets = [];
+    private readonly AudioManager _manager;
     private readonly List<Voice> _voices = [];
     private float _volume = 1;
+    private bool _muted;
+    private bool _disposed;
+
+    public UIAudioService(AudioManager? manager = null) => _manager = manager ?? AudioManager.Current;
+
     public float Volume
     {
-        get => _volume; set => _volume = Math.Clamp(value, 0, 1);
+        get => _volume;
+        set
+        {
+            _volume = AudioMath.Unit(value, nameof(Volume));
+            RefreshVoices();
+        }
     }
     public bool Muted
     {
-        get; set;
+        get => _muted;
+        set
+        {
+            _muted = value;
+            RefreshVoices();
+        }
     }
 
     public IUIAudioVoice Play(UISoundCue cue)
     {
-        if (!_assets.TryGetValue(cue.Asset, out var asset))
+        ObjectDisposedException.ThrowIf(_disposed, this);
+        ArgumentNullException.ThrowIfNull(cue);
+        AudioMath.Unit(cue.Volume, nameof(cue.Volume));
+        // UIAnimationPlayer already schedules cue.Delay; do not apply the delay a second time.
+        var voice = new Voice(_manager.Play(cue.Asset, new AudioPlayOptions
         {
-            using var stream = File.OpenRead(Path.GetFullPath(cue.Asset, AppContext.BaseDirectory));
-            asset = SoundEffect.FromStream(stream);
-            _assets.Add(cue.Asset, asset);
-        }
-        var instance = asset.CreateInstance();
-        try
-        {
-            instance.Volume = Muted ? 0 : Math.Clamp(cue.Volume * Volume, 0, 1);
-            instance.Pitch = Math.Clamp(cue.Pitch, -1, 1);
-            instance.Pan = Math.Clamp(cue.Pan, -1, 1);
-            instance.IsLooped = cue.Loop;
-            var voice = new Voice(instance, cue.Volume);
-            instance.Play();
-            _voices.Add(voice);
-            return voice;
-        }
-        catch
-        {
-            instance.Dispose();
-            throw;
-        }
+            Bus = _manager.Ui,
+            Volume = Muted ? 0 : cue.Volume * Volume,
+            Pitch = cue.Pitch,
+            Pan = cue.Pan,
+            Loop = cue.Loop,
+            Priority = 100
+        }), cue.Volume);
+        _voices.Add(voice);
+        return voice;
     }
 
     public void Update()
     {
-        foreach (var voice in _voices.ToArray())
+        for (var i = _voices.Count - 1; i >= 0; i--)
         {
+            var voice = _voices[i];
             if (!voice.IsPlaying)
             {
                 voice.Dispose();
-                _voices.Remove(voice);
+                _voices.RemoveAt(i);
             }
-            else
-            {
-                voice.SetVolume(Muted ? 0 : Math.Clamp(voice.Volume * Volume, 0, 1));
-            }
+        }
+    }
+
+    private void RefreshVoices()
+    {
+        foreach (var voice in _voices)
+        {
+            voice.SetVolume(Muted ? 0 : voice.Volume * Volume);
         }
     }
 
     public void Dispose()
     {
+        _disposed = true;
         foreach (var voice in _voices)
         {
             voice.Dispose();
         }
 
         _voices.Clear();
-        foreach (var asset in _assets.Values)
-        {
-            asset.Dispose();
-        }
-
-        _assets.Clear();
     }
 
-    private sealed class Voice(SoundEffectInstance instance, float volume) : IUIAudioVoice
+    private sealed class Voice(AudioVoice instance, float volume) : IUIAudioVoice
     {
-        private bool _disposed;
         public float Volume { get; } = volume;
-        public bool IsPlaying => !_disposed && instance.State != SoundState.Stopped;
-        public void SetVolume(float value)
-        {
-            if (!_disposed)
-            {
-                instance.Volume = value;
-            }
-        }
-        public void Stop()
-        {
-            if (!_disposed)
-            {
-                instance.Stop();
-            }
-        }
-        public void Dispose()
-        {
-            if (_disposed)
-            {
-                return;
-            }
-
-            instance.Stop();
-            instance.Dispose();
-            _disposed = true;
-        }
+        public bool IsPlaying => instance.IsPlaying;
+        public void SetVolume(float value) => instance.Volume = value;
+        public void Stop() => instance.Stop();
+        public void Dispose() => instance.Dispose();
     }
 }

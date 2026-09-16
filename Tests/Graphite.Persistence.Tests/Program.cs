@@ -22,6 +22,7 @@ internal static class Program
         {
             Throws<InvalidOperationException>(() => Storage.Load<Session>());
             Throws<InvalidOperationException>(() => Preferences.Get<bool>("muted"));
+            ActiveSession();
             Serialization();
             Slots(Path.Combine(root, "slots"));
             Migrations(Path.Combine(root, "migrations"));
@@ -311,6 +312,26 @@ internal static class Program
         Preferences.Set(volume, .5f);
         Rewrite(Preferences.FilePath, node => node["Data"]![volume.Name]!["Type"] = "string", updateChecksum: true);
         Check(Preferences.Initialize(failures).RecoveredFromBackup && Preferences.Get(volume) == .3f, "Invalid entry types recover a valid backup");
+    }
+
+    private static void ActiveSession()
+    {
+        Throws<InvalidOperationException>(() => _ = SessionManager.ActiveSession);
+        var first = new Session();
+        var second = new Session();
+        SessionManager.ActiveSession = first;
+        Check(ReferenceEquals(SessionManager.ActiveSession, first), "The manager holds the supplied live session without persistence initialization");
+        first.ClearSector("test-sector");
+        Check(SessionManager.ActiveSession.ClearedSectors.Contains("test-sector"), "Active state is the same in-memory session, not a snapshot");
+        SessionManager.ActiveSession = second;
+        Check(ReferenceEquals(SessionManager.ActiveSession, second), "The active session can be replaced");
+        SessionManager.ActiveSession = null;
+        Throws<InvalidOperationException>(() => _ = SessionManager.ActiveSession);
+        var nullability = new System.Reflection.NullabilityInfoContext()
+            .Create(typeof(SessionManager).GetProperty(nameof(SessionManager.ActiveSession))!);
+        Check(nullability.ReadState == System.Reflection.NullabilityState.NotNull
+            && nullability.WriteState == System.Reflection.NullabilityState.Nullable,
+            "The compiler contract guarantees a non-null getter while allowing null assignments");
     }
 
     private static void Sessions(string root)

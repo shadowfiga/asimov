@@ -1,4 +1,5 @@
 using Graphite.Engine.UI;
+using Graphite.Engine.Audio;
 using Microsoft.Xna.Framework;
 
 namespace Graphite.Engine.Scenes;
@@ -6,6 +7,7 @@ namespace Graphite.Engine.Scenes;
 public abstract class Scene
 {
     public UIScope UI { get; } = new();
+    public AudioScope Audio { get; } = new();
 
     protected internal virtual void OnLoad()
     {
@@ -28,7 +30,14 @@ public abstract class Scene
         }
         finally
         {
-            UI.CloseAll();
+            try
+            {
+                Audio.Dispose();
+            }
+            finally
+            {
+                UI.CloseAll();
+            }
         }
     }
 }
