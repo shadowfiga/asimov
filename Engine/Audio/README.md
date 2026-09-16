@@ -1,6 +1,6 @@
 # Engine audio
 
-`AudioManager.Current` is the game-thread, engine-wide audio service. `GameHost` restores its preferences before the first scene, updates it independently of UI, and disposes it after scene/UI teardown. No sound assets are assigned to the menu yet.
+`AudioManager.Current` is the game-thread, engine-wide audio service. `GameHost` restores its preferences before the first scene, updates it independently of UI, and disposes it after scene/UI teardown. The game assigns licensed menu/session music and control sounds through `Game/Audio/GameAudio.cs`; see [asset import and selections](../../Content/Audio/README.md).
 
 ## Mixer and settings
 
@@ -17,6 +17,8 @@ Use the typed keys in `AudioPreferences`; the existing three `PlayerPreferences`
 Effective volume is **voice gain × spatial attenuation × bus/ancestor user volumes × bus/ancestor snapshot gains**. Music goes through Music, never FX. UI remains part of FX but has its own sub-level. Ambience is independently adjustable. For another category, call `CreateBus("dialogue", audio.Master)` and route voices to that bus. Custom bus preferences/UI are explicitly authored rather than automatically adding settings.
 
 Setting a bus volume changes active voices immediately. Changes to persisted preferences are also picked up by the host's next audio update, without an open settings dialog. Temporary snapshots/ducking do not modify user preferences. Do not set `SoundEffect.MasterVolume`, use `MediaPlayer`, or create unmanaged sound instances for game playback: those bypass this routing.
+
+`Engine/UI/Audio/UIAudioFeedback` optionally binds immediate one-shot hover/focus/click cues to a button without a material wrapper or layout changes. The game supplies the asset/gain choices. Hidden or disabled ancestry suppresses playback; disposing the binding unsubscribes its handlers. The shared UI service owns the resulting one-shots, so closing a dialog does not truncate a click.
 
 ## 2D positional playback
 
@@ -114,7 +116,7 @@ The music renderer blends adjacent intensity versions into **one 48 kHz stereo P
 
 The output queues three 1024-frame buffers (about 64 ms). `RenderedFrames` reports the rendering horizon, not the exact speaker position. The host must keep pumping audio; a main-thread stall longer than the buffered audio can underrun. `UnderrunCount` exposes this. Sample alignment is preserved on recovery, but uninterrupted playback through arbitrary loading stalls is **not** guaranteed. Load/decode assets before playback; a dedicated streaming backend remains a future improvement.
 
-The game-side enemy/threat director, selected soundtrack, and authored transition metadata are still pending. The engine does not depend on enemy classes, UI screens, or Chisel.
+The game-side enemy/threat director and auditioned beat/transition markers are still pending. Two provisional licensed cues use timed crossfades and source-specified tails. The engine does not depend on enemy classes, UI screens, or Chisel.
 
 ## Asset formats and limits
 
@@ -143,4 +145,4 @@ dotnet run --project Tests/Graphite.Audio.Tests
 dotnet run --project Tests/Graphite.Audio.Tests -- --native
 ```
 
-The first test command needs no audio device. The optional native check exercises MonoGame/OpenAL with a silent fixture: native effects, high sample rates, stream refill, pause/resume and stop. Tests cover routing, preferences, UI delegation, spatial math, budgets, snapshots/zones, WAV decoding, music loops/tails, downbeat scheduling, crossfades and chunk-size-independent synchronization. The older UI test project currently has unrelated compile failures from removed session play-time members.
+The first test command needs no audio device. The optional native check exercises MonoGame/OpenAL with a silent fixture: native effects, high sample rates, stream refill, pause/resume and stop. Tests cover routing, preferences, UI delegation, spatial math, budgets, snapshots/zones, WAV decoding, music loops/tails, downbeat scheduling, crossfades and chunk-size-independent synchronization. Add `--assets` to check the locally imported soundtrack. UI tests cover the bootstrap → Play → session-preload flow.

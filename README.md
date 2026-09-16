@@ -1,10 +1,18 @@
 # DEEP // DRIVE
 
-Mining-defense roguelite foundation using Graphite / MonoGame DesktopGL. Startup runs `BootstrapScene` → `MainMenuScene`. Gameplay is being rebuilt around the prototype scope, so operation buttons remain disabled while Settings is functional. The authoritative product scope is [DEEP DRIVE — Game Design Document.md](<DEEP DRIVE — Game Design Document.md>).
+Mining-defense roguelite foundation using Graphite / MonoGame DesktopGL. Startup runs `BootstrapScene` → `MainMenuScene`. Play prepares a fresh in-memory session through `SessionLoadingScene`, then enters `SessionScene`. Gameplay/world rendering is not implemented yet; Escape returns to the menu. Settings is functional. The authoritative product scope is [DEEP DRIVE — Game Design Document.md](<DEEP DRIVE — Game Design Document.md>).
 
 ## Run
 
 On macOS, double-click `Play DEEP DRIVE.command`. Alternatively, use `./run.sh` (macOS/Linux) or `run.cmd` (Windows). For initial setup, use `./setup.sh` or `setup.cmd`.
+
+Before the first build, import the selected licensed audio from your owned ZIPs:
+
+```powershell
+python Scripts/import_audio.py "C:\Users\matic\Downloads"
+```
+
+See [audio asset selections and import details](Content/Audio/README.md). Imported WAVs stay local/Git-ignored; other machines must import their copies too.
 
 ## Settings
 
@@ -14,7 +22,7 @@ Debug defaults to staging; Release defaults to production. Override with `DEEP_D
 
 Staging defaults to **2560×1440 borderless fullscreen**; production retains **1280×720 windowed**. Borderless fills the current desktop at its native resolution (1440p on a 1440p desktop); it does not change the monitor's mode. Confirmed player settings override these environment defaults on subsequent launches.
 
-Settings uses a wide modal with sidebar navigation and one active page: **Video** (display mode and resolution), **Audio** (master, music, and FX volume sliders), and **Accessibility** (UI scale and CRT intensity). There is no Mute setting; zero master volume silences both channels. There are no placeholder Gameplay/Controls pages or unsupported switches. Settings apply and persist live; the footer only needs Back. The page area scrolls when necessary while the header and Back button stay visible.
+Settings uses a wide modal with sidebar navigation and one active page: **Video** (display mode and resolution), **Audio** (master, music, FX, ambience and UI volume sliders), and **Accessibility** (UI scale and CRT intensity). There is no Mute setting; zero master volume silences every channel. There are no placeholder Gameplay/Controls pages or unsupported switches. Settings apply and persist live; the footer only needs Back. The page area scrolls when necessary while the header and Back button stay visible.
 
 Video offers Windowed, Borderless Fullscreen, and Fullscreen modes plus a resolution dropdown. Windowed resolutions fit the desktop; exclusive fullscreen lists the graphics adapter's supported modes. Borderless displays its desktop resolution with the selector disabled. Mode/resolution changes are previewed immediately, then require **Keep** within 15 seconds or automatically revert; the red **Cancel** button restores the prior configuration immediately. Both confirmation buttons are text-only. Escape/Back first reverts an open display confirmation, otherwise it closes Settings.
 
@@ -79,15 +87,15 @@ root.Widgets.Add(confirmation.Overlay);
 confirmation.Show();
 ```
 
-The main menu uses [Lucide](https://lucide.dev/) icons, bundled as SVG sources and 96 px PNGs in `Content/Icons/Lucide` with their license and source revision. Normal builds use the PNGs. Menu spacing and type scale with the window. Continue, New Operation, and Load Operation remain disabled while gameplay is being rebuilt.
+The main menu uses [Lucide](https://lucide.dev/) icons, bundled as SVG sources and 96 px PNGs in `Content/Icons/Lucide` with their license and source revision. Normal builds use the PNGs. Menu spacing and type scale with the window. Its actions are Play, Settings, Credits and Quit; there are no Continue/New/Load buttons. Shared buttons use engine `UIAudioFeedback` for hover/focus/click one-shots without changing their rendering or layout.
 
 The fullscreen CRT progress-slider runs from 0% to 100%, with its label, bar, and percentage inline. Zero disables processing and every non-zero value enables it; no separate checkbox or boolean is stored. The treatment is the original Aged profile: subtle horizontal scanlines, faint two-dimensional screen-space noise, radial falloff, and bloom. There is no direction selector or screen curvature. The CRT is a game-wide final-frame pass over the scene and UI, so the same preference remains active during gameplay. Menu buttons use ordinary Myra hover/focus states rather than per-button shader materials.
 
 ## Persistence
 
-Use the static engine APIs from any scene. `GameHost` initializes storage and loads preferences before calling `Startup.Initialize` and constructing the first scene. The game startup callback installs its theme, interaction styles, audio preferences, and final-frame CRT. `Game/Scenes/Bootstrap` presents a centered loading view with a themed, borderless progress bar, prepares UI font sizes and caches bundled icon file data one resource per rendered frame, then opens the main menu. Cached icon data is reused by menu assets and released with the game; GPU textures retain their existing per-screen ownership. Bootstrap does not load or create a session.
+Use the static engine APIs from any scene. `GameHost` initializes storage and loads preferences before calling `Startup.Initialize` and constructing the first scene. `BootstrapScene` uses the shared `Game/Scenes/Loading` flow to prepare UI fonts, icon data, two synchronized music cues and UI sounds before opening the menu. Resource preparation advances once per rendered frame. Music decoding finishes before playback begins. Bootstrap does not create a session. Play uses the same loading view and publishes a new `SessionManager.ActiveSession` only after its preload succeeds; repeated clicks cannot queue duplicate loads.
 
-`SessionManager.ActiveSession` in `Game/Sessions/SessionManager.cs` holds the in-memory session shared across scenes. Its getter returns a non-null `Session` or throws `InvalidOperationException` if none is set. Assign a session to activate it or `null` to clear it; `[AllowNull]` permits null assignment without making reads nullable. It has no save-slot limit, disk operations, last-active-ID preference, or Continue logic; those workflows remain unimplemented.
+`SessionManager.ActiveSession` in `Game/Domain/Sessions/SessionManager.cs` holds the in-memory session shared across scenes. Its getter returns a non-null `Session` or throws `InvalidOperationException` if none is set. Assign a session to activate it or `null` to clear it; `[AllowNull]` permits null assignment without making reads nullable. It has no save-slot limit, disk operations, last-active-ID preference, or Continue logic; those workflows remain unimplemented.
 
 ```csharp
 using Graphite.Engine.Persistence;

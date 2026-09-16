@@ -1,4 +1,5 @@
 using Graphite.Engine.Core;
+using Graphite.Engine.Scenes;
 using Graphite.Engine.UI;
 using Graphite.Game.Configuration;
 using Graphite.Game.UI;
@@ -16,6 +17,7 @@ public sealed class MainMenuUI : UIScreen
 {
     private readonly MenuAssets _assets = new();
     private readonly UIScope _dialogs = new();
+    private MenuButton _playButton = null!;
     private MenuButton _settingsButton = null!;
     private MenuButton _creditsButton = null!;
     private MenuButton _quitButton = null!;
@@ -45,9 +47,7 @@ public sealed class MainMenuUI : UIScreen
         var brand = new VerticalStackPanel { Spacing = spacing.Sm };
         brand.Widgets.Add(new MenuTitle());
         var buttons = new VerticalStackPanel { Spacing = spacing.Sm };
-        AddRow(buttons, "CONTINUE", "play", enabled: false, primary: true, arrow: false);
-        AddRow(buttons, "NEW OPERATION", "play", enabled: false);
-        AddRow(buttons, "LOAD OPERATION", "folder-open", enabled: false);
+        _playButton = AddRow(buttons, "PLAY", "play", primary: true, arrow: false);
         _settingsButton = AddRow(buttons, "SETTINGS", "settings");
         _creditsButton = AddRow(buttons, "CREDITS", "users", enabled: GameSettings.Instance.Menu.Credits.Count > 0);
         _quitButton = AddRow(buttons, "QUIT", "log-out");
@@ -85,6 +85,7 @@ public sealed class MainMenuUI : UIScreen
 
     protected override void Awake()
     {
+        _playButton.Click += Play;
         _settingsButton.Click += ShowSettings;
         _creditsButton.Click += ShowCredits;
         _quitButton.Click += Quit;
@@ -92,11 +93,22 @@ public sealed class MainMenuUI : UIScreen
 
     protected override void OnDestroy()
     {
+        _playButton.Click -= Play;
         _settingsButton.Click -= ShowSettings;
         _creditsButton.Click -= ShowCredits;
         _quitButton.Click -= Quit;
         _dialogs.CloseAll();
         _assets.Dispose();
+    }
+
+    private void Play(object sender, MyraEventArgs args)
+    {
+        if (IsClosing || !_playButton.Enabled)
+        {
+            return;
+        }
+        _playButton.Enabled = false;
+        SceneManager.Load<SessionLoadingScene>();
     }
 
     private void ShowSettings(object sender, MyraEventArgs args)

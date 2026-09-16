@@ -30,7 +30,7 @@ internal static class StartupChecks
     {
         get; set;
     }
-    internal static double ExpectedTime
+    internal static int ExpectedClearedCount
     {
         get; private set;
     }
@@ -50,18 +50,18 @@ internal static class StartupChecks
             Preferences.Set(RuntimePreferences.Display, "Windowed:1280x720");
             Storage.Initialize(Path.Combine(root, "saves"));
             var session = new Session();
-            session.AddPlayTime(12);
+            session.ClearSector("initial");
             Storage.Save(session);
             Preferences.Shutdown();
             Storage.Shutdown();
             for (var run = 0; run < 2; run++)
             {
-                ExpectedTime = 12 + run * 3;
+                ExpectedClearedCount = 1 + run;
                 Configured = Constructed = Loaded = Unloaded = false;
                 using (var game = new GameHost(settings, () =>
                 {
                     Program.Check(Preferences.Get(PlayerPreferences.MasterVolume) == .25f
-                        && Storage.Load<Session>().PlayTimeSeconds == ExpectedTime, "Engine persistence is ready before game initialization");
+                        && Storage.Load<Session>().ClearedSectors.Count == ExpectedClearedCount, "Engine persistence is ready before game initialization");
                     Startup.Initialize();
                     Program.Check(EnvironmentOverlay.IsInitialized && EnvironmentOverlay.Text == "STAGING",
                         "The host initializes its environment print before the first scene");
@@ -89,13 +89,17 @@ internal static class StartupChecks
                     Storage.Load<Session>();
                     throw new Exception("Storage was not shut down");
                 }
-                catch (InvalidOperationException) { }
+                catch (InvalidOperationException)
+                {
+                }
                 try
                 {
                     Preferences.Get(PlayerPreferences.MasterVolume);
                     throw new Exception("Preferences were not shut down");
                 }
-                catch (InvalidOperationException) { }
+                catch (InvalidOperationException)
+                {
+                }
             }
         }
         finally
@@ -135,7 +139,7 @@ public sealed class StartupProbeScene : Scene
     public StartupProbeScene()
     {
         Program.Check(StartupChecks.Configured && Preferences.Get(PlayerPreferences.MasterVolume) == .25f
-            && Storage.Load<Session>().PlayTimeSeconds == StartupChecks.ExpectedTime,
+            && Storage.Load<Session>().ClearedSectors.Count == StartupChecks.ExpectedClearedCount,
             "All initialization finishes before the first scene is constructed");
         Program.Near(Graphite.Engine.Audio.AudioManager.Current.Fx.EffectiveVolume, .15f, "Loaded master and FX apply before the first scene");
         Program.Near(Graphite.Engine.Audio.AudioManager.Current.Music.EffectiveVolume, .1f, "Loaded master and music apply before the first scene");
@@ -149,7 +153,7 @@ public sealed class StartupProbeScene : Scene
     protected internal override void OnLoad()
     {
         var session = Storage.Load<Session>();
-        session.AddPlayTime(3);
+        session.ClearSector($"sector-{StartupChecks.ExpectedClearedCount}");
         Storage.Save(session);
         Preferences.Set("startup.fixture", true);
         Program.Check(Preferences.Get<bool>("startup.fixture"), "Preferences.Set works in the first scene");
@@ -159,7 +163,7 @@ public sealed class StartupProbeScene : Scene
 
     protected internal override void OnUnload()
     {
-        Program.Check(Storage.Load<Session>().PlayTimeSeconds == StartupChecks.ExpectedTime + 3
+        Program.Check(Storage.Load<Session>().ClearedSectors.Count == StartupChecks.ExpectedClearedCount + 1
             && Preferences.Remove<bool>("startup.fixture"), "Persistence stays available during scene teardown");
         StartupChecks.Unloaded = true;
     }

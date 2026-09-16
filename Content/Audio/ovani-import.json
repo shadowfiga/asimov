@@ -1,0 +1,49 @@
+{
+  "assets": [
+    {
+      "archive": "Metal Music Pack Vol. 3.zip",
+      "entry": "Metal Music Pack Vol. 3/Fallen Angel (RT 6.455)/Metal Vol3 Fallen Angel Intensity 1.wav",
+      "output": "Music/fallen-angel-low.wav"
+    },
+    {
+      "archive": "Metal Music Pack Vol. 3.zip",
+      "entry": "Metal Music Pack Vol. 3/Fallen Angel (RT 6.455)/Metal Vol3 Fallen Angel Intensity 2.wav",
+      "output": "Music/fallen-angel-medium.wav"
+    },
+    {
+      "archive": "Metal Music Pack Vol. 3.zip",
+      "entry": "Metal Music Pack Vol. 3/Fallen Angel (RT 6.455)/Metal Vol3 Fallen Angel Main.wav",
+      "output": "Music/fallen-angel-full.wav"
+    },
+    {
+      "archive": "Metal Music Pack Vol. 3.zip",
+      "entry": "Metal Music Pack Vol. 3/Chin Surgery (RT 6.455)/Metal Vol3 Chin Surgery Intensity 1.wav",
+      "output": "Music/chin-surgery-low.wav"
+    },
+    {
+      "archive": "Metal Music Pack Vol. 3.zip",
+      "entry": "Metal Music Pack Vol. 3/Chin Surgery (RT 6.455)/Metal Vol3 Chin Surgery Intensity 2.wav",
+      "output": "Music/chin-surgery-medium.wav"
+    },
+    {
+      "archive": "Metal Music Pack Vol. 3.zip",
+      "entry": "Metal Music Pack Vol. 3/Chin Surgery (RT 6.455)/Metal Vol3 Chin Surgery Main.wav",
+      "output": "Music/chin-surgery-full.wav"
+    },
+    {
+      "archive": "UI & Menus Sound FX Pack(1).zip",
+      "entry": "UI & Menu/Mouse/Hover-On/Mouse Hover Soft A.wav",
+      "output": "UI/hover.wav"
+    },
+    {
+      "archive": "UI & Menus Sound FX Pack(1).zip",
+      "entry": "UI & Menu/Mouse/Clicks/Click Tick.wav",
+      "output": "UI/click.wav"
+    },
+    {
+      "archive": "Metal Music Pack Vol. 3.zip",
+      "entry": "Metal Music Pack Vol. 3/Royalty-Free License (Link).pdf",
+      "output": "License/Royalty-Free License (Link).pdf"
+    }
+  ]
+}

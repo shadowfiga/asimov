@@ -2,6 +2,7 @@ using System.Text;
 using Graphite.Engine.Audio;
 using Graphite.Engine.Persistence;
 using Graphite.Engine.UI.Audio;
+using Graphite.Game.Audio;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Audio;
 
@@ -20,6 +21,10 @@ internal static class Program
         WaveChecks();
         MusicChecks();
         PreferenceAndUiChecks();
+        if (args.Contains("--assets"))
+        {
+            AssetChecks();
+        }
         if (args.Contains("--native"))
         {
             NativeChecks();
@@ -347,6 +352,42 @@ internal static class Program
         {
             Preferences.Shutdown();
         }
+    }
+
+    private static void AssetChecks()
+    {
+        using var manager = new AudioManager(new FakeBackend());
+        foreach (var step in GameAudio.PreloadSteps(manager))
+        {
+            step();
+        }
+        Check(manager.CachedClipCount == 8, "Only six music variants and two UI effects are preloaded");
+        var menu = GameAudio.MenuCue(manager);
+        var session = GameAudio.SessionCue(manager);
+        foreach (var cue in new[] { menu, session })
+        {
+            Check(cue.Intensities.Count == 3 && cue.SampleRate == 48000, "Imported low/medium/full variants are aligned at 48 kHz");
+            Check(cue.BeatsPerMinute == 112, "Cue tempo matches embedded vendor metadata");
+            Check(cue.Intensities[0].FrameCount - cue.LoopEndFrame == 309840, "Vendor's 6.455-second tail is excluded from loop body");
+            foreach (var intensity in new[] { 0f, .25f, .5f, 1f })
+            {
+                Check(float.IsFinite(cue.Sample(cue.LoopEndFrame, 0, intensity)), "Licensed cue can render its loop/tail boundary at every intensity");
+            }
+        }
+        Check(menu.Intensities[0].FrameCount == 4629429 && session.Intensities[0].FrameCount == 5246590,
+            "Selected files preserve their full source sample counts");
+        Check(ReferenceEquals(menu.Intensities[0], GameAudio.MenuCue(manager).Intensities[0]) && manager.CachedClipCount == 8,
+            "Scene entry reuses preloaded clips instead of decoding or duplicating them");
+        var transport = new MusicTransport();
+        transport.Play(menu, MusicTransition.Immediate, 0);
+        Render(transport, 4800);
+        transport.Play(session, MusicTransition.Immediate, .1f);
+        transport.SetIntensity(.25f, .2f);
+        var samples = Render(transport, 12000);
+        Check(transport.CurrentCueId == session.Id && samples.All(float.IsFinite) && samples.Any(sample => Math.Abs(sample) > .001f),
+            "Real imported tracks crossfade with non-silent finite output");
+        Near(transport.Intensity, .25f, "Session preparation intensity ramps without restarting its cue");
+        Console.WriteLine("Imported Ovani asset checks passed (offline rendering, no playback).");
     }
 
     private static void NativeChecks()

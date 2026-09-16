@@ -68,6 +68,7 @@ internal sealed class GraphicsChecks : Microsoft.Xna.Framework.Game
         EnvironmentOverlayChecks.Run(GraphicsDevice, _output);
         FontRenderingChecks();
         NativeAudioCheck();
+        ControlAudioChecks();
         CrtShaderChecks();
         FullscreenPostProcessChecks();
         RoundedSurfaceChecks();
@@ -144,6 +145,47 @@ internal sealed class GraphicsChecks : Microsoft.Xna.Framework.Game
         {
             var region = pixels.Skip(top * target.Width).Take(60 * target.Width).Where(pixel => pixel.R > 25).ToArray();
             return region.Count(pixel => pixel.R < 220) / (float)region.Length;
+        }
+    }
+
+    private static void ControlAudioChecks()
+    {
+        using var audio = new FakeAudio();
+        Ui.SetAudioService(audio);
+        try
+        {
+            var cue = new UISoundCue { Asset = "fixture.wav", Volume = .2f };
+            var button = new Button();
+            var parent = new Panel();
+            parent.Widgets.Add(button);
+            using var feedback = new UIAudioFeedback(button, click: cue);
+            button.DoClick();
+            Program.Check(audio.Cues.Count == 1 && ReferenceEquals(audio.Cues[0], cue), "Control feedback routes one click through the shared UI audio service");
+            parent.Enabled = false;
+            button.DoClick();
+            parent.Enabled = true;
+            parent.Visible = false;
+            button.DoClick();
+            Program.Check(audio.Cues.Count == 1, "Disabled/hidden control ancestry suppresses sounds");
+            parent.Visible = true;
+            feedback.Dispose();
+            button.DoClick();
+            Program.Check(audio.Cues.Count == 1 && audio.Voices.Single().IsPlaying, "Unbinding feedback removes handlers without cutting off its one-shot");
+            try
+            {
+                using var invalid = new UIAudioFeedback(button, click: cue with
+                {
+                    Loop = true
+                });
+                throw new InvalidOperationException("Looping feedback should have been rejected");
+            }
+            catch (ArgumentException)
+            {
+            }
+        }
+        finally
+        {
+            Ui.SetAudioService(new UIAudioService());
         }
     }
 
@@ -417,7 +459,9 @@ internal sealed class GraphicsChecks : Microsoft.Xna.Framework.Game
         var fill = new Color(40, 40, 40, 128);
         var border = new Color(128, 128, 128, 128);
         foreach (var scale in new[] { .4f, .5f, .8f, 1f, 1.25f, 1.6f, 2f })
+        {
             foreach (var stroke in new[] { 1, 2 })
+            {
                 foreach (var offset in new[] { 11, 12, 13 })
                 {
                     var panel = new Panel
@@ -461,6 +505,8 @@ internal sealed class GraphicsChecks : Microsoft.Xna.Framework.Game
                     Program.Check(pixels[(top + bottom) / 2 * target.Width + (left + right) / 2] == fill,
                         "Square outline does not overwrite the surface fill");
                 }
+            }
+        }
     }
 
     private static void MenuButtonThemeChecks()

@@ -1,4 +1,6 @@
 using Graphite.Engine.UI.Theming;
+using Graphite.Engine.UI.Audio;
+using Graphite.Game.Audio;
 using Graphite.Game.UI.Theming;
 using Microsoft.Xna.Framework;
 using Myra.Graphics2D;
@@ -113,6 +115,7 @@ internal sealed class MenuButton : Button
         KeyboardFocusChanged += RefreshContentState;
         EnabledChanged += RefreshContentState;
         RefreshContentState();
+        _ = new UIAudioFeedback(this, GameAudio.Hover, GameAudio.Click);
     }
 
     private static int? SizeOverride(int? value, int minimum, string parameter)

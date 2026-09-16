@@ -1241,7 +1241,7 @@ Choose a small, coherent set of cues with satisfying low, medium and high arrang
 
 Build an original, reusable music system for the MonoGame runtime. Ovani's [Music Plugin](https://ovanisound.com/products/unity-audio-plugin) is the functional reference for intensity changes, song selection and seamless looping; beat/bar scheduling and the enemy rules below are our own requirements, not assumptions about that plugin's internals.
 
-The engine now supplies Master, Music, FX, Ambience and UI volume controls, 2D positional effects, gain-based ambience zones, and sample-synchronized intensity/cue playback. See the [engine audio implementation notes](Engine/Audio/README.md). The selected soundtrack, authored musical metadata and game-side enemy/threat director remain **planned work**. This foundation does not include environmental reverb/occlusion DSP or disk-streamed music.
+The engine now supplies Master, Music, FX, Ambience and UI volume controls, 2D positional effects, gain-based ambience zones, and sample-synchronized intensity/cue playback. See the [engine audio implementation notes](Engine/Audio/README.md). A provisional two-cue selection from the supplied Metal Vol. 3 pack is wired: **Fallen Angel** for the menu, **Chin Surgery** for session preparation, plus hover/click sounds from UI & Menus. All three intensity mixes are preloaded; transitions currently use timed crossfades. Embedded tempo labels and supplied reverb-tail values are recorded in the [asset notes](Content/Audio/README.md). Final audition, downbeat/meter verification and the game-side enemy/threat director remain **planned work**. This foundation does not include environmental reverb/occlusion DSP or disk-streamed music.
 
 Separate two responsibilities:
 

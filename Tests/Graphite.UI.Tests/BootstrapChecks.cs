@@ -1,8 +1,10 @@
 using System.Reflection;
 using Graphite.Engine.Persistence;
+using Graphite.Engine.Audio;
 using Graphite.Engine.Scenes;
 using Graphite.Game.Scenes;
 using Graphite.Game.Sessions;
+using Graphite.Game.UI;
 using Graphite.Game.UI.Theming;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
@@ -18,11 +20,11 @@ internal static class BootstrapChecks
         var desktop = (Desktop)typeof(Ui).GetField("_desktop", BindingFlags.Static | BindingFlags.NonPublic)!.GetValue(null)!;
         var originalScale = Preferences.Get(RuntimePreferences.UiScale);
         var session = new Session();
-        session.AddPlayTime(42);
+        session.ClearSector("fixture-sector");
         SessionManager.ActiveSession = session;
         try
         {
-            using (var screen = Ui.Open<BootstrapUI>())
+            using (var screen = Ui.Open<LoadingUI>())
             {
                 screen.SetProgress(.5f);
                 foreach (var scale in new[] { .75f, 1.75f, 1f })
@@ -75,8 +77,9 @@ internal static class BootstrapChecks
             }
             Program.Check(!desktop.Widgets.Contains(loading) && Ui.HostCount > 0 && steps > 1 && showedComplete,
                 "Bootstrap prepares UI resources and presents completed progress before opening the menu");
-            Program.Check(ReferenceEquals(SessionManager.ActiveSession, session) && session.PlayTimeSeconds == 42,
-                "Bootstrap preloads only UI and does not replace, load, or advance the active session");
+            Program.Check(ReferenceEquals(SessionManager.ActiveSession, session) && session.ClearedSectors.Contains("fixture-sector"),
+                "Bootstrap preloads presentation assets without replacing or advancing the active session");
+            CheckPlay(desktop, session, device, output);
             SceneManager.Shutdown();
             Program.Check(Ui.HostCount == 0, "Scene teardown releases menu hosts after bootstrap");
         }
@@ -87,6 +90,49 @@ internal static class BootstrapChecks
             Preferences.Set(RuntimePreferences.UiScale, originalScale);
             Ui.Update(0);
         }
+    }
+
+    private static void CheckPlay(Desktop desktop, Session original, GraphicsDevice device, string output)
+    {
+        Ui.Update(0);
+        var buttons = desktop.Widgets.Single().GetChildren(true).OfType<MenuButton>().ToArray();
+        string Text(MenuButton button) => button.GetChildren(true).OfType<Label>().Single().Text;
+        Program.Check(buttons.Select(Text).SequenceEqual(new[] { "PLAY", "SETTINGS", "CREDITS", "QUIT" }),
+            "One Play action replaces Continue, New Operation and Load Operation");
+        Capture(device, output, "menu-play");
+        var play = buttons.Single(button => Text(button) == "PLAY");
+        var cached = AudioManager.Current.CachedClipCount;
+        play.DoClick();
+        play.DoClick();
+        Program.Check(!play.Enabled && ReferenceEquals(SessionManager.ActiveSession, original),
+            "Double-click cannot queue duplicate loads or publish an unprepared session");
+        SceneManager.CommitPendingChanges();
+        var loading = desktop.Widgets.Single();
+        var meter = loading.GetChildren(true).OfType<HorizontalProgressBar>().Single();
+        SceneManager.Update(0);
+        Program.Check(meter.Value == 0 && ReferenceEquals(SessionManager.ActiveSession, original),
+            "Play presents loading before preparing the new session");
+        for (var frame = 0; frame < 2; frame++)
+        {
+            SceneManager.Draw(new GameTime());
+            SceneManager.Update(0);
+            SceneManager.CommitPendingChanges();
+            Program.Check(ReferenceEquals(SessionManager.ActiveSession, original), "Partial preload does not replace active session");
+        }
+        Program.Check(meter.Value == 1, "Session preload reaches completion before entry");
+        Ui.Update(0);
+        Capture(device, output, "session-preloaded");
+        SceneManager.Draw(new GameTime());
+        SceneManager.Update(0);
+        SceneManager.CommitPendingChanges();
+        Program.Check(!ReferenceEquals(SessionManager.ActiveSession, original) && SessionManager.ActiveSession.ClearedSectors.Count == 0,
+            "Successful preload publishes a fresh non-null session");
+        Program.Check(desktop.Widgets.Count == 0 && AudioManager.Current.CachedClipCount == cached,
+            "Session entry closes loading UI and reuses bootstrap audio assets");
+        SceneManager.Load<MainMenuScene>();
+        SceneManager.CommitPendingChanges();
+        Program.Check(desktop.Widgets.Count == 1, "The main menu can be re-entered after playing");
+        AudioManager.Current.MusicPlayer.Stop(0);
     }
 
     private static void Capture(GraphicsDevice device, string output, string name)

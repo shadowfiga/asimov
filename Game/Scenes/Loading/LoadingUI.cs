@@ -6,14 +6,14 @@ using Myra.Graphics2D.UI;
 
 namespace Graphite.Game.Scenes;
 
-public sealed class BootstrapUI : UIScreen
+public sealed class LoadingUI : UIScreen
 {
     private HorizontalProgressBar _progress = null!;
 
     protected override Widget Build()
     {
         var theme = GameThemes.DeepDrive;
-        var title = DialogLayout.Title("LOADING UI", theme.MenuButton.Dialog.DefaultFontSize);
+        var title = DialogLayout.Title("LOADING", theme.MenuButton.Dialog.DefaultFontSize);
         title.HorizontalAlignment = HorizontalAlignment.Center;
         _progress = new HorizontalProgressBar
         {

@@ -1,4 +1,6 @@
 using Graphite.Engine.UI.Theming;
+using Graphite.Engine.UI.Audio;
+using Graphite.Game.Audio;
 using Graphite.Game.UI.Theming;
 using Microsoft.Xna.Framework;
 using Myra.Graphics2D;
@@ -33,6 +35,7 @@ internal sealed class SettingsNavigationButton : Button
         KeyboardFocusChanged += (_, _) => RefreshText();
         PressedChanged += (_, _) => RefreshText();
         Select(false);
+        _ = new UIAudioFeedback(this, GameAudio.Hover, GameAudio.Click);
     }
 
     internal void Select(bool selected)

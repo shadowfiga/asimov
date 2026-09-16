@@ -1,18 +1,19 @@
 using Graphite.Engine.Scenes;
 using Graphite.Game.Audio;
+using Graphite.Game.Sessions;
 using Microsoft.Xna.Framework.Input;
 
 namespace Graphite.Game.Scenes;
 
-public sealed class MainMenuScene : Scene
+/// <summary>Session entry point. Gameplay/world rendering is not implemented yet.</summary>
+public sealed class SessionScene : Scene
 {
-    private MainMenuUI _screen = null!;
     private KeyboardState _previous;
 
     protected internal override void OnLoad()
     {
-        _screen = UI.Open<MainMenuUI>();
-        GameAudio.PlayMenu();
+        _ = SessionManager.ActiveSession;
+        GameAudio.PlaySession();
         _previous = Keyboard.GetState();
     }
 
@@ -21,7 +22,7 @@ public sealed class MainMenuScene : Scene
         var keyboard = Keyboard.GetState();
         if (Myra.MyraEnvironment.Game.IsActive && keyboard.IsKeyDown(Keys.Escape) && !_previous.IsKeyDown(Keys.Escape))
         {
-            _screen.BackToMenu();
+            SceneManager.Load<MainMenuScene>();
         }
         _previous = keyboard;
     }
