@@ -102,6 +102,7 @@ internal static class BootstrapChecks
         Capture(device, output, "menu-play");
         var play = buttons.Single(button => Text(button) == "PLAY");
         var cached = AudioManager.Current.CachedClipCount;
+        var cursorVisible = Myra.MyraEnvironment.Game.IsMouseVisible;
         play.DoClick();
         play.DoClick();
         Program.Check(!play.Enabled && ReferenceEquals(SessionManager.ActiveSession, original),
@@ -129,9 +130,23 @@ internal static class BootstrapChecks
             "Successful preload publishes a fresh non-null session");
         Program.Check(desktop.Widgets.Count == 0 && AudioManager.Current.CachedClipCount == cached,
             "Session entry closes loading UI and reuses bootstrap audio assets");
+        Program.Check(!Myra.MyraEnvironment.Game.IsMouseVisible, "Play hides the system pointer for the world-space reticle");
+        using (var target = new RenderTarget2D(device, device.PresentationParameters.BackBufferWidth, device.PresentationParameters.BackBufferHeight))
+        {
+            device.SetRenderTarget(target);
+            device.Clear(GameThemes.DeepDrive.Background);
+            SceneManager.Draw(new GameTime());
+            device.SetRenderTarget(null);
+            var pixels = new Color[target.Width * target.Height];
+            target.GetData(pixels);
+            Program.Check(pixels.Count(pixel => pixel.R > 180) > 100, "Play draws the robot as scene content with no UI hosts");
+            using var stream = File.Create(Path.Combine(output, "session-robot.png"));
+            target.SaveAsPng(stream, target.Width, target.Height);
+        }
         SceneManager.Load<MainMenuScene>();
         SceneManager.CommitPendingChanges();
         Program.Check(desktop.Widgets.Count == 1, "The main menu can be re-entered after playing");
+        Program.Check(Myra.MyraEnvironment.Game.IsMouseVisible == cursorVisible, "Leaving play restores the menu cursor");
         AudioManager.Current.MusicPlayer.Stop(0);
     }
 

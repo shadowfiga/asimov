@@ -1,6 +1,6 @@
 # DEEP // DRIVE
 
-Mining-defense roguelite foundation using Graphite / MonoGame DesktopGL. Startup runs `BootstrapScene` → `MainMenuScene`. Play prepares a fresh in-memory session through `SessionLoadingScene`, then enters `SessionScene`. Gameplay/world rendering is not implemented yet; Escape returns to the menu. Settings is functional. The authoritative product scope is [DEEP DRIVE — Game Design Document.md](<DEEP DRIVE — Game Design Document.md>).
+Mining-defense roguelite foundation using Graphite / MonoGame DesktopGL. Startup runs `BootstrapScene` → `MainMenuScene`. Play prepares a fresh in-memory session through `SessionLoadingScene`, then enters the top-down robot prototype in `SessionScene`. Escape returns to the menu. Settings is functional. The authoritative product scope is [DEEP DRIVE — Game Design Document.md](<DEEP DRIVE — Game Design Document.md>).
 
 ## Run
 
@@ -13,6 +13,21 @@ python Scripts/import_audio.py "C:\Users\matic\Downloads"
 ```
 
 See [audio asset selections and import details](Content/Audio/README.md). Imported WAVs stay local/Git-ignored; other machines must import their copies too.
+
+## Robot prototype
+
+WASD or arrow keys move the robot; the legs face the movement direction. Their placeholder pose is static; frame-based animation will be added later. The torso faces the mouse and each arm gun aims independently at the reticle. Hold left mouse to fire both guns. Diagonal movement is normalized. The camera follows the robot, and aiming uses world coordinates independently of the UI scale. Losing window focus pauses the simulation and requires releasing the fire button before shooting again.
+
+`Game/Domain/Player/PlayerController.cs` owns movement and pose, `PlayerInput.cs` reads Chisel actions, and `Game/Domain/Combat/TwinGunController.cs` owns fire cadence and expiring projectiles. `Game/Graphics/RobotRenderer.cs` supplies temporary geometric art. `SessionScene` only wires input, simulation, rendering and scene lifetime together. The reusable world/backbuffer `Camera2D` lives in the engine; robot behavior does not.
+
+Chisel owns the input bindings and the **Robots** and **Weapons** definitions under `.chisel`. Tune the starter mech's speed and dimensions, or its autocannon's fire rate, projectile speed/lifetime and barrel length there. Commit the data in Chisel, then export MonoGame to this project. `GameData/Generated` is generated source, not a place to hand-edit settings. Import `Graphite.Game.Data` and access the unchanged generated arrays with `ChiselRobots.MoveSpeed[id.ToInt()]`. The shared game-side `ChiselIdExtensions` works with every generated ID enum and rejects invalid or undefined IDs before indexing; it requires no Chisel exporter changes. The initial committed snapshot is included. With the sibling Chisel checkout and its dependencies installed, the same exporter can also be run from this folder:
+
+```sh
+bun Scripts/export-chisel.ts
+bun Scripts/export-chisel.ts --check
+```
+
+Normal builds use the checked-in C# exports and do not require Bun or Chisel. Robot state is currently scene-local: there are no enemies, hit detection, damage, terrain collision, weapon sounds or saved robot positions yet.
 
 ## Settings
 
@@ -153,6 +168,8 @@ Preferences support `bool`, `int`, `long`, `float`, `double`, and `string`. `Get
 dotnet build --warnaserror
 dotnet format Graphite.csproj --verify-no-changes --severity warn
 dotnet run --project Tests/Graphite.Persistence.Tests/Graphite.Persistence.Tests.csproj -p:TreatWarningsAsErrors=true
+dotnet run --project Tests/Graphite.Gameplay.Tests -p:TreatWarningsAsErrors=true
+dotnet run --project Tests/Graphite.UI.Tests -- --graphics
 ```
 
 Dependencies: MonoGame DesktopGL 3.8.5.1, Myra 1.6.5, and .NET 8 with newer-runtime roll-forward support.

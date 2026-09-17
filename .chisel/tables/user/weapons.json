@@ -1,0 +1,80 @@
+{
+  "schemaVersion": 1,
+  "table": {
+    "id": "weapons",
+    "name": "Weapons",
+    "description": "Prototype arm weapon definitions.",
+    "kind": "user",
+    "isSystemTable": false,
+    "lastChangeAt": "2026-09-17T20:00:00.000Z",
+    "version": 1,
+    "columns": [
+      {
+        "id": "weapons_rounds_per_se",
+        "name": "rounds_per_second",
+        "type": "decimal",
+        "defaultValue": 8,
+        "required": true,
+        "unique": false,
+        "min": 0.1,
+        "max": 60
+      },
+      {
+        "id": "weapons_projectile_sp",
+        "name": "projectile_speed",
+        "type": "decimal",
+        "defaultValue": 1000,
+        "required": true,
+        "unique": false,
+        "min": 1
+      },
+      {
+        "id": "weapons_projectile_li",
+        "name": "projectile_lifetime",
+        "type": "decimal",
+        "defaultValue": 1.2,
+        "required": true,
+        "unique": false,
+        "min": 0.1,
+        "max": 10
+      },
+      {
+        "id": "weapons_barrel_length",
+        "name": "barrel_length",
+        "type": "decimal",
+        "defaultValue": 30,
+        "required": true,
+        "unique": false,
+        "min": 1
+      }
+    ],
+    "rows": [
+      {
+        "id": "row_AUTOCANNON0000000",
+        "slug": "AUTOCANNON",
+        "values": [
+          {
+            "columnId": "weapons_rounds_per_se",
+            "type": "decimal",
+            "value": 8
+          },
+          {
+            "columnId": "weapons_projectile_sp",
+            "type": "decimal",
+            "value": 1000
+          },
+          {
+            "columnId": "weapons_projectile_li",
+            "type": "decimal",
+            "value": 1.2
+          },
+          {
+            "columnId": "weapons_barrel_length",
+            "type": "decimal",
+            "value": 30
+          }
+        ]
+      }
+    ]
+  }
+}

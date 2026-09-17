@@ -1,0 +1,397 @@
+{
+  "schemaVersion": 3,
+  "commits": [
+    {
+      "id": "prototype_robot000000",
+      "committedAt": "2026-09-17T20:00:00.000Z",
+      "project": {
+        "id": "M7gzZK-ELqR9WTLlI15uz",
+        "name": "Deep Dive",
+        "description": "A game with anime girls and mecha and incremental progression in a gritty and cool twin stick where you have to defend your operation against an enormous amount of enemies!"
+      },
+      "tables": [
+        {
+          "id": "weapons",
+          "name": "Weapons",
+          "description": "Prototype arm weapon definitions.",
+          "kind": "user",
+          "isSystemTable": false,
+          "lastChangeAt": "2026-09-17T20:00:00.000Z",
+          "version": 1,
+          "columns": [
+            {
+              "id": "weapons_rounds_per_se",
+              "name": "rounds_per_second",
+              "type": "decimal",
+              "defaultValue": 8,
+              "required": true,
+              "unique": false,
+              "min": 0.1,
+              "max": 60
+            },
+            {
+              "id": "weapons_projectile_sp",
+              "name": "projectile_speed",
+              "type": "decimal",
+              "defaultValue": 1000,
+              "required": true,
+              "unique": false,
+              "min": 1
+            },
+            {
+              "id": "weapons_projectile_li",
+              "name": "projectile_lifetime",
+              "type": "decimal",
+              "defaultValue": 1.2,
+              "required": true,
+              "unique": false,
+              "min": 0.1,
+              "max": 10
+            },
+            {
+              "id": "weapons_barrel_length",
+              "name": "barrel_length",
+              "type": "decimal",
+              "defaultValue": 30,
+              "required": true,
+              "unique": false,
+              "min": 1
+            }
+          ],
+          "rows": [
+            {
+              "id": "row_AUTOCANNON0000000",
+              "slug": "AUTOCANNON",
+              "values": [
+                {
+                  "columnId": "weapons_rounds_per_se",
+                  "type": "decimal",
+                  "value": 8
+                },
+                {
+                  "columnId": "weapons_projectile_sp",
+                  "type": "decimal",
+                  "value": 1000
+                },
+                {
+                  "columnId": "weapons_projectile_li",
+                  "type": "decimal",
+                  "value": 1.2
+                },
+                {
+                  "columnId": "weapons_barrel_length",
+                  "type": "decimal",
+                  "value": 30
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "robots",
+          "name": "Robots",
+          "description": "Prototype player robot definitions.",
+          "kind": "user",
+          "isSystemTable": false,
+          "lastChangeAt": "2026-09-17T20:00:00.000Z",
+          "version": 1,
+          "columns": [
+            {
+              "id": "robots_move_speed0000",
+              "name": "move_speed",
+              "type": "decimal",
+              "defaultValue": 280,
+              "required": true,
+              "unique": false,
+              "min": 1
+            },
+            {
+              "id": "robots_body_radius000",
+              "name": "body_radius",
+              "type": "decimal",
+              "defaultValue": 20,
+              "required": true,
+              "unique": false,
+              "min": 1
+            },
+            {
+              "id": "robots_arm_spacing000",
+              "name": "arm_spacing",
+              "type": "decimal",
+              "defaultValue": 26,
+              "required": true,
+              "unique": false,
+              "min": 1
+            },
+            {
+              "id": "robots_weapon00000000",
+              "name": "weapon",
+              "type": "ref",
+              "defaultValue": "AUTOCANNON",
+              "required": true,
+              "unique": false,
+              "refTableId": "weapons"
+            }
+          ],
+          "rows": [
+            {
+              "id": "row_STARTER_MECH00000",
+              "slug": "STARTER_MECH",
+              "values": [
+                {
+                  "columnId": "robots_move_speed0000",
+                  "type": "decimal",
+                  "value": 280
+                },
+                {
+                  "columnId": "robots_body_radius000",
+                  "type": "decimal",
+                  "value": 20
+                },
+                {
+                  "columnId": "robots_arm_spacing000",
+                  "type": "decimal",
+                  "value": 26
+                },
+                {
+                  "columnId": "robots_weapon00000000",
+                  "type": "ref",
+                  "value": "AUTOCANNON"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "columns": [
+            {
+              "defaultValue": 0,
+              "id": "input_sort_order00000",
+              "name": "sort_order",
+              "required": true,
+              "type": "integer",
+              "unique": false,
+              "min": 0
+            },
+            {
+              "defaultValue": [],
+              "id": "input_bindings0000000",
+              "name": "bindings",
+              "required": true,
+              "type": "enumArray",
+              "unique": false,
+              "max": 8,
+              "possibleValues": [
+                "KEY_A",
+                "KEY_B",
+                "KEY_C",
+                "KEY_D",
+                "KEY_E",
+                "KEY_F",
+                "KEY_G",
+                "KEY_H",
+                "KEY_I",
+                "KEY_J",
+                "KEY_K",
+                "KEY_L",
+                "KEY_M",
+                "KEY_N",
+                "KEY_O",
+                "KEY_P",
+                "KEY_Q",
+                "KEY_R",
+                "KEY_S",
+                "KEY_T",
+                "KEY_U",
+                "KEY_V",
+                "KEY_W",
+                "KEY_X",
+                "KEY_Y",
+                "KEY_Z",
+                "KEY_0",
+                "KEY_1",
+                "KEY_2",
+                "KEY_3",
+                "KEY_4",
+                "KEY_5",
+                "KEY_6",
+                "KEY_7",
+                "KEY_8",
+                "KEY_9",
+                "KEY_F1",
+                "KEY_F2",
+                "KEY_F3",
+                "KEY_F4",
+                "KEY_F5",
+                "KEY_F6",
+                "KEY_F7",
+                "KEY_F8",
+                "KEY_F9",
+                "KEY_F10",
+                "KEY_F11",
+                "KEY_F12",
+                "KEY_ESCAPE",
+                "KEY_SPACE",
+                "KEY_SHIFT",
+                "KEY_CTRL",
+                "KEY_ALT",
+                "KEY_TAB",
+                "KEY_ENTER",
+                "KEY_BACKSPACE",
+                "KEY_UP",
+                "KEY_DOWN",
+                "KEY_LEFT",
+                "KEY_RIGHT",
+                "KEY_MINUS",
+                "KEY_EQUAL",
+                "KEY_KP_ADD",
+                "KEY_KP_SUBTRACT",
+                "MOUSE_BUTTON_LEFT",
+                "MOUSE_BUTTON_RIGHT",
+                "MOUSE_BUTTON_MIDDLE",
+                "MOUSE_BUTTON_WHEEL_UP",
+                "MOUSE_BUTTON_WHEEL_DOWN"
+              ]
+            }
+          ],
+          "description": "Input actions and bindings exported to supported game runtimes.",
+          "id": "input_bindings",
+          "isSystemTable": true,
+          "kind": "system",
+          "lastChangeAt": "2026-09-17T20:00:00.000Z",
+          "moduleId": "input",
+          "name": "Input Bindings",
+          "rows": [
+            {
+              "id": "action_MOVE_UP0000000",
+              "slug": "MOVE_UP",
+              "values": [
+                {
+                  "columnId": "input_sort_order00000",
+                  "type": "integer",
+                  "value": 0
+                },
+                {
+                  "columnId": "input_bindings0000000",
+                  "type": "enumArray",
+                  "value": [
+                    "KEY_W",
+                    "KEY_UP"
+                  ]
+                }
+              ]
+            },
+            {
+              "id": "action_MOVE_DOWN00000",
+              "slug": "MOVE_DOWN",
+              "values": [
+                {
+                  "columnId": "input_sort_order00000",
+                  "type": "integer",
+                  "value": 1
+                },
+                {
+                  "columnId": "input_bindings0000000",
+                  "type": "enumArray",
+                  "value": [
+                    "KEY_S",
+                    "KEY_DOWN"
+                  ]
+                }
+              ]
+            },
+            {
+              "id": "action_MOVE_LEFT00000",
+              "slug": "MOVE_LEFT",
+              "values": [
+                {
+                  "columnId": "input_sort_order00000",
+                  "type": "integer",
+                  "value": 2
+                },
+                {
+                  "columnId": "input_bindings0000000",
+                  "type": "enumArray",
+                  "value": [
+                    "KEY_A",
+                    "KEY_LEFT"
+                  ]
+                }
+              ]
+            },
+            {
+              "id": "action_MOVE_RIGHT0000",
+              "slug": "MOVE_RIGHT",
+              "values": [
+                {
+                  "columnId": "input_sort_order00000",
+                  "type": "integer",
+                  "value": 3
+                },
+                {
+                  "columnId": "input_bindings0000000",
+                  "type": "enumArray",
+                  "value": [
+                    "KEY_D",
+                    "KEY_RIGHT"
+                  ]
+                }
+              ]
+            },
+            {
+              "id": "action_FIRE0000000000",
+              "slug": "FIRE",
+              "values": [
+                {
+                  "columnId": "input_sort_order00000",
+                  "type": "integer",
+                  "value": 4
+                },
+                {
+                  "columnId": "input_bindings0000000",
+                  "type": "enumArray",
+                  "value": [
+                    "MOUSE_BUTTON_LEFT"
+                  ]
+                }
+              ]
+            },
+            {
+              "id": "action_BACK0000000000",
+              "slug": "BACK",
+              "values": [
+                {
+                  "columnId": "input_sort_order00000",
+                  "type": "integer",
+                  "value": 5
+                },
+                {
+                  "columnId": "input_bindings0000000",
+                  "type": "enumArray",
+                  "value": [
+                    "KEY_ESCAPE"
+                  ]
+                }
+              ]
+            }
+          ],
+          "version": 1
+        }
+      ],
+      "assets": {
+        "schemaVersion": 1,
+        "assets": []
+      },
+      "localization": {
+        "schemaVersion": 2,
+        "defaultLocale": "en",
+        "locales": [
+          "en"
+        ],
+        "keys": [],
+        "styles": [],
+        "tooltips": []
+      }
+    }
+  ]
+}

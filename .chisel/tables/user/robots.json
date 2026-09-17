@@ -1,0 +1,78 @@
+{
+  "schemaVersion": 1,
+  "table": {
+    "id": "robots",
+    "name": "Robots",
+    "description": "Prototype player robot definitions.",
+    "kind": "user",
+    "isSystemTable": false,
+    "lastChangeAt": "2026-09-17T20:00:00.000Z",
+    "version": 1,
+    "columns": [
+      {
+        "id": "robots_move_speed0000",
+        "name": "move_speed",
+        "type": "decimal",
+        "defaultValue": 280,
+        "required": true,
+        "unique": false,
+        "min": 1
+      },
+      {
+        "id": "robots_body_radius000",
+        "name": "body_radius",
+        "type": "decimal",
+        "defaultValue": 20,
+        "required": true,
+        "unique": false,
+        "min": 1
+      },
+      {
+        "id": "robots_arm_spacing000",
+        "name": "arm_spacing",
+        "type": "decimal",
+        "defaultValue": 26,
+        "required": true,
+        "unique": false,
+        "min": 1
+      },
+      {
+        "id": "robots_weapon00000000",
+        "name": "weapon",
+        "type": "ref",
+        "defaultValue": "AUTOCANNON",
+        "required": true,
+        "unique": false,
+        "refTableId": "weapons"
+      }
+    ],
+    "rows": [
+      {
+        "id": "row_STARTER_MECH00000",
+        "slug": "STARTER_MECH",
+        "values": [
+          {
+            "columnId": "robots_move_speed0000",
+            "type": "decimal",
+            "value": 280
+          },
+          {
+            "columnId": "robots_body_radius000",
+            "type": "decimal",
+            "value": 20
+          },
+          {
+            "columnId": "robots_arm_spacing000",
+            "type": "decimal",
+            "value": 26
+          },
+          {
+            "columnId": "robots_weapon00000000",
+            "type": "ref",
+            "value": "AUTOCANNON"
+          }
+        ]
+      }
+    ]
+  }
+}
