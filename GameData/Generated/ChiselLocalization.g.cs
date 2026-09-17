@@ -4,6 +4,7 @@ using System;
 
 namespace Chisel.Generated
 {
+    [System.Runtime.Serialization.DataContract]
     public enum ChiselLocalizationId
     {
         Invalid = -1

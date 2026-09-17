@@ -2,6 +2,7 @@ using Chisel.Generated;
 using Graphite.Engine.Objects;
 using Graphite.Game.Data;
 using Graphite.Game.Domain.Combat;
+using Graphite.Game.Domain;
 using Graphite.Game.Domain.Player;
 using Microsoft.Xna.Framework;
 using static Graphite.Gameplay.Tests.Program;
@@ -156,7 +157,7 @@ internal static class ObjectChecks
     private static void Weapons()
     {
         using var world = new GameWorld();
-        var player = world.Spawn(new RobotPrefab(ChiselRobotsId.STARTER_MECH), Vector2.Zero);
+        var player = world.Spawn(new RobotPrefab(new Loadout()), Vector2.Zero);
         Check(player.Owner.Children.Select(value => value.Name).SequenceEqual(new[] { "Bottom", "Top" }), "Robot has bottom and top children");
         Check(player.Top.Children.Select(value => value.Name).SequenceEqual(new[] { "LeftWeapon", "RightWeapon" }), "Weapons are children of the torso");
         Check(player.LeftWeapon.Muzzle.Owner.Parent == player.LeftWeapon.Owner, "Each weapon owns a muzzle child");
@@ -178,7 +179,7 @@ internal static class ObjectChecks
 
         foreach (var rate in new[] { 4f, 8f })
         {
-            var weaponId = ChiselRobots.Weapon[ChiselRobotsId.STARTER_MECH.ToInt()];
+            var weaponId = new Loadout().WeaponLeftId;
             WithChiselValue(ChiselWeapons.RoundsPerSecond, weaponId.ToInt(), rate, () =>
             {
                 using var gunWorld = new GameWorld();

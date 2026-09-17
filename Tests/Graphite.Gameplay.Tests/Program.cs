@@ -3,6 +3,7 @@ using Graphite.Engine.Graphics;
 using Graphite.Engine.Objects;
 using Graphite.Game.Data;
 using Graphite.Game.Domain.Combat;
+using Graphite.Game.Domain;
 using Graphite.Game.Domain.Player;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Input;
@@ -13,7 +14,7 @@ internal static class Program
 {
     private static int _assertions;
     private const ChiselRobotsId RobotId = ChiselRobotsId.STARTER_MECH;
-    private static ChiselWeaponsId WeaponId => ChiselRobots.Weapon[RobotId.ToInt()];
+    private const ChiselWeaponsId WeaponId = ChiselWeaponsId.AUTOCANNON;
 
     public static void Main()
     {
@@ -37,16 +38,16 @@ internal static class Program
         Check(id.ToInt() == 0, "Generated enum IDs convert to array indexes with ToInt");
         Near(ChiselRobots.MoveSpeed[id.ToInt()], 280, "Robot column access uses the extension inline");
         Check(ChiselRobots.Slugs[id.ToInt()] == "STARTER_MECH", "Stable slug lookup uses the same extension");
-        var weapon = ChiselRobots.Weapon[id.ToInt()];
+        var weapon = new Loadout().WeaponLeftId;
         Near(ChiselWeapons.RoundsPerSecond[weapon.ToInt()], 8, "Referenced IDs use the extension without table-specific helpers");
         Check(ChiselInputBindings.Bindings[ChiselInputBindingsId.FIRE.ToInt()].SequenceEqual(new[] { "MOUSE_BUTTON_LEFT" }),
             "System table IDs work with the extension as well");
-        Check(ChiselRobots.MoveSpeed.GetType() == typeof(float[]) && ChiselRobots.Weapon.GetType() == typeof(ChiselWeaponsId[]),
+        Check(ChiselRobots.MoveSpeed.GetType() == typeof(float[]) && ChiselWeapons.RoundsPerSecond.GetType() == typeof(float[]),
             "Chisel's generated array contract stays unchanged");
         foreach (var invalid in new[] { -1, -2, ChiselRobots.Count, int.MaxValue })
         {
             Check(((ChiselRobotsId)invalid).ToInt() == invalid, "ID conversion does not validate or substitute a fallback");
-            Throws<IndexOutOfRangeException>(() => world.Spawn(new RobotPrefab((ChiselRobotsId)invalid)));
+            Throws<IndexOutOfRangeException>(() => world.Spawn(new RobotPrefab(new Loadout { ChassisId = (ChiselRobotsId)invalid })));
         }
         Check(world.Roots.Count == 0 && world.ComponentCount == 0, "Invalid Chisel robot IDs fail without leaking partial prefabs");
         var gun = world.Spawn(new ObjectPrefab("Gun"));
@@ -57,16 +58,20 @@ internal static class Program
     private static void DirectChiselReferences()
     {
         using var world = new GameWorld();
-        var prefab = new RobotPrefab(RobotId);
-        WithChiselValue(ChiselRobots.Weapon, RobotId.ToInt(), ChiselWeaponsId.Invalid, () =>
-            Throws<IndexOutOfRangeException>(() => world.Spawn(prefab)));
+        var prefab = new RobotPrefab(new Loadout { ChassisId = RobotId });
+        Throws<IndexOutOfRangeException>(() => world.Spawn(new RobotPrefab(new Loadout { WeaponLeftId = ChiselWeaponsId.Invalid })));
+        Throws<IndexOutOfRangeException>(() => world.Spawn(new RobotPrefab(new Loadout { WeaponRightId = ChiselWeaponsId.Invalid })));
         Check(world.Roots.Count == 0 && world.ComponentCount == 0, "Invalid weapon references fail and roll back the robot hierarchy");
         WithChiselValue(ChiselRobots.ArmSpacing, RobotId.ToInt(), 42f, () =>
             WithChiselValue(ChiselWeapons.BarrelLength, WeaponId.ToInt(), 53f, () =>
         {
             var robot = world.Spawn(prefab);
             Check(robot.LeftWeapon.WeaponId == WeaponId && robot.RightWeapon.WeaponId == WeaponId,
-                "Both mounts keep the weapon ID referenced by the Chisel robot");
+                "Both mounts keep the weapon IDs selected by the loadout");
+            Check(robot.PilotId == ChiselPilotId.STARTER_PILOT, "The spawned player retains the selected pilot ID");
+            Check(ChiselPilot.DisplayName[robot.PilotId.ToInt()] == "Starter Pilot"
+                && ChiselPilot.Portrait[robot.PilotId.ToInt()] == ChiselAssetId.Invalid,
+                "Pilot presentation data comes directly from Chisel and the initial portrait is intentionally unassigned");
             Near(robot.LeftWeapon.Transform.LocalPosition.Y, -42, "Left mount reads Chisel arm spacing at build time");
             Near(robot.RightWeapon.Transform.LocalPosition.Y, 42, "Right mount reads Chisel arm spacing at build time");
             Near(robot.LeftWeapon.Muzzle.LocalPosition.X, 53, "Left muzzle reads Chisel barrel length directly");
@@ -87,14 +92,14 @@ internal static class Program
     private static void FailFast()
     {
         using var world = new GameWorld();
-        var robot = world.Spawn(new RobotPrefab(RobotId), Vector2.Zero);
+        var robot = world.Spawn(new RobotPrefab(new Loadout { ChassisId = RobotId }), Vector2.Zero);
         // Invalid game state must reach the engine's existing transform contract, not become idle/default input.
         Throws<ArgumentOutOfRangeException>(() => Step(robot, .1f, new PlayerControls(new Vector2(float.NaN, 0), Vector2.UnitX, false)));
         Throws<ArgumentOutOfRangeException>(() => Step(robot, .1f, new PlayerControls(Vector2.Zero, new Vector2(float.NaN, 0), false)));
         robot.Owner.Destroy();
         WithChiselValue(ChiselRobots.MoveSpeed, RobotId.ToInt(), float.NaN, () =>
         {
-            var badSpeed = world.Spawn(new RobotPrefab(RobotId), Vector2.Zero);
+            var badSpeed = world.Spawn(new RobotPrefab(new Loadout { ChassisId = RobotId }), Vector2.Zero);
             Throws<ArgumentOutOfRangeException>(() => Step(badSpeed, .1f, new PlayerControls(Vector2.UnitX, Vector2.Zero, false)));
             badSpeed.Owner.Destroy();
         });
@@ -129,7 +134,7 @@ internal static class Program
     private static void Movement()
     {
         using var world = new GameWorld();
-        var robot = world.Spawn(new RobotPrefab(RobotId), Vector2.Zero);
+        var robot = world.Spawn(new RobotPrefab(new Loadout { ChassisId = RobotId }), Vector2.Zero);
         Step(robot, .1f, new PlayerControls(Vector2.UnitX, new Vector2(0, -300), false));
         Near(robot.Position.X, 28, "Move speed comes from Chisel");
         Near(robot.LegsAngle, 0, "Legs face movement");
@@ -144,11 +149,11 @@ internal static class Program
         Step(robot, .1f, new PlayerControls(Vector2.Zero, new Vector2(-200, 0), false));
         Near(robot.LegsAngle, 0, "Idle legs retain the last driving direction");
         Near(MathHelper.WrapAngle(robot.TorsoAngle - MathHelper.Pi), 0, "Stationary torso can turn behind the legs");
-        var diagonal = world.Spawn(new RobotPrefab(RobotId), Vector2.Zero);
+        var diagonal = world.Spawn(new RobotPrefab(new Loadout { ChassisId = RobotId }), Vector2.Zero);
         Step(diagonal, .1f, new PlayerControls(Vector2.One, Vector2.Zero, false));
         Near(diagonal.Position.Length(), 28, "Diagonal movement is normalized");
         Check(float.IsFinite(diagonal.TorsoAngle) && float.IsFinite(diagonal.LeftWeapon.Transform.Forward.X), "Aiming exactly at the robot stays finite");
-        var stationary = world.Spawn(new RobotPrefab(RobotId), Vector2.Zero);
+        var stationary = world.Spawn(new RobotPrefab(new Loadout { ChassisId = RobotId }), Vector2.Zero);
         Step(stationary, .1f, new PlayerControls(Vector2.Zero, stationary.LeftWeapon.Transform.WorldPosition, true));
         Check(Projectiles(stationary).All(p => float.IsFinite(p.Position.X)), "Aiming at an arm pivot does not create NaN projectiles");
         Throws<ArgumentOutOfRangeException>(() => Step(robot, -1, new PlayerControls()));
@@ -157,7 +162,7 @@ internal static class Program
     private static void Shooting()
     {
         using var world = new GameWorld();
-        var robot = world.Spawn(new RobotPrefab(RobotId), Vector2.Zero);
+        var robot = world.Spawn(new RobotPrefab(new Loadout { ChassisId = RobotId }), Vector2.Zero);
         var firing = new PlayerControls(Vector2.Zero, new Vector2(500, -200), true);
         Step(robot, .01f, firing);
         Check(Projectiles(robot).Length == 2, "Mouse-down fires bullets from both guns immediately");
@@ -172,7 +177,7 @@ internal static class Program
         foreach (var fps in new[] { 32, 64, 128 })
         {
             using var heldWorld = new GameWorld();
-            var held = heldWorld.Spawn(new RobotPrefab(RobotId), Vector2.Zero);
+            var held = heldWorld.Spawn(new RobotPrefab(new Loadout { ChassisId = RobotId }), Vector2.Zero);
             for (var frame = 0; frame < fps; frame++)
             {
                 Step(held, 1f / fps, firing);

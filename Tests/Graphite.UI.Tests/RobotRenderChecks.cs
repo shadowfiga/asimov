@@ -2,6 +2,7 @@ using Chisel.Generated;
 using Graphite.Engine.Graphics;
 using Graphite.Engine.Objects;
 using Graphite.Engine.Persistence;
+using Graphite.Game.Domain;
 using Graphite.Game.Domain.Player;
 using Graphite.Game.Scenes;
 using Graphite.Game.UI.Theming;
@@ -17,7 +18,7 @@ internal static class RobotRenderChecks
         var originalScale = Preferences.Get(RuntimePreferences.UiScale);
         using var renderer = new WorldRenderer2D(device);
         using var world = new GameWorld();
-        var robot = world.Spawn(new RobotPrefab(ChiselRobotsId.STARTER_MECH), Vector2.Zero);
+        var robot = world.Spawn(new RobotPrefab(new Loadout()), Vector2.Zero);
         world.Spawn(new SandboxPresentationPrefab(robot));
         robot.Controls = new PlayerControls(Vector2.UnitX, new Vector2(350, -210), true);
         for (var frame = 0; frame < 50; frame++)
@@ -66,10 +67,10 @@ internal static class RobotRenderChecks
     {
         using var movingWorld = new GameWorld();
         using var idleWorld = new GameWorld();
-        var moving = movingWorld.Spawn(new RobotPrefab(ChiselRobotsId.STARTER_MECH), new Vector2(0, 28));
+        var moving = movingWorld.Spawn(new RobotPrefab(new Loadout()), new Vector2(0, 28));
         moving.Controls = new PlayerControls(-Vector2.UnitY, new Vector2(0, -100), false);
         movingWorld.Update(.1f);
-        var idle = idleWorld.Spawn(new RobotPrefab(ChiselRobotsId.STARTER_MECH), moving.Position);
+        var idle = idleWorld.Spawn(new RobotPrefab(new Loadout()), moving.Position);
         var camera = new Camera2D { Position = moving.Position };
         camera.SetViewport(new Point(256, 256), 2);
         using var target = new RenderTarget2D(device, 256, 256);

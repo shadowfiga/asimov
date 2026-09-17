@@ -1,5 +1,4 @@
 using Graphite.Engine.Scenes;
-using Chisel.Generated;
 using Graphite.Engine.Audio;
 using Graphite.Engine.Graphics;
 using Graphite.Game.Audio;
@@ -21,11 +20,11 @@ public sealed class SandboxScene : Scene
 
     protected internal override void OnLoad()
     {
-        _ = SessionManager.ActiveSession;
+        var loadout = SessionManager.ActiveSession.CurrentLoadout;
         var game = Myra.MyraEnvironment.Game;
         _previousCursorVisible = game.IsMouseVisible;
         Objects.MaxDeltaTime = .1f;
-        _player = Objects.Spawn(new RobotPrefab(ChiselRobotsId.STARTER_MECH), Vector2.Zero);
+        _player = Objects.Spawn(new RobotPrefab(loadout), Vector2.Zero);
         _reticle = Objects.Spawn(new SandboxPresentationPrefab(_player));
         game.IsMouseVisible = false;
         RefreshCamera();

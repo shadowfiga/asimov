@@ -1,0 +1,49 @@
+{
+  "schemaVersion": 1,
+  "table": {
+    "id": "pilots",
+    "name": "Pilot",
+    "description": "Cosmetic pilot identities. Add presentation fields here; pilots do not alter chassis stats.",
+    "kind": "user",
+    "isSystemTable": false,
+    "lastChangeAt": "2026-09-17T19:42:24.000Z",
+    "version": 1,
+    "columns": [
+      {
+        "id": "pilots_display_name00",
+        "name": "display_name",
+        "type": "string",
+        "defaultValue": "",
+        "required": true,
+        "unique": false
+      },
+      {
+        "id": "pilots_portrait000000",
+        "name": "portrait",
+        "type": "assetRef",
+        "defaultValue": "",
+        "assetCategory": "UI",
+        "required": false,
+        "unique": false
+      }
+    ],
+    "rows": [
+      {
+        "id": "row_STARTER_PILOT0000",
+        "slug": "STARTER_PILOT",
+        "values": [
+          {
+            "columnId": "pilots_display_name00",
+            "type": "string",
+            "value": "Starter Pilot"
+          },
+          {
+            "columnId": "pilots_portrait000000",
+            "type": "assetRef",
+            "value": ""
+          }
+        ]
+      }
+    ]
+  }
+}

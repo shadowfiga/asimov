@@ -11,10 +11,16 @@ namespace Graphite.Game.Domain.Player;
 public sealed class RobotPrefab : Prefab<PlayerController>
 {
     private readonly int _robotId;
+    private readonly ChiselPilotId _pilotId;
+    private readonly ChiselWeaponsId _weaponLeftId;
+    private readonly ChiselWeaponsId _weaponRightId;
 
-    public RobotPrefab(ChiselRobotsId id) : base(id.ToString())
+    public RobotPrefab(Loadout loadout) : base(loadout.ChassisId.ToString())
     {
-        _robotId = id.ToInt();
+        _robotId = loadout.ChassisId.ToInt();
+        _pilotId = loadout.PilotId;
+        _weaponLeftId = loadout.WeaponLeftId;
+        _weaponRightId = loadout.WeaponRightId;
     }
 
     protected internal override PlayerController Build(GameObject root)
@@ -26,9 +32,9 @@ public sealed class RobotPrefab : Prefab<PlayerController>
         var top = root.CreateChild("Top");
         var torsoAim = top.AddComponent(new AimController(target));
         top.AddComponent(new RobotPartRenderer(RobotPart.Top, ChiselRobots.BodyRadius[_robotId]) { Layer = 30 });
-        var left = CreateWeapon(top, "LeftWeapon", -ChiselRobots.ArmSpacing[_robotId], ChiselRobots.Weapon[_robotId], target);
-        var right = CreateWeapon(top, "RightWeapon", ChiselRobots.ArmSpacing[_robotId], ChiselRobots.Weapon[_robotId], target);
-        return root.AddComponent(new PlayerController(ChiselRobots.MoveSpeed[_robotId], bottom, torsoAim, left.Aim, right.Aim, left.Weapon, right.Weapon)
+        var left = CreateWeapon(top, "LeftWeapon", -ChiselRobots.ArmSpacing[_robotId], _weaponLeftId, target);
+        var right = CreateWeapon(top, "RightWeapon", ChiselRobots.ArmSpacing[_robotId], _weaponRightId, target);
+        return root.AddComponent(new PlayerController(ChiselRobots.MoveSpeed[_robotId], _pilotId, bottom, torsoAim, left.Aim, right.Aim, left.Weapon, right.Weapon)
         {
             Controls = new PlayerControls(Vector2.Zero, target - root.Transform.WorldPosition, false)
         });

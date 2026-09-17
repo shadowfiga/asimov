@@ -6,8 +6,8 @@ namespace Chisel.Generated
     {
         public const string ProjectId = "M7gzZK-ELqR9WTLlI15uz";
         public const string ProjectName = "Deep Dive";
-        public const string GeneratedAt = "2026-09-17T20:00:00.000Z";
-        public const int TableCount = 3;
+        public const string GeneratedAt = "2026-09-17T19:42:24.000Z";
+        public const int TableCount = 4;
         public const int AssetCount = 0;
         public const int TranslationCount = 0;
     }

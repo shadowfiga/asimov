@@ -6,6 +6,8 @@ using System.Text.Json.Serialization;
 using Graphite.Engine.Configuration;
 using Graphite.Engine.Persistence;
 using Graphite.Game.Configuration;
+using Chisel.Generated;
+using Graphite.Game.Domain;
 using Graphite.Game.Sessions;
 
 namespace Graphite.Persistence.Tests;
@@ -24,6 +26,9 @@ internal static class Program
             Throws<InvalidOperationException>(() => Preferences.Get<bool>("muted"));
             ActiveSession();
             Serialization();
+            EnumContractChecks.Run();
+            EnumContractChecks.GeneratedIds();
+            Loadouts();
             Slots(Path.Combine(root, "slots"));
             Migrations(Path.Combine(root, "migrations"));
             InterruptedWrites(Path.Combine(root, "writes"));
@@ -85,6 +90,48 @@ internal static class Program
         var custom = new SaveSerializer(new CoordinateConverter());
         var coordinate = custom.Deserialize<Coordinate>(custom.Serialize(new Coordinate(3, 7)));
         Check(coordinate == new Coordinate(3, 7), "Custom value converters extend serialization");
+    }
+
+    private static void Loadouts()
+    {
+        var serializer = new SaveSerializer();
+        var source = new Loadout();
+        var bytes = serializer.Serialize(source);
+        var json = JsonNode.Parse(bytes)!.AsObject();
+        Check(json.Count == 4 && json["chassis"]!.GetValue<string>() == "STARTER_MECH"
+            && json["pilot"]!.GetValue<string>() == "STARTER_PILOT"
+            && json["weaponLeft"]!.GetValue<string>() == "AUTOCANNON"
+            && json["weaponRight"]!.GetValue<string>() == "AUTOCANNON",
+            "Loadouts save stable Chisel slugs under the four explicit save keys, not dense enum indexes");
+        var copy = serializer.Deserialize<Loadout>(bytes);
+        Check(copy.ChassisId == source.ChassisId && copy.PilotId == source.PilotId
+            && copy.WeaponLeftId == source.WeaponLeftId && copy.WeaponRightId == source.WeaponRightId,
+            "All typed loadout selections round trip through stable slugs");
+        copy.WeaponLeftId = ChiselWeaponsId.Invalid;
+        Check(source.WeaponLeftId == ChiselWeaponsId.AUTOCANNON && copy.WeaponRightId == ChiselWeaponsId.AUTOCANNON,
+            "Loaded loadouts and their two arm selections are independent");
+        Throws<JsonException>(() => serializer.Serialize(copy));
+        foreach (var key in new[] { "chassis", "pilot", "weaponLeft", "weaponRight" })
+        {
+            var unknown = JsonNode.Parse(bytes)!.AsObject();
+            unknown[key] = "MISSING_CONTENT";
+            Throws<JsonException>(() => serializer.Deserialize<Loadout>(JsonSerializer.SerializeToUtf8Bytes(unknown)));
+            unknown[key] = 0;
+            Throws<JsonException>(() => serializer.Deserialize<Loadout>(JsonSerializer.SerializeToUtf8Bytes(unknown)));
+            unknown[key] = null;
+            Throws<JsonException>(() => serializer.Deserialize<Loadout>(JsonSerializer.SerializeToUtf8Bytes(unknown)));
+            unknown.Remove(key);
+            var defaults = serializer.Deserialize<Loadout>(JsonSerializer.SerializeToUtf8Bytes(unknown));
+            Check(defaults.ChassisId == source.ChassisId && defaults.PilotId == source.PilotId
+                && defaults.WeaponLeftId == source.WeaponLeftId && defaults.WeaponRightId == source.WeaponRightId,
+                "Missing loadout fields follow the engine's normal initialized-default contract");
+        }
+        Throws<InvalidDataException>(() => serializer.Deserialize<Loadout>("null"u8));
+        Throws<JsonException>(() => serializer.Deserialize<Session>("{\"currentLoadout\":{\"pilot\":\"missing\"}}"u8));
+        var oldSession = serializer.Deserialize<Session>("{\"clearedSectors\":[]}"u8);
+        Check(oldSession.CurrentLoadout.ChassisId == ChiselRobotsId.STARTER_MECH
+            && oldSession.CurrentLoadout.PilotId == ChiselPilotId.STARTER_PILOT,
+            "Sessions without an authored loadout retain the explicit starter defaults");
     }
 
     private static void Slots(string root)
@@ -347,6 +394,12 @@ internal static class Program
         Check(loaded.ClearedSectors.SequenceEqual(new[] { "a-3-crystal-basin" }),
             "Save and load accept and return the whole campaign directly");
         Check(!ReferenceEquals(session, loaded), "Loaded session is independent of live state");
+        Check(!ReferenceEquals(session.CurrentLoadout, loaded.CurrentLoadout)
+            && loaded.CurrentLoadout.ChassisId == session.CurrentLoadout.ChassisId
+            && loaded.CurrentLoadout.PilotId == session.CurrentLoadout.PilotId
+            && loaded.CurrentLoadout.WeaponLeftId == session.CurrentLoadout.WeaponLeftId
+            && loaded.CurrentLoadout.WeaponRightId == session.CurrentLoadout.WeaponRightId,
+            "The active loadout persists as independent nested session state");
         var slotId = Guid.NewGuid();
         var second = new Session();
         second.ClearSector("b-1-iron-ridge");

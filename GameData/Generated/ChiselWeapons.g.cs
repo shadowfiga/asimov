@@ -5,9 +5,11 @@ using Microsoft.Xna.Framework;
 
 namespace Chisel.Generated
 {
+    [System.Runtime.Serialization.DataContract]
     public enum ChiselWeaponsId
     {
         Invalid = -1,
+        [System.Runtime.Serialization.EnumMember(Value = "AUTOCANNON")]
         AUTOCANNON = 0
     }
 

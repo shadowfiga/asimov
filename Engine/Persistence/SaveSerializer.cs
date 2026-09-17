@@ -22,6 +22,7 @@ public sealed class SaveSerializer
         {
             _options.Converters.Add(converter);
         }
+        _options.Converters.Add(new ContractEnumJsonConverterFactory());
     }
 
     public SaveContractAttribute Contract<T>() => Contract(typeof(T));

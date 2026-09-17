@@ -3,11 +3,11 @@
   "table": {
     "id": "robots",
     "name": "Robots",
-    "description": "Prototype player robot definitions.",
+    "description": "Robot chassis definitions. Pilot and arm weapons are selected by the game loadout.",
     "kind": "user",
     "isSystemTable": false,
-    "lastChangeAt": "2026-09-17T20:00:00.000Z",
-    "version": 1,
+    "lastChangeAt": "2026-09-17T19:42:24.000Z",
+    "version": 2,
     "columns": [
       {
         "id": "robots_move_speed0000",
@@ -35,15 +35,6 @@
         "required": true,
         "unique": false,
         "min": 1
-      },
-      {
-        "id": "robots_weapon00000000",
-        "name": "weapon",
-        "type": "ref",
-        "defaultValue": "AUTOCANNON",
-        "required": true,
-        "unique": false,
-        "refTableId": "weapons"
       }
     ],
     "rows": [
@@ -65,11 +56,6 @@
             "columnId": "robots_arm_spacing000",
             "type": "decimal",
             "value": 26
-          },
-          {
-            "columnId": "robots_weapon00000000",
-            "type": "ref",
-            "value": "AUTOCANNON"
           }
         ]
       }

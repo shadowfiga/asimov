@@ -2,6 +2,7 @@ using System.Reflection;
 using Chisel.Generated;
 using Graphite.Engine.Objects;
 using Graphite.Game.Domain.Combat;
+using Graphite.Game.Domain;
 using Graphite.Game.Domain.Player;
 using Microsoft.Xna.Framework;
 using static Graphite.Gameplay.Tests.Program;
@@ -55,7 +56,7 @@ internal static class PrefabChecks
     private static void IndependentRobots()
     {
         using var world = new GameWorld();
-        var prefab = new RobotPrefab(ChiselRobotsId.STARTER_MECH);
+        var prefab = new RobotPrefab(new Loadout());
         var first = world.Spawn(prefab, new Vector2(100, 200));
         var second = world.Spawn(prefab, new Vector2(-300, 400));
         Check(first.Owner != second.Owner && first.Bottom != second.Bottom && first.Top != second.Top

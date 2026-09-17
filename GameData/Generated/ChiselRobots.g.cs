@@ -5,9 +5,11 @@ using Microsoft.Xna.Framework;
 
 namespace Chisel.Generated
 {
+    [System.Runtime.Serialization.DataContract]
     public enum ChiselRobotsId
     {
         Invalid = -1,
+        [System.Runtime.Serialization.EnumMember(Value = "STARTER_MECH")]
         STARTER_MECH = 0
     }
 
@@ -20,6 +22,5 @@ namespace Chisel.Generated
         public static readonly float[] MoveSpeed = new float[] { 280.0f };
         public static readonly float[] BodyRadius = new float[] { 20.0f };
         public static readonly float[] ArmSpacing = new float[] { 26.0f };
-        public static readonly ChiselWeaponsId[] Weapon = new ChiselWeaponsId[] { ChiselWeaponsId.AUTOCANNON };
     }
 }

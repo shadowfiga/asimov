@@ -4,11 +4,11 @@
 
 ```csharp
 var player = Objects.Spawn(
-    new RobotPrefab(ChiselRobotsId.STARTER_MECH),
+    new RobotPrefab(SessionManager.ActiveSession.CurrentLoadout),
     new Vector2(100, 200));
 ```
 
-The game-specific `RobotPrefab` assembles the complete robot and returns its `PlayerController`. It accepts a Chisel robot ID and reads the generated columns directly; only `MoveSpeed` is passed to the controller. Other entities can attach the same game `WeaponComponent` with a Chisel weapon ID without player input: set `TriggerHeld`, and optionally add an `AimController` with a world-space `Target`. Chisel remains the definition authority; components reference Chisel IDs instead of copying export data into wrapper definitions. Runtime objects, textures and components are not save records.
+The game-specific `RobotPrefab` assembles the complete robot and returns its `PlayerController`. It accepts the game's `Loadout` and captures the selected chassis, pilot, and separate arm weapon IDs. It reads chassis/weapon columns directly; movement speed and pilot identity are passed to the controller. Pilot identity is cosmetic and does not modify combat stats. Other entities can attach the same game `WeaponComponent` with a Chisel weapon ID without player input: set `TriggerHeld`, and optionally add an `AimController` with a world-space `Target`. Chisel remains the definition authority; components reference Chisel IDs instead of copying export data into wrapper definitions. Runtime objects, textures and components are not save records.
 
 ## Writing a prefab
 
