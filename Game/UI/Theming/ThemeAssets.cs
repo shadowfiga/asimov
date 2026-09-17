@@ -67,15 +67,7 @@ internal static class ThemeAssets
                 _fontData = File.ReadAllBytes(Path.Combine(AppContext.BaseDirectory, "Content", "Fonts", "Abel", FontFile));
             }
             system = new FontSystem(new FontSystemSettings { FontResolutionFactor = density });
-            try
-            {
-                system.AddFont(_fontData);
-            }
-            catch
-            {
-                system.Dispose();
-                throw;
-            }
+            system.AddFont(_fontData);
             ResolutionFonts.Add(density, system);
             ThemeFontSystems.Add(system);
         }
@@ -88,17 +80,9 @@ internal static class ThemeAssets
 
     private static void Release(object? sender, EventArgs args)
     {
-        if (sender is Microsoft.Xna.Framework.Game game)
-        {
-            game.Disposed -= Release;
-        }
+        ((Microsoft.Xna.Framework.Game)sender!).Disposed -= Release;
 
-        if (_assets is null)
-        {
-            return;
-        }
-
-        foreach (var resource in _assets.Cache.Values.OfType<IDisposable>().Distinct<IDisposable>(ReferenceEqualityComparer.Instance))
+        foreach (var resource in _assets!.Cache.Values.OfType<IDisposable>().Distinct<IDisposable>(ReferenceEqualityComparer.Instance))
         {
             resource.Dispose();
         }

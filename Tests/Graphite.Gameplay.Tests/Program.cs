@@ -17,9 +17,9 @@ internal static class Program
     public static void Main()
     {
         Check(Definition.MoveSpeed == 280 && Definition.Weapon.RoundsPerSecond == 8, "Actual exported robot and weapon definitions load");
-        Throws<ArgumentOutOfRangeException>(() => RobotDefinition.FromChisel(ChiselRobotsId.Invalid));
-        Throws<InvalidDataException>(() => (Definition with { MoveSpeed = float.NaN }).Validate());
+        Throws<IndexOutOfRangeException>(() => RobotDefinition.FromChisel(ChiselRobotsId.Invalid));
         ChiselIds();
+        FailFast();
         ObjectChecks.Run();
         Movement();
         Shooting();
@@ -39,11 +39,50 @@ internal static class Program
             "System table IDs work with the extension as well");
         Check(ChiselRobots.MoveSpeed.GetType() == typeof(float[]) && ChiselRobots.Weapon.GetType() == typeof(ChiselWeaponsId[]),
             "Chisel's generated array contract stays unchanged");
-        Throws<ArgumentOutOfRangeException>(() => ChiselRobotsId.Invalid.ToInt());
-        Throws<ArgumentOutOfRangeException>(() => ((ChiselRobotsId)(-2)).ToInt());
-        Throws<ArgumentOutOfRangeException>(() => ((ChiselRobotsId)ChiselRobots.Count).ToInt());
-        Throws<ArgumentOutOfRangeException>(() => ((ChiselRobotsId)int.MaxValue).ToInt());
-        Throws<ArgumentOutOfRangeException>(() => WeaponDefinition.FromChisel(ChiselWeaponsId.Invalid));
+        foreach (var invalid in new[] { -1, -2, ChiselRobots.Count, int.MaxValue })
+        {
+            Check(((ChiselRobotsId)invalid).ToInt() == invalid, "ID conversion does not validate or substitute a fallback");
+            Throws<IndexOutOfRangeException>(() => RobotDefinition.FromChisel((ChiselRobotsId)invalid));
+        }
+        Throws<IndexOutOfRangeException>(() => WeaponDefinition.FromChisel(ChiselWeaponsId.Invalid));
+    }
+
+    private static void FailFast()
+    {
+        using var world = new GameWorld();
+        var robot = RobotFactory.Create(world, Definition, Vector2.Zero);
+        // Invalid game state must reach the engine's existing transform contract, not become idle/default input.
+        Throws<ArgumentOutOfRangeException>(() => Step(robot, .1f, new PlayerControls(new Vector2(float.NaN, 0), Vector2.UnitX, false)));
+        Throws<ArgumentOutOfRangeException>(() => Step(robot, .1f, new PlayerControls(Vector2.Zero, new Vector2(float.NaN, 0), false)));
+        robot.Owner.Destroy();
+        var badSpeed = RobotFactory.Create(world, Definition with
+        {
+            MoveSpeed = float.NaN
+        }, Vector2.Zero);
+        Throws<ArgumentOutOfRangeException>(() => Step(badSpeed, .1f, new PlayerControls(Vector2.UnitX, Vector2.Zero, false)));
+        badSpeed.Owner.Destroy();
+
+        var gun = world.Create("Gun");
+        var muzzle = gun.CreateChild("Muzzle");
+        foreach (var rate in new[] { 0f, -1f, float.NaN, float.PositiveInfinity })
+        {
+            Throws<InvalidDataException>(() => new WeaponComponent(Definition.Weapon with { RoundsPerSecond = rate }, muzzle.Transform));
+        }
+        foreach (var lifetime in new[] { 0f, -1f, float.NaN, float.PositiveInfinity })
+        {
+            Throws<InvalidDataException>(() => new WeaponComponent(Definition.Weapon with { ProjectileLifetime = lifetime }, muzzle.Transform));
+            Throws<ArgumentOutOfRangeException>(() => new ProjectileComponent(Vector2.UnitX, lifetime));
+        }
+        var fastWeapon = gun.AddComponent(new WeaponComponent(Definition.Weapon with
+        {
+            RoundsPerSecond = 120,
+            ProjectileLifetime = 12
+        }, muzzle.Transform));
+        Check(fastWeapon.Definition.RoundsPerSecond == 120 && fastWeapon.Definition.ProjectileLifetime == 12,
+            "Authored weapons are not restricted by arbitrary prototype caps");
+        fastWeapon.TriggerHeld = true;
+        muzzle.Destroy();
+        Throws<ObjectDisposedException>(() => world.Update(.1f));
     }
 
     private static void Movement()

@@ -11,7 +11,6 @@ public static class MyraTheme
     // Apply before constructing screens; use Abel with Myra's control glyphs.
     public static void Apply(GameTheme theme)
     {
-        ArgumentNullException.ThrowIfNull(theme);
         var styles = ThemeAssets.LoadStylesheet();
         styles.DesktopStyle = new DesktopStyle { Background = Brush(theme.Background) };
         styles.PanelStyle = new WidgetStyle();

@@ -17,7 +17,7 @@ internal static class GameAudio
         {
             yield return () =>
             {
-                LoadClip(audio, sound.Asset);
+                audio.LoadClip(sound.Asset);
                 audio.PreloadEffect(sound.Asset);
             };
         }
@@ -26,7 +26,7 @@ internal static class GameAudio
             foreach (var variant in Variants)
             {
                 var path = MusicPath(cue, variant);
-                yield return () => LoadClip(audio, path);
+                yield return () => audio.LoadClip(path);
             }
         }
         yield return () => MenuCue(audio);
@@ -53,7 +53,7 @@ internal static class GameAudio
 
     private static MusicCue Cue(AudioManager audio, string id)
     {
-        var clips = Variants.Select(variant => LoadClip(audio, MusicPath(id, variant))).ToArray();
+        var clips = Variants.Select(variant => audio.LoadClip(MusicPath(id, variant))).ToArray();
         // BPM is embedded in the WAV cue labels; RT is supplied in both source folder names.
         // Use a timed crossfade until meter/downbeats have been auditioned, not guessed beat matching.
         var tailFrames = (int)Math.Round(6.455 * clips[0].SampleRate);
@@ -63,16 +63,4 @@ internal static class GameAudio
 
     private static string MusicPath(string cue, string variant) => $"{Root}Music/{cue}-{variant}.wav";
 
-    private static AudioClip LoadClip(AudioManager audio, string path)
-    {
-        try
-        {
-            return audio.LoadClip(path);
-        }
-        catch (IOException exception)
-        {
-            throw new InvalidOperationException(
-                "Import the licensed audio with python Scripts/import_audio.py <your packs folder>, then rebuild.", exception);
-        }
-    }
 }

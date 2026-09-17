@@ -20,40 +20,32 @@ public sealed class CreditsDialog : UIScreen
 
     protected override Widget Build()
     {
-        try
+        var theme = GameThemes.DeepDrive;
+        _frame = new Grid
         {
-            var theme = GameThemes.DeepDrive;
-            _frame = new Grid
-            {
-                Width = theme.Layout.CreditsSize.X,
-                Height = theme.Layout.CreditsSize.Y,
-                Padding = new Thickness(theme.Spacing.Xl),
-                RowSpacing = theme.Spacing.Md,
-                Background = DialogLayout.Surface()
-            };
-            _frame.ColumnsProportions.Add(new Proportion(ProportionType.Fill));
-            _frame.RowsProportions.Add(Proportion.Auto);
-            _frame.RowsProportions.Add(new Proportion(ProportionType.Fill));
-            _frame.RowsProportions.Add(Proportion.Auto);
-            _frame.Widgets.Add(DialogLayout.Title("CREDITS"));
-            var entries = new VerticalStackPanel { Spacing = theme.Spacing.Md };
-            foreach (var entry in GameSettings.Instance.Menu.Credits)
-            {
-                entries.Widgets.Add(DialogLayout.Title(entry, 20));
-            }
-            var scroll = new ScrollViewer { Content = entries, ShowHorizontalScrollBar = false };
-            Grid.SetRow(scroll, 1);
-            _frame.Widgets.Add(scroll);
-            _back = new MenuButton(_assets, "BACK", "arrow-left", arrow: false, size: MenuButtonSize.Dialog);
-            Grid.SetRow(_back, 2);
-            _frame.Widgets.Add(_back);
-            return new Graphite.Game.UI.Dialog(new UIMaterialHost(_frame, interactions: MenuPresentation.FadeStyle));
-        }
-        catch
+            Width = theme.Layout.CreditsSize.X,
+            Height = theme.Layout.CreditsSize.Y,
+            Padding = new Thickness(theme.Spacing.Xl),
+            RowSpacing = theme.Spacing.Md,
+            Background = DialogLayout.Surface()
+        };
+        _frame.ColumnsProportions.Add(new Proportion(ProportionType.Fill));
+        _frame.RowsProportions.Add(Proportion.Auto);
+        _frame.RowsProportions.Add(new Proportion(ProportionType.Fill));
+        _frame.RowsProportions.Add(Proportion.Auto);
+        _frame.Widgets.Add(DialogLayout.Title("CREDITS"));
+        var entries = new VerticalStackPanel { Spacing = theme.Spacing.Md };
+        foreach (var entry in GameSettings.Instance.Menu.Credits)
         {
-            _assets.Dispose();
-            throw;
+            entries.Widgets.Add(DialogLayout.Title(entry, 20));
         }
+        var scroll = new ScrollViewer { Content = entries, ShowHorizontalScrollBar = false };
+        Grid.SetRow(scroll, 1);
+        _frame.Widgets.Add(scroll);
+        _back = new MenuButton(_assets, "BACK", "arrow-left", arrow: false, size: MenuButtonSize.Dialog);
+        Grid.SetRow(_back, 2);
+        _frame.Widgets.Add(_back);
+        return new Graphite.Game.UI.Dialog(new UIMaterialHost(_frame, interactions: MenuPresentation.FadeStyle));
     }
 
     protected override void Awake()

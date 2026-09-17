@@ -21,7 +21,6 @@ public abstract class GameSettings : Settings
             SettingsEnvironment.Production => new ProductionSettings(),
             _ => throw new ArgumentOutOfRangeException(nameof(environment))
         };
-        settings.Validate();
         return settings;
     }
 
@@ -46,10 +45,6 @@ public abstract class GameSettings : Settings
     public override void Validate()
     {
         base.Validate();
-        if (Menu is null)
-        {
-            throw new InvalidDataException("menu settings cannot be null.");
-        }
         if (Menu.Credits.Any(string.IsNullOrWhiteSpace))
         {
             throw new InvalidDataException("menu.credits must be an array of non-empty strings.");

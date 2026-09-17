@@ -32,7 +32,7 @@ internal sealed class VideoSettingsPage : SettingsPage
         };
         _resolution.SelectedIndexChanged += (_, _) =>
         {
-            if (!_syncing && _resolution.SelectedIndex is { } index && index >= 0 && index < _resolutions.Length)
+            if (!_syncing && _resolution.SelectedIndex is { } index)
             {
                 DisplaySettings.Preview(DisplaySettings.Current.Mode, _resolutions[index]);
             }

@@ -10,30 +10,18 @@ public static class RobotFactory
 {
     public static PlayerController Create(GameWorld world, RobotDefinition definition, Vector2 position)
     {
-        ArgumentNullException.ThrowIfNull(world);
-        ArgumentNullException.ThrowIfNull(definition);
-        definition.Validate();
-        Transform2D.Validate(position);
         var root = world.Create("Robot");
-        try
-        {
-            root.Transform.LocalPosition = position;
-            var target = position - new Vector2(0, 100);
-            var bottom = root.CreateChild("Bottom");
-            bottom.Transform.LocalRotation = -MathHelper.PiOver2;
-            bottom.AddComponent(new RobotPartRenderer(RobotPart.Bottom, definition.BodyRadius) { Layer = 10 });
-            var top = root.CreateChild("Top");
-            var torsoAim = top.AddComponent(new AimController(target));
-            top.AddComponent(new RobotPartRenderer(RobotPart.Top, definition.BodyRadius) { Layer = 30 });
-            var left = CreateWeapon(top, "LeftWeapon", -definition.ArmSpacing, definition.Weapon, target);
-            var right = CreateWeapon(top, "RightWeapon", definition.ArmSpacing, definition.Weapon, target);
-            return root.AddComponent(new PlayerController(definition, bottom, torsoAim, left.Aim, right.Aim, left.Weapon, right.Weapon));
-        }
-        catch
-        {
-            root.Destroy();
-            throw;
-        }
+        root.Transform.LocalPosition = position;
+        var target = position - new Vector2(0, 100);
+        var bottom = root.CreateChild("Bottom");
+        bottom.Transform.LocalRotation = -MathHelper.PiOver2;
+        bottom.AddComponent(new RobotPartRenderer(RobotPart.Bottom, definition.BodyRadius) { Layer = 10 });
+        var top = root.CreateChild("Top");
+        var torsoAim = top.AddComponent(new AimController(target));
+        top.AddComponent(new RobotPartRenderer(RobotPart.Top, definition.BodyRadius) { Layer = 30 });
+        var left = CreateWeapon(top, "LeftWeapon", -definition.ArmSpacing, definition.Weapon, target);
+        var right = CreateWeapon(top, "RightWeapon", definition.ArmSpacing, definition.Weapon, target);
+        return root.AddComponent(new PlayerController(definition, bottom, torsoAim, left.Aim, right.Aim, left.Weapon, right.Weapon));
     }
 
     private static (AimController Aim, WeaponComponent Weapon) CreateWeapon(GameObject top, string name,

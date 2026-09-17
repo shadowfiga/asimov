@@ -17,6 +17,19 @@
 - Arrays, lists, dictionaries, sets, and other collection-like fields and properties must default to an empty collection of the appropriate type, never `null` or `null!`.
 - Never use `null` or `null!` as a fallback when initializing or assigning a collection; use an empty collection instead.
 
+# Fail-fast game code
+
+- Outside `Engine/`, trust internal callers, generated Chisel definitions, and contracts already enforced by the engine. Do not add blanket null/range checks, repeated `Validate()` calls, or defensive try/catch cleanup wrappers around ordinary game code.
+- Let programming errors propagate and crash with their original exception. Do not swallow them, log-and-continue, silently return, substitute defaults, clamp invalid state, or otherwise make broken game code appear to work.
+- Prefer direct access over redundant existence/bounds checks when the runtime or engine already throws. Keep a focused fail-fast assertion only when invalid state would otherwise be silently accepted, corrupt behavior, or hang (for example, an invalid firing interval).
+- Keep intentional behavior: optional UI content, cache misses, input debouncing, pause/focus handling, normal resource disposal, and actual gameplay limits are not error recovery. Validate external settings/data once at their owning boundary, not throughout their consumers.
+- This cleanup policy does NOT apply to `Engine/`. Preserve the engine's existing level of validation, defensive handling, and resource/lifecycle safety; do not weaken it to simplify game code.
+
+# Engine bug regression tests
+
+- Every discovered engine-level bug must have a focused automated regression test reproducing it. Write the test before or alongside the fix, verify that it fails against the broken behavior and passes with the fix, and run the relevant existing tests.
+- Do not fix engine bugs without regression coverage or weaken/remove existing tests to make a failure disappear.
+
 # UI theme
 
 - Use the bundled Abel font for all game text through the shared Myra theme.

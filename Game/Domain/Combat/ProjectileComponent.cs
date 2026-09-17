@@ -16,7 +16,7 @@ public sealed class ProjectileComponent : Component
     public Vector2 Position => Transform.WorldPosition;
     public ProjectileComponent(Vector2 velocity, float lifetime)
     {
-        Transform2D.Validate(velocity);
+        // A non-finite lifetime would leave an immortal projectile in the scene.
         if (!float.IsFinite(lifetime) || lifetime <= 0)
         {
             throw new ArgumentOutOfRangeException(nameof(lifetime));

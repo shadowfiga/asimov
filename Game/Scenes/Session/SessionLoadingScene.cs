@@ -11,7 +11,6 @@ public sealed class SessionLoadingScene : LoadingScene
 
     protected override IEnumerable<Action> Prepare()
     {
-        yield return _session.Validate;
         yield return () => GameAudio.SessionCue(AudioManager.Current);
     }
 

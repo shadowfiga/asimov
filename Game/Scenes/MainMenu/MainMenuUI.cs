@@ -29,19 +29,6 @@ public sealed class MainMenuUI : UIScreen
 
     protected override Widget Build()
     {
-        try
-        {
-            return BuildMenu();
-        }
-        catch
-        {
-            _assets.Dispose();
-            throw;
-        }
-    }
-
-    private Widget BuildMenu()
-    {
         var theme = GameThemes.DeepDrive;
         var spacing = theme.Spacing;
         var brand = new VerticalStackPanel { Spacing = spacing.Sm };

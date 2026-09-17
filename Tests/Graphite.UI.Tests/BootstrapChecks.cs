@@ -27,6 +27,19 @@ internal static class BootstrapChecks
             using (var screen = Ui.Open<LoadingUI>())
             {
                 screen.SetProgress(.5f);
+                foreach (var invalid in new[] { -.1f, 1.1f, float.NaN, float.PositiveInfinity })
+                {
+                    var rejected = false;
+                    try
+                    {
+                        screen.SetProgress(invalid);
+                    }
+                    catch (ArgumentOutOfRangeException)
+                    {
+                        rejected = true;
+                    }
+                    Program.Check(rejected, "Broken loading progress throws instead of being clamped");
+                }
                 foreach (var scale in new[] { .75f, 1.75f, 1f })
                 {
                     Preferences.Set(RuntimePreferences.UiScale, scale);
@@ -113,7 +126,7 @@ internal static class BootstrapChecks
         SceneManager.Update(0);
         Program.Check(meter.Value == 0 && ReferenceEquals(SessionManager.ActiveSession, original),
             "Play presents loading before preparing the new session");
-        for (var frame = 0; frame < 2; frame++)
+        for (var frame = 0; frame < 10 && meter.Value < 1; frame++)
         {
             SceneManager.Draw(new GameTime(), device);
             SceneManager.Update(0);

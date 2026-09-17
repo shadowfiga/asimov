@@ -18,7 +18,6 @@ internal sealed class Dialog : Panel
     internal Dialog(Widget content)
         : base(new Stylesheet { PanelStyle = new WidgetStyle() }, null)
     {
-        ArgumentNullException.ThrowIfNull(content);
         if (content.Parent is not null || content.Desktop is not null)
         {
             throw new InvalidOperationException("Add a dialog around a child before placing that child in the UI.");

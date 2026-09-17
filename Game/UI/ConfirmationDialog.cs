@@ -43,12 +43,6 @@ internal sealed class ConfirmationDialog : IDisposable
         string confirmText = "CONFIRM",
         string cancelText = "CANCEL")
     {
-        ArgumentNullException.ThrowIfNull(assets);
-        ArgumentException.ThrowIfNullOrWhiteSpace(title);
-        ArgumentNullException.ThrowIfNull(onConfirm);
-        ArgumentNullException.ThrowIfNull(onCancel);
-        ArgumentException.ThrowIfNullOrWhiteSpace(confirmText);
-        ArgumentException.ThrowIfNullOrWhiteSpace(cancelText);
         _onConfirm = onConfirm;
         _onCancel = onCancel;
 
@@ -84,7 +78,7 @@ internal sealed class ConfirmationDialog : IDisposable
 
     private void Complete(Action action)
     {
-        if (_disposed || !Overlay.Visible)
+        if (!Overlay.Visible)
         {
             return;
         }

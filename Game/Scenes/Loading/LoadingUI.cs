@@ -37,5 +37,13 @@ public sealed class LoadingUI : UIScreen
         return root;
     }
 
-    internal void SetProgress(float value) => _progress.Value = Math.Clamp(value, 0, 1);
+    internal void SetProgress(float value)
+    {
+        // The widget clamps values; reject a broken loading calculation instead of hiding it.
+        if (!float.IsFinite(value) || value is < 0 or > 1)
+        {
+            throw new ArgumentOutOfRangeException(nameof(value));
+        }
+        _progress.Value = value;
+    }
 }

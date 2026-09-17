@@ -323,6 +323,9 @@ internal static class Program
         Check(ReferenceEquals(SessionManager.ActiveSession, first), "The manager holds the supplied live session without persistence initialization");
         first.ClearSector("test-sector");
         Check(SessionManager.ActiveSession.ClearedSectors.Contains("test-sector"), "Active state is the same in-memory session, not a snapshot");
+        Throws<ArgumentNullException>(() => first.ClearSector(null!));
+        Throws<ArgumentException>(() => first.ClearSector(" "));
+        Check(first.ClearedSectors.SequenceEqual(new[] { "test-sector" }), "Invalid sector IDs cannot silently enter session state");
         SessionManager.ActiveSession = second;
         Check(ReferenceEquals(SessionManager.ActiveSession, second), "The active session can be replaced");
         SessionManager.ActiveSession = null;
@@ -338,23 +341,24 @@ internal static class Program
     {
         Storage.Initialize(root);
         var session = new Session();
-        session.AddPlayTime(42);
         session.ClearSector("a-3-crystal-basin");
         Storage.Save(session);
         var loaded = Storage.Load<Session>();
-        Check(loaded.PlayTimeSeconds == 42 && loaded.ClearedSectors.Contains("a-3-crystal-basin"),
+        Check(loaded.ClearedSectors.SequenceEqual(new[] { "a-3-crystal-basin" }),
             "Save and load accept and return the whole campaign directly");
         Check(!ReferenceEquals(session, loaded), "Loaded session is independent of live state");
         var slotId = Guid.NewGuid();
         var second = new Session();
-        second.AddPlayTime(7);
+        second.ClearSector("b-1-iron-ridge");
         Storage.Save(second, slotId, "Expedition");
         Storage.Shutdown();
         Storage.Initialize(root);
-        Check(Storage.Load<Session>().PlayTimeSeconds == 42 && Storage.Load<Session>(slotId).PlayTimeSeconds == 7, "The default slot and explicit slots survive restart independently");
+        Check(Storage.Load<Session>().ClearedSectors.SequenceEqual(new[] { "a-3-crystal-basin" })
+            && Storage.Load<Session>(slotId).ClearedSectors.SequenceEqual(new[] { "b-1-iron-ridge" }), "The default slot and explicit slots survive restart independently");
         Check(Storage.ListSlots<Session>().Count == 2 && Storage.ListSlots<Session>().Single(slot => slot.Id == slotId).Name == "Expedition", "Default and explicit slots can be listed");
         Storage.Delete();
-        Check(Storage.TryLoad<Session>().Status == SaveStatus.NotFound && Storage.Load<Session>(slotId).PlayTimeSeconds == 7, "Deleting the default slot preserves other slots");
+        Check(Storage.TryLoad<Session>().Status == SaveStatus.NotFound
+            && Storage.Load<Session>(slotId).ClearedSectors.SequenceEqual(new[] { "b-1-iron-ridge" }), "Deleting the default slot preserves other slots");
     }
 
     private static void Rewrite(string path, Action<JsonObject> edit, bool updateChecksum = false)

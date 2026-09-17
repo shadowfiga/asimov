@@ -6,16 +6,10 @@ namespace Graphite.Game.Domain.Combat;
 /// <summary>World-space targeting, usable by player input or AI.</summary>
 public sealed class AimController : Component
 {
-    private Vector2 _target;
     public override int UpdateOrder => 100;
     public Vector2 Target
     {
-        get => _target;
-        set
-        {
-            Transform2D.Validate(value);
-            _target = value;
-        }
+        get; set;
     }
     public AimController(Vector2 target) => Target = target;
     protected override void OnAdded() => Transform.FaceWorldPoint(Target);

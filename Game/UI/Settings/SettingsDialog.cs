@@ -44,23 +44,6 @@ public sealed class SettingsDialog : UIScreen
 
     protected override Widget Build()
     {
-        try
-        {
-            return BuildDialog();
-        }
-        catch
-        {
-            foreach (var page in _pages)
-            {
-                page.Dispose();
-            }
-            _assets.Dispose();
-            throw;
-        }
-    }
-
-    private Widget BuildDialog()
-    {
         var theme = GameThemes.DeepDrive;
         var spacing = theme.Spacing;
         _video = new VideoSettingsPage(_assets);
@@ -129,10 +112,6 @@ public sealed class SettingsDialog : UIScreen
 
     internal void SelectPage(int index)
     {
-        if (index < 0 || index >= _pages.Length)
-        {
-            throw new ArgumentOutOfRangeException(nameof(index));
-        }
         if (IsClosing || (IsOpen && DisplaySettings.NeedsConfirmation))
         {
             return;

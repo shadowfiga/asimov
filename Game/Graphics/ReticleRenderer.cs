@@ -11,10 +11,7 @@ public sealed class ReticleRenderer : RenderComponent
     public ReticleRenderer(PlayerController player) => _player = player;
     protected internal override void Draw(RenderContext2D context)
     {
-        if (_player.IsDisposed)
-        {
-            return;
-        }
+        ObjectDisposedException.ThrowIf(_player.IsDisposed, _player);
         var point = Transform.InverseTransformPoint(_player.AimPosition);
         var color = GameThemes.DeepDrive.PrimaryText;
         context.Ring(point, 9, color);

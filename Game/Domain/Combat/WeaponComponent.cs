@@ -23,9 +23,16 @@ public sealed class WeaponComponent : Component
 
     public WeaponComponent(WeaponDefinition definition, Transform2D muzzle)
     {
-        ArgumentNullException.ThrowIfNull(definition);
-        ArgumentNullException.ThrowIfNull(muzzle);
-        definition.Validate();
+        // Non-positive cadence would make the firing loop stop advancing.
+        if (!float.IsFinite(definition.RoundsPerSecond) || definition.RoundsPerSecond <= 0)
+        {
+            throw new InvalidDataException("Weapon firing rate must be finite and positive.");
+        }
+        // Catch-up skips expired rounds; an invalid lifetime would otherwise silently suppress every shot.
+        if (!float.IsFinite(definition.ProjectileLifetime) || definition.ProjectileLifetime <= 0)
+        {
+            throw new InvalidDataException("Weapon projectile lifetime must be finite and positive.");
+        }
         Definition = definition;
         Muzzle = muzzle;
     }

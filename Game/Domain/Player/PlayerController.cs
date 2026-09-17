@@ -53,14 +53,12 @@ public sealed class PlayerController : Component
 
     protected internal override void Update(float dt)
     {
-        Transform2D.Validate(Controls.Movement);
-        Transform2D.Validate(Controls.AimOffset);
         var move = Controls.Movement;
         if (move.LengthSquared() > 1)
         {
             move.Normalize();
         }
-        IsMoving = move.LengthSquared() > .0001f;
+        IsMoving = move != Vector2.Zero;
         if (IsMoving)
         {
             Bottom.Transform.WorldRotation = MathF.Atan2(move.Y, move.X);

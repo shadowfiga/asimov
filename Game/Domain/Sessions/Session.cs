@@ -3,7 +3,7 @@ using Graphite.Engine.Persistence;
 namespace Graphite.Game.Sessions;
 
 [SaveContract("deep-drive.campaign", Version = 1)]
-public sealed class Session : ISaveValidatable
+public sealed class Session
 {
     [SaveMember("clearedSectors")]
     private HashSet<string> _clearedSectors = [];
@@ -14,10 +14,5 @@ public sealed class Session : ISaveValidatable
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(sectorId);
         _clearedSectors.Add(sectorId);
-    }
-
-    public void Validate()
-    {
-
     }
 }

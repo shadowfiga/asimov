@@ -152,13 +152,13 @@ internal sealed class MenuButton : Button
                 : highlighted
                     ? _highlightColor
                     : _normalTextColor;
-        if (_icon is not null && _iconImages is { } iconImages)
+        if (_icon is not null)
         {
-            _icon.Renderable = Select(iconImages, highlighted);
+            _icon.Renderable = Select(_iconImages!.Value, highlighted);
         }
-        if (_arrow is not null && _arrowImages is { } arrowImages)
+        if (_arrow is not null)
         {
-            _arrow.Renderable = Select(arrowImages, highlighted);
+            _arrow.Renderable = Select(_arrowImages!.Value, highlighted);
         }
     }
 

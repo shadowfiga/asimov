@@ -1,5 +1,8 @@
 using Graphite.Engine.Graphics;
 using Graphite.Engine.Objects;
+using Chisel.Generated;
+using Graphite.Game.Domain.Player;
+using Graphite.Game.Graphics;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 
@@ -9,6 +12,7 @@ internal static class WorldRenderingChecks
 {
     internal static void Run(GraphicsDevice device)
     {
+        StaleReticleFails(device);
         using var texture = new Texture2D(device, 4, 2);
         texture.SetData(new[] { Color.Red, Color.Red, Color.Green, Color.Green, Color.Red, Color.Red, Color.Green, Color.Green });
         using var world = new GameWorld();
@@ -75,5 +79,26 @@ internal static class WorldRenderingChecks
             var screen = camera.WorldToScreen(child.Transform.WorldPosition);
             return pixels[(int)MathF.Round(screen.Y) * 128 + (int)MathF.Round(screen.X)];
         }
+    }
+
+    private static void StaleReticleFails(GraphicsDevice device)
+    {
+        using var world = new GameWorld();
+        using var renderer = new WorldRenderer2D(device);
+        var camera = new Camera2D();
+        camera.SetViewport(new Point(128, 128), 1);
+        var player = RobotFactory.Create(world, RobotDefinition.FromChisel(ChiselRobotsId.STARTER_MECH), Vector2.Zero);
+        world.Create("Reticle").AddComponent(new ReticleRenderer(player));
+        player.Owner.Destroy();
+        var rejected = false;
+        try
+        {
+            renderer.Draw(world, camera);
+        }
+        catch (ObjectDisposedException)
+        {
+            rejected = true;
+        }
+        Program.Check(rejected, "A reticle with stale player ownership throws instead of silently disappearing");
     }
 }

@@ -12,12 +12,6 @@ public sealed class CrtFilter() : ShaderScreenFilter("Content/Shaders/Crt.mgfxo"
 
     public static void Configure(ScreenFilterParameters parameters, float intensity)
     {
-        ArgumentNullException.ThrowIfNull(parameters);
-        if (!float.IsFinite(intensity) || intensity is < 0 or > 1)
-        {
-            throw new ArgumentOutOfRangeException(nameof(intensity));
-        }
-
         // This is the original Aged profile; the settings control scales the
         // complete recipe without changing its balance.
         parameters.Set(Scanlines, .1f * intensity);

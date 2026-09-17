@@ -33,10 +33,7 @@ internal sealed class MenuAssets : IDisposable
 
     private static void ReleasePreloaded(object? sender, EventArgs args)
     {
-        if (sender is Microsoft.Xna.Framework.Game game)
-        {
-            game.Disposed -= ReleasePreloaded;
-        }
+        ((Microsoft.Xna.Framework.Game)sender!).Disposed -= ReleasePreloaded;
         Preloaded.Clear();
         _releaseRegistered = false;
     }
