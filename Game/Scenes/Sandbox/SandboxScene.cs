@@ -18,7 +18,6 @@ public sealed class SandboxScene : Scene
     private ReticleRenderer _reticle = null!;
     private SandboxUI _hud = null!;
     private Run _run = null!;
-    private double _elapsedMilliseconds;
     private bool _previousCursorVisible;
 
     protected internal override void OnLoad()
@@ -27,7 +26,6 @@ public sealed class SandboxScene : Scene
         _previousCursorVisible = game.IsMouseVisible;
         var session = SessionManager.ActiveSession;
         _run = session.CurrentRun;
-        _elapsedMilliseconds = _run.DurationMs;
         var loadout = session.CurrentLoadout;
         Objects.MaxDeltaTime = .1f;
         _player = Objects.Spawn(new MechPrefab(loadout), Vector2.Zero);
@@ -62,8 +60,7 @@ public sealed class SandboxScene : Scene
             return;
         }
         _player.Controls = controls;
-        _elapsedMilliseconds += dt * 1000d;
-        _run.DurationMs = (int)_elapsedMilliseconds;
+        _run.AddTime(TimeSpan.FromSeconds(dt));
     }
 
     protected internal override void LateUpdate(float dt)

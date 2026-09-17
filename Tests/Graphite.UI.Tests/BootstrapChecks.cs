@@ -188,8 +188,8 @@ internal static class BootstrapChecks
         Program.Check(!ReferenceEquals(SessionManager.ActiveSession, original) && SessionManager.ActiveSession.ClearedSectors.Count == 0,
             "Successful preload publishes a fresh non-null session");
         var run = SessionManager.ActiveSession.CurrentRun;
-        Program.Check(desktop.Widgets.Contains(loading) && run.XP == 0 && run.Biomass == 0 && run.Kills == 0
-            && run.DurationMs == 0 && run.Modifiers.Length == 0,
+        Program.Check(desktop.Widgets.Contains(loading) && run.XP == 0 && run.Kills == 0
+            && run.Duration == TimeSpan.Zero && run.Modifiers.Length == 0,
             "Loading creates and publishes an initialized run before Sandbox OnLoad executes");
         SceneManager.CommitPendingChanges();
         Program.Check(ReferenceEquals(SessionManager.ActiveSession.CurrentRun, run), "Sandbox consumes the prepared run without replacing it");
@@ -266,7 +266,7 @@ internal static class BootstrapChecks
     private static void CheckHudReadouts(Desktop desktop, Graphite.Game.Domain.Run.Run run)
     {
         var originalXp = run.XP;
-        var originalDuration = run.DurationMs;
+        var originalDuration = run.Duration;
         try
         {
             using var screen = Ui.Open<SandboxUI>();
@@ -279,10 +279,16 @@ internal static class BootstrapChecks
             foreach (var (milliseconds, expected) in new[] { (1, "10:00"), (1000, "09:59"), (59_999, "09:01"),
                 (60_000, "09:00"), (599_999, "00:01"), (600_000, "00:00"), (610_000, "00:00") })
             {
-                run.DurationMs = milliseconds;
+                run.Duration = TimeSpan.FromMilliseconds(milliseconds);
                 screen.Refresh();
                 Program.Check(timer.Text == expected, "Timer counts remaining whole seconds and stops at zero");
             }
+            run.Duration = TimeSpan.FromMinutes(10) - TimeSpan.FromTicks(1);
+            screen.Refresh();
+            Program.Check(timer.Text == "00:01", "A final partial second remains visible until the full ten minutes elapse");
+            run.Duration = TimeSpan.FromMinutes(10);
+            screen.Refresh();
+            Program.Check(timer.Text == "00:00", "The TimeSpan deadline displays zero exactly");
             run.XP = 1250;
             screen.Refresh();
             Program.Check(widgets.OfType<Label>().Any(label => label.Text == "1,250 XP") && xp.Value == 0,
@@ -293,7 +299,7 @@ internal static class BootstrapChecks
         finally
         {
             run.XP = originalXp;
-            run.DurationMs = originalDuration;
+            run.Duration = originalDuration;
         }
     }
 

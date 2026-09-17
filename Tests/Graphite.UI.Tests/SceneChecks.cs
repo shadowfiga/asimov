@@ -8,6 +8,8 @@ internal static class SceneChecks
 {
     private static readonly List<string> Events = [];
     private static float _elapsed;
+    private static float _lateElapsed;
+    private static float _objectElapsed;
 
     public static void Run()
     {
@@ -25,6 +27,28 @@ internal static class SceneChecks
             Program.Check(Events[^1] == "menu update", "Only the active scene updates");
             SceneManager.Draw(new GameTime(TimeSpan.FromSeconds(.25), TimeSpan.FromSeconds(.25)));
             Program.Check(Events[^1] == "menu draw", "Only the active scene draws");
+
+            const float frameDelta = 1f / 60;
+            SceneManager.Update(frameDelta);
+            Program.Check(_elapsed == frameDelta && _lateElapsed == frameDelta,
+                "Update and late update receive the same unmodified float delta in seconds");
+            SceneManager.Update(0);
+            Program.Check(_elapsed == 0 && _lateElapsed == 0,
+                "A zero-duration frame does not retain the previous elapsed time");
+            var beforeInvalid = Events.Count;
+            foreach (var invalid in new[] { -1f, float.NaN, float.PositiveInfinity, float.NegativeInfinity })
+            {
+                try
+                {
+                    SceneManager.Update(invalid);
+                    throw new InvalidOperationException("Expected invalid delta time to fail");
+                }
+                catch (ArgumentOutOfRangeException)
+                {
+                    Program.Check(Events.Count == beforeInvalid && _elapsed == 0 && _lateElapsed == 0,
+                        "Invalid frame durations fail before scene callbacks run");
+                }
+            }
 
             SceneManager.Load<MenuScene>();
             SceneManager.CommitPendingChanges();
@@ -47,6 +71,10 @@ internal static class SceneChecks
             SceneManager.Update(.1f);
             Program.Check(Events.SequenceEqual(new[] { "scene input", "component update", "component late", "scene late" }),
                 "Scenes automatically schedule object updates between input and the scene late-update hook");
+            owned.Objects.MaxDeltaTime = .1f;
+            SceneManager.Update(1f);
+            Program.Check(_elapsed == 1f && _lateElapsed == 1f && _objectElapsed == .1f,
+                "Object simulation clamping does not shorten the scene's delta time");
             SceneManager.Draw(new GameTime());
             SceneManager.Shutdown();
             Program.Check(owned.Objects.Roots.Count == 0 && owned.Objects.ComponentCount == 0 && Events.Count(value => value == "component removed") == 1,
@@ -90,8 +118,16 @@ internal static class SceneChecks
         public static ObjectScene? Instance;
         public ObjectScene() => Instance = this;
         protected internal override void OnLoad() => Objects.Spawn(new ObjectProbePrefab());
-        protected internal override void Update(float dt) => Events.Add("scene input");
-        protected internal override void LateUpdate(float dt) => Events.Add("scene late");
+        protected internal override void Update(float dt)
+        {
+            _elapsed = dt;
+            Events.Add("scene input");
+        }
+        protected internal override void LateUpdate(float dt)
+        {
+            _lateElapsed = dt;
+            Events.Add("scene late");
+        }
     }
 
     private sealed class FailedObjectScene : Scene
@@ -113,7 +149,11 @@ internal static class SceneChecks
 
     private sealed class ObjectProbe : Component
     {
-        protected internal override void Update(float dt) => Events.Add("component update");
+        protected internal override void Update(float dt)
+        {
+            _objectElapsed = dt;
+            Events.Add("component update");
+        }
         protected internal override void LateUpdate(float dt) => Events.Add("component late");
         protected override void OnRemoved() => Events.Add("component removed");
     }
@@ -131,6 +171,8 @@ internal static class SceneChecks
             _elapsed = dt;
             Events.Add("menu update");
         }
+
+        protected internal override void LateUpdate(float dt) => _lateElapsed = dt;
 
         protected internal override void Draw(GameTime gameTime) => Events.Add("menu draw");
 

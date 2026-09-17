@@ -224,11 +224,12 @@ public sealed class SandboxUI : UIScreen
             _experience.Text = $"{_shownExperience.ToString("N0", CultureInfo.InvariantCulture)} XP";
         }
         // Ten-minute presentation timer; reaching zero does not end the sandbox.
-        var seconds = (int)Math.Ceiling(Math.Max(0, 600_000L - _run.DurationMs) / 1000d);
+        var remaining = TimeSpan.FromMinutes(10) - _run.Duration;
+        var seconds = remaining > TimeSpan.Zero ? (int)Math.Ceiling(remaining.TotalSeconds) : 0;
         if (_shownSeconds != seconds)
         {
             _shownSeconds = seconds;
-            _timer.Text = $"{seconds / 60:00}:{seconds % 60:00}";
+            _timer.Text = TimeSpan.FromSeconds(seconds).ToString(@"mm\:ss", CultureInfo.InvariantCulture);
         }
     }
 

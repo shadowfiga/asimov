@@ -13,19 +13,21 @@ public sealed class Run
     [SaveMember("xp")]
     public int XP;
 
-    [SaveMember("biomass")]
-    public int Biomass;
-
     [SaveMember("kills")]
     public int Kills;
 
-    [SaveMember("durationMs")]
-    public int DurationMs;
+    [SaveMember("duration")]
+    public TimeSpan Duration;
 
     [SaveMember("modifiers")]
     public int[] Modifiers = [];
 
     public event Action? OreChanged;
+
+    public void AddTime(TimeSpan elapsed)
+    {
+        Duration += elapsed;
+    }
 
     public void AddOre(int amount)
     {

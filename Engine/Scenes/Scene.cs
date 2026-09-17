@@ -31,6 +31,10 @@ public abstract class Scene
 
     internal void UpdateInternal(float dt)
     {
+        if (!float.IsFinite(dt) || dt < 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(dt), "Delta time must be finite and non-negative.");
+        }
         Update(dt);
         Objects.Update(dt);
         LateUpdate(dt);
