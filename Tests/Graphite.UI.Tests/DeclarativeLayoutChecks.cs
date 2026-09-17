@@ -2,6 +2,7 @@ using FontStashSharp;
 using Graphite.Engine.Persistence;
 using Graphite.Engine.UI;
 using Graphite.Game.Scenes;
+using Graphite.Game.Configuration;
 using Graphite.Game.UI;
 using Graphite.Game.UI.Theming;
 using Microsoft.Xna.Framework;
@@ -17,6 +18,14 @@ internal static class DeclarativeLayoutChecks
     {
         using var assets = new MenuAssets();
         var theme = GameThemes.DeepDrive;
+        var title = new MenuTitle();
+        Program.Check(title.Text == "GIRLS & MINING"
+            && new StagingSettings().Game.Name == title.Text && new ProductionSettings().Game.Name == title.Text,
+            "Menu and both environment window titles use the shared game display name");
+        Program.Check(title.Font.MeasureString(title.Text).X <= theme.Layout.MenuWidth,
+            "The renamed title fits the themed menu width");
+        Program.Check(new StagingSettings().Game.Id == "deep-drive" && new ProductionSettings().Game.Id == "deep-drive",
+            "The display-name change preserves existing settings and save locations");
         var button = new MenuButton(assets, "SETTINGS", "settings", size: MenuButtonSize.Menu);
         var frame = new Panel { Width = 900, Height = 500 };
         frame.Widgets.Add(button);

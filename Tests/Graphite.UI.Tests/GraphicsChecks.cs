@@ -443,7 +443,7 @@ internal sealed class GraphicsChecks : Microsoft.Xna.Framework.Game
     {
         var radii = GameThemes.DeepDrive.BorderRadius;
         Program.Check(new[] { radii.Zero, radii.Xs, radii.Sm, radii.Md, radii.Lg, radii.Xl, radii.Full }.All(radius => radius == 0),
-            "Every DEEP DRIVE radius token is zero, including Full");
+            "Every game-theme radius token is zero, including Full");
         var navigation = new SettingsNavigationButton("VIDEO");
         foreach (var selected in new[] { false, true })
         {

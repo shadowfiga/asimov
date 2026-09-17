@@ -50,6 +50,6 @@
 
 # Full-game scope
 
-- [Content Scope Lock](<DEEP DRIVE — Game Design Document.md#41-content-scope-lock>) and [Things Explicitly Out of Scope](<DEEP DRIVE — Game Design Document.md#42-things-explicitly-out-of-scope>) are the hard scope for the full game.
+- [Content Scope Lock](<GIRLS & MINING — Game Design Document.md#41-content-scope-lock>) and [Things Explicitly Out of Scope](<GIRLS & MINING — Game Design Document.md#42-things-explicitly-out-of-scope>) are the hard scope for the full game.
 - Do not add features beyond that scope, exceed its content caps, or implement excluded systems.
 - Only an explicit user instruction revising the scope can change these limits.

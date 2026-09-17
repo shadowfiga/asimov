@@ -1,6 +1,6 @@
-# DEEP // DRIVE UI Design Requirements
+# GIRLS & MINING UI Design Requirements
 
-This document defines the designer handoff required by DEEP // DRIVE and the current Graphite/Myra implementation boundary. Designers provide approved tokens, component states, screen layouts, assets, and behavior specifications; engineering implements those decisions in the game.
+This document defines the designer handoff required by GIRLS & MINING and the current Graphite/Myra implementation boundary. Designers provide approved tokens, component states, screen layouts, assets, and behavior specifications; engineering implements those decisions in the game.
 
 ## 1. Required designer handoff
 
@@ -243,7 +243,7 @@ Available sound parameters:
 
 ## 9. Engineering prerequisites for later screens
 
-- Keep future content and terminology aligned with the DEEP // DRIVE GDD.
+- Keep future content and terminology aligned with the GIRLS & MINING GDD.
 - Add semantic checkbox, radio, slider, and scroll-view styling before the full Settings screen expands.
 - Extend centralized typography and icon-size tokens beyond the menu-button component; add border-width and component-height tokens.
 - Implement controller navigation and controller glyph switching.

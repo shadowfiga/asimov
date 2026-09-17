@@ -5,6 +5,7 @@ using Myra;
 using Myra.Graphics2D.UI.Styles;
 using FontStashSharp;
 using System.Globalization;
+using Graphite.Game.Configuration;
 using Ui = Graphite.Engine.UI.UI;
 
 namespace Graphite.Game.UI.Theming;
@@ -103,7 +104,7 @@ internal static class ThemeAssets
         private readonly AssetManager _resources = AssetManager.CreateResourceAssetManager(typeof(DefaultAssets).Assembly, "Resources.");
         private readonly string _fontPath = Path.Combine(AppContext.BaseDirectory, "Content", "Fonts", "Abel", FontFile);
 
-        public string Name => "DEEP // DRIVE theme";
+        public string Name => $"{GameSettings.DisplayName} theme";
         public bool Exists(string path) => path == FontFile ? File.Exists(_fontPath) : _resources.Exists(path);
 
         public Stream Open(string path)

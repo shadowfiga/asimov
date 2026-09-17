@@ -13,7 +13,7 @@ public sealed class ProductionSettings : GameSettings
     } = new()
     {
         Id = "deep-drive",
-        Name = "DEEP // DRIVE",
+        Name = DisplayName,
         Icon = null,
         StartupScene = "Scenes/BootstrapScene"
     };

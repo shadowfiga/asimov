@@ -1,10 +1,10 @@
-# DEEP // DRIVE
+# GIRLS & MINING
 
-Mining-defense roguelite foundation using Graphite / MonoGame DesktopGL. Startup runs `BootstrapScene` → `MainMenuScene`. Play prepares a fresh in-memory session through `SessionLoadingScene`, then enters the top-down robot prototype in `SandboxScene`. Escape returns to the menu. Settings is functional. The authoritative product scope is [DEEP DRIVE — Game Design Document.md](<DEEP DRIVE — Game Design Document.md>).
+Mining-defense roguelite foundation using Graphite / MonoGame DesktopGL. Startup runs `BootstrapScene` → `MainMenuScene`. Play prepares a fresh in-memory session through `SessionLoadingScene`, then enters the top-down robot prototype in `SandboxScene`. Escape returns to the menu. Settings is functional. The authoritative product scope is [GIRLS & MINING — Game Design Document.md](<GIRLS & MINING — Game Design Document.md>).
 
 ## Run
 
-On macOS, double-click `Play DEEP DRIVE.command`. Alternatively, use `./run.sh` (macOS/Linux) or `run.cmd` (Windows). For initial setup, use `./setup.sh` or `setup.cmd`.
+On macOS, double-click `Play DEEP DRIVE.command` (legacy launcher filename). Alternatively, use `./run.sh` (macOS/Linux) or `run.cmd` (Windows). For initial setup, use `./setup.sh` or `setup.cmd`.
 
 Before the first build, import the selected licensed audio from your owned ZIPs:
 
@@ -34,6 +34,8 @@ Normal builds use the checked-in C# exports and do not require Bun or Chisel. Ro
 ## Settings
 
 `Game/Configuration/StagingSettings.cs` and `ProductionSettings.cs` inherit the shared `GameSettings` contract in `RuntimeSettings.cs`. Read values through `GameSettings.Instance`. Menu settings belong to the game layer; window, graphics, and runtime settings belong to the engine.
+
+`GameSettings.DisplayName` defines the shared window/menu title, **GIRLS & MINING**. The internal `deep-drive` storage ID, `deep-drive.campaign` save contract, `DEEP_DRIVE_ENVIRONMENT` override, and `GameThemes.DeepDrive` theme identifier remain stable; the name change does not relocate existing settings or saves.
 
 Debug defaults to staging; Release defaults to production. Override with `DEEP_DRIVE_ENVIRONMENT=staging` or `production`. Rebuild after editing settings. A host-owned `EnvironmentOverlay` prints the active environment (STAGING or PRODUCTION) in the bottom-left corner across all scenes and dialogs. It is drawn directly after the scene/UI and CRT pass, not as a UI widget: its 18px Abel text and 16px margin stay fixed when the window or UI scale changes.
 

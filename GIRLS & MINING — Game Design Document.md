@@ -1,4 +1,4 @@
-# DEEP // DRIVE
+# GIRLS & MINING
 
 ## Game Design Document — Small-Scope Production Version v1.0
 
@@ -18,7 +18,7 @@
 
 ## Elevator Pitch
 
-**DEEP // DRIVE is a top-down mining-defense game where you control an industrial robot, establish automated mining operations, fortify them with turrets and support structures, and extract as much ore as possible while increasingly massive alien swarms attack the operation.**
+**GIRLS & MINING is a top-down mining-defense game where you control an industrial robot, establish automated mining operations, fortify them with turrets and support structures, and extract as much ore as possible while increasingly massive alien swarms attack the operation.**
 
 Mining faster makes you richer.
 
@@ -38,7 +38,7 @@ The overriding production objective is:
 
 > **Build the smallest viable game capable of producing visually spectacular battles.**
 
-DEEP // DRIVE is deliberately not trying to compete through enormous amounts of content.
+GIRLS & MINING is deliberately not trying to compete through enormous amounts of content.
 
 Its value comes from:
 
@@ -1410,7 +1410,7 @@ The Steam screenshots should primarily show:
 
 # 46. Final Identity
 
-DEEP // DRIVE should feel like someone discovered an unreleased **1980s PC mining-control terminal**, except when the mission begins the terminal becomes an extremely polished top-down action game.
+GIRLS & MINING should feel like someone discovered an unreleased **1980s PC mining-control terminal**, except when the mission begins the terminal becomes an extremely polished top-down action game.
 
 The UI is:
 

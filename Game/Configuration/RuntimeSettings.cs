@@ -4,6 +4,8 @@ namespace Graphite.Game.Configuration;
 
 public abstract class GameSettings : Settings
 {
+    public const string DisplayName = "GIRLS & MINING";
+
     private static readonly Lazy<GameSettings> Shared = new(() => Create(
         SelectEnvironment(System.Environment.GetEnvironmentVariable("DEEP_DRIVE_ENVIRONMENT"))));
 
