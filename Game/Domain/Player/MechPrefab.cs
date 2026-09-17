@@ -13,6 +13,7 @@ public sealed class MechPrefab : Prefab<PlayerController>
     private readonly ChiselPilotId _pilotId;
     private readonly ChiselWeaponsId _weaponLeftId;
     private readonly ChiselWeaponsId _weaponRightId;
+    public float MaxInwardAngle { get; init; } = MathHelper.ToRadians(15);
 
     public MechPrefab(Loadout loadout) : base(loadout.ChassisId.ToString())
     {
@@ -39,12 +40,16 @@ public sealed class MechPrefab : Prefab<PlayerController>
         });
     }
 
-    private static (AimController Aim, WeaponComponent Weapon) CreateWeapon(GameObject top, string name,
+    private (AimController Aim, WeaponComponent Weapon) CreateWeapon(GameObject top, string name,
         float offset, ChiselWeaponsId weaponId, Vector2 target)
     {
         var gun = top.CreateChild(name);
         gun.Transform.LocalPosition = new Vector2(0, offset);
-        var aim = gun.AddComponent(new AimController(target));
+        var aim = gun.AddComponent(new AimController(target)
+        {
+            MinLocalAngle = offset > 0 ? -MaxInwardAngle : -MathHelper.Pi,
+            MaxLocalAngle = offset < 0 ? MaxInwardAngle : MathHelper.Pi
+        });
         var muzzle = gun.CreateChild("Muzzle");
         muzzle.Transform.LocalPosition = new Vector2(ChiselWeapons.BarrelLength[weaponId.ToInt()], 0);
         var weapon = gun.AddComponent(new WeaponComponent(weaponId, muzzle.Transform));

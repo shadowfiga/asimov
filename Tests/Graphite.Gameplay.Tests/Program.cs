@@ -26,6 +26,7 @@ internal static class Program
         ObjectChecks.Run();
         PrefabChecks.Run();
         Movement();
+        InwardAimLimits();
         CameraObjects();
         Shooting();
         Inputs();
@@ -160,6 +161,54 @@ internal static class Program
         Step(stationary, .1f, new PlayerControls(Vector2.Zero, stationary.LeftWeapon.Transform.WorldPosition, true));
         Check(Projectiles(stationary).All(p => float.IsFinite(p.Position.X)), "Aiming at an arm pivot does not create NaN projectiles");
         Throws<ArgumentOutOfRangeException>(() => Step(mech, -1, new PlayerControls()));
+    }
+
+    private static void InwardAimLimits()
+    {
+        using var world = new GameWorld();
+        var mech = world.Spawn(new MechPrefab(new Loadout()), new Vector2(120, -80), .6f);
+        var limit = MathHelper.ToRadians(15);
+        foreach (var angle in new[] { 0f, MathHelper.PiOver2, -MathHelper.PiOver2, MathHelper.Pi - .001f, -MathHelper.Pi + .001f })
+        {
+            var direction = new Vector2(MathF.Cos(angle), MathF.Sin(angle));
+            Step(mech, 0, new PlayerControls(Vector2.Zero, direction, false));
+            Near(MathHelper.WrapAngle(mech.TorsoAngle - angle), 0, "Torso remains unrestricted while arm aiming is limited");
+            Near(mech.LeftWeapon.Transform.LocalRotation, limit, "Left arm stops at 15 degrees inward for close targets");
+            Near(mech.RightWeapon.Transform.LocalRotation, -limit, "Right arm mirrors the inward stop across all torso headings");
+            Step(mech, 0, new PlayerControls(Vector2.Zero, direction * 1000, false));
+            foreach (var gun in new[] { mech.LeftWeapon, mech.RightWeapon })
+            {
+                Near(Vector2.Dot(gun.Transform.Forward, Vector2.Normalize(mech.AimPosition - gun.Transform.WorldPosition)), 1,
+                    "Distant targets still converge exactly when within the inward limit");
+            }
+        }
+        Step(mech, .001f, new PlayerControls(Vector2.Zero, Vector2.Zero, true));
+        Near(mech.LeftWeapon.Transform.LocalRotation, limit, "Cursor at mech center respects the left inward limit");
+        Near(mech.RightWeapon.Transform.LocalRotation, -limit, "Cursor at mech center respects the right inward limit");
+        var shots = Projectiles(mech);
+        Check(shots.Length == 2, "Clamped aiming still fires both weapons");
+        var guns = new[] { mech.LeftWeapon, mech.RightWeapon };
+        for (var index = 0; index < guns.Length; index++)
+        {
+            Near(Vector2.Distance(Vector2.Normalize(shots[index].Velocity), guns[index].Transform.Forward), 0,
+                "Projectile direction uses the restricted barrel heading, not the unreachable cursor");
+        }
+
+        mech.Enabled = false;
+        mech.Top.GetComponent<AimController>().Enabled = false;
+        foreach (var gun in guns)
+        {
+            gun.TriggerHeld = false;
+            var outwardAngle = gun == mech.LeftWeapon ? -MathHelper.PiOver4 : MathHelper.PiOver4;
+            gun.Owner.GetComponent<AimController>().Target = gun.Transform.WorldPosition
+                + Vector2.TransformNormal(new Vector2(MathF.Cos(outwardAngle), MathF.Sin(outwardAngle)) * 100,
+                    mech.Top.Transform.WorldMatrix);
+            world.Update(0);
+            Near(gun.Transform.LocalRotation, outwardAngle, "The inward stop does not restrict outward aiming");
+        }
+        var custom = world.Spawn(new MechPrefab(new Loadout()) { MaxInwardAngle = MathHelper.ToRadians(1) });
+        Near(custom.LeftWeapon.Transform.LocalRotation, MathHelper.ToRadians(1), "Configured left stop applies immediately during prefab construction");
+        Near(custom.RightWeapon.Transform.LocalRotation, -MathHelper.ToRadians(1), "Configured right stop applies immediately during prefab construction");
     }
 
     private static void Shooting()
