@@ -1,5 +1,6 @@
 using Chisel.Generated;
 using Graphite.Engine.Graphics;
+using Graphite.Engine.Objects;
 using Graphite.Game.Data;
 using Graphite.Game.Domain.Combat;
 using Graphite.Game.Domain.Player;
@@ -19,6 +20,7 @@ internal static class Program
         Throws<ArgumentOutOfRangeException>(() => RobotDefinition.FromChisel(ChiselRobotsId.Invalid));
         Throws<InvalidDataException>(() => (Definition with { MoveSpeed = float.NaN }).Validate());
         ChiselIds();
+        ObjectChecks.Run();
         Movement();
         Shooting();
         Inputs();
@@ -46,66 +48,69 @@ internal static class Program
 
     private static void Movement()
     {
-        var robot = new PlayerController(Definition, Vector2.Zero);
-        robot.Update(.1f, new PlayerControls(Vector2.UnitX, new Vector2(0, -300), false));
+        using var world = new GameWorld();
+        var robot = RobotFactory.Create(world, Definition, Vector2.Zero);
+        Step(robot, .1f, new PlayerControls(Vector2.UnitX, new Vector2(0, -300), false));
         Near(robot.Position.X, 28, "Move speed comes from Chisel");
         Near(robot.LegsAngle, 0, "Legs face movement");
         Near(robot.TorsoAngle, -MathHelper.PiOver2, "Torso aims independently of movement");
         Near(robot.AimPosition.X, robot.Position.X, "Aim follows cursor offset during camera movement");
         foreach (var gun in new[] { robot.LeftWeapon, robot.RightWeapon })
         {
-            Near(Vector2.Dot(gun.Direction, Vector2.Normalize(robot.AimPosition - gun.Pivot)), 1, "Each arm converges independently on the reticle");
-            Near(Vector2.Distance(gun.Muzzle, gun.Pivot), Definition.Weapon.BarrelLength, "Muzzle uses authored barrel length");
+            Near(Vector2.Dot(gun.Transform.Forward, Vector2.Normalize(robot.AimPosition - gun.Transform.WorldPosition)), 1, "Each arm converges independently on the reticle");
+            Near(Vector2.Distance(gun.Muzzle.WorldPosition, gun.Transform.WorldPosition), Definition.Weapon.BarrelLength, "Muzzle uses authored barrel length");
         }
-        Check(robot.LeftWeapon.Direction != robot.RightWeapon.Direction, "Separated arm mounts do not use parallel aiming");
-        robot.Update(.1f, new PlayerControls(Vector2.Zero, new Vector2(-200, 0), false));
+        Check(robot.LeftWeapon.Transform.Forward != robot.RightWeapon.Transform.Forward, "Separated arm mounts do not use parallel aiming");
+        Step(robot, .1f, new PlayerControls(Vector2.Zero, new Vector2(-200, 0), false));
         Near(robot.LegsAngle, 0, "Idle legs retain the last driving direction");
-        Near(robot.TorsoAngle, MathHelper.Pi, "Stationary torso can turn behind the legs");
-        var diagonal = new PlayerController(Definition, Vector2.Zero);
-        diagonal.Update(.1f, new PlayerControls(Vector2.One, Vector2.Zero, false));
+        Near(MathHelper.WrapAngle(robot.TorsoAngle - MathHelper.Pi), 0, "Stationary torso can turn behind the legs");
+        var diagonal = RobotFactory.Create(world, Definition, Vector2.Zero);
+        Step(diagonal, .1f, new PlayerControls(Vector2.One, Vector2.Zero, false));
         Near(diagonal.Position.Length(), 28, "Diagonal movement is normalized");
-        Check(float.IsFinite(diagonal.TorsoAngle) && float.IsFinite(diagonal.LeftWeapon.Direction.X), "Aiming exactly at the robot stays finite");
-        var stationary = new PlayerController(Definition, Vector2.Zero);
-        stationary.Update(.1f, new PlayerControls(Vector2.Zero, stationary.LeftWeapon.Pivot, true));
-        Check(stationary.Guns.Projectiles.All(p => float.IsFinite(p.Position.X)), "Aiming at an arm pivot does not create NaN projectiles");
-        Throws<ArgumentOutOfRangeException>(() => robot.Update(-1, new PlayerControls()));
+        Check(float.IsFinite(diagonal.TorsoAngle) && float.IsFinite(diagonal.LeftWeapon.Transform.Forward.X), "Aiming exactly at the robot stays finite");
+        var stationary = RobotFactory.Create(world, Definition, Vector2.Zero);
+        Step(stationary, .1f, new PlayerControls(Vector2.Zero, stationary.LeftWeapon.Transform.WorldPosition, true));
+        Check(Projectiles(stationary).All(p => float.IsFinite(p.Position.X)), "Aiming at an arm pivot does not create NaN projectiles");
+        Throws<ArgumentOutOfRangeException>(() => Step(robot, -1, new PlayerControls()));
     }
 
     private static void Shooting()
     {
-        var robot = new PlayerController(Definition, Vector2.Zero);
+        using var world = new GameWorld();
+        var robot = RobotFactory.Create(world, Definition, Vector2.Zero);
         var firing = new PlayerControls(Vector2.Zero, new Vector2(500, -200), true);
-        robot.Update(.01f, firing);
-        Check(robot.Guns.Projectiles.Count == 2, "Mouse-down fires bullets from both guns immediately");
-        var first = robot.Guns.Projectiles[0];
-        Near(Vector2.Distance(first.Position, robot.LeftWeapon.Muzzle), Definition.Weapon.ProjectileSpeed * .01f, "First shot advances for its time inside the frame");
-        robot.Update(.01f, firing with
+        Step(robot, .01f, firing);
+        Check(Projectiles(robot).Length == 2, "Mouse-down fires bullets from both guns immediately");
+        var first = Projectiles(robot)[0];
+        Near(Vector2.Distance(first.Position, robot.LeftWeapon.Muzzle.WorldPosition), Definition.Weapon.ProjectileSpeed * .01f, "First shot advances for its time inside the frame");
+        Step(robot, .01f, firing with
         {
             Fire = false
         });
-        robot.Update(.01f, firing);
-        Check(robot.Guns.Projectiles.Count == 2, "Rapid release/repress cannot bypass weapon cooldown");
+        Step(robot, .01f, firing);
+        Check(Projectiles(robot).Length == 2, "Rapid release/repress cannot bypass weapon cooldown");
         foreach (var fps in new[] { 32, 64, 128 })
         {
-            var held = new PlayerController(Definition, Vector2.Zero);
+            using var heldWorld = new GameWorld();
+            var held = RobotFactory.Create(heldWorld, Definition, Vector2.Zero);
             for (var frame = 0; frame < fps; frame++)
             {
-                held.Update(1f / fps, firing);
+                Step(held, 1f / fps, firing);
             }
-            Check(held.Guns.Projectiles.Count == 16, "Holding fire produces eight paired rounds per second independent of frame rate");
+            Check(Projectiles(held).Length == 16, "Holding fire produces eight paired rounds per second independent of frame rate");
         }
         for (var frame = 0; frame < 4000; frame++)
         {
-            robot.Update(1f / 60, firing);
+            Step(robot, 1f / 60, firing);
         }
-        Check(robot.Guns.Projectiles.Count <= 22, "Long firing does not accumulate unbounded projectiles");
-        robot.Update(2, firing with
+        Check(Projectiles(robot).Length <= 22, "Long firing does not accumulate unbounded projectiles");
+        Step(robot, 2, firing with
         {
             Fire = false
         });
-        Check(robot.Guns.Projectiles.Count == 0, "Released shots expire and are removed");
-        robot.Update(50, firing);
-        Check(robot.Guns.Projectiles.Count <= 22, "Long steps skip expired catch-up rounds");
+        Check(Projectiles(robot).Length == 0, "Released shots expire and are removed");
+        Step(robot, 50, firing);
+        Check(Projectiles(robot).Length <= 22, "Long steps skip expired catch-up rounds");
     }
 
     private static void Inputs()
@@ -144,11 +149,18 @@ internal static class Program
         Check(!input.BackRequested, "Holding Escape does not retrigger");
     }
 
+    private static ProjectileComponent[] Projectiles(PlayerController player) => player.World.GetComponents<ProjectileComponent>().ToArray();
+    private static void Step(PlayerController player, float dt, PlayerControls controls)
+    {
+        player.Controls = controls;
+        player.World.Update(dt);
+    }
+
     private static MouseState Mouse(bool down, int x = 800) => new(x, 360, 0,
         down ? ButtonState.Pressed : ButtonState.Released, ButtonState.Released, ButtonState.Released, ButtonState.Released, ButtonState.Released);
 
-    private static void Near(float actual, float expected, string message) => Check(Math.Abs(actual - expected) < .002f, message);
-    private static void Check(bool result, string message)
+    internal static void Near(float actual, float expected, string message) => Check(Math.Abs(actual - expected) < .002f, message);
+    internal static void Check(bool result, string message)
     {
         _assertions++;
         if (!result)
@@ -157,7 +169,7 @@ internal static class Program
         }
     }
 
-    private static void Throws<T>(Action action) where T : Exception
+    internal static void Throws<T>(Action action) where T : Exception
     {
         try
         {

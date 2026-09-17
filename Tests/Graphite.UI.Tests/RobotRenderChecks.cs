@@ -1,5 +1,6 @@
 using Chisel.Generated;
 using Graphite.Engine.Graphics;
+using Graphite.Engine.Objects;
 using Graphite.Engine.Persistence;
 using Graphite.Game.Domain.Player;
 using Graphite.Game.Graphics;
@@ -14,11 +15,15 @@ internal static class RobotRenderChecks
     internal static void Run(GraphicsDevice device, string output)
     {
         var originalScale = Preferences.Get(RuntimePreferences.UiScale);
-        using var renderer = new RobotRenderer(device);
-        var robot = new PlayerController(RobotDefinition.FromChisel(ChiselRobotsId.STARTER_MECH), Vector2.Zero);
+        using var renderer = new WorldRenderer2D(device);
+        using var world = new GameWorld();
+        var robot = RobotFactory.Create(world, RobotDefinition.FromChisel(ChiselRobotsId.STARTER_MECH), Vector2.Zero);
+        world.Create("Grid").AddComponent(new PrototypeGridRenderer { Layer = -100 });
+        world.Create("Reticle").AddComponent(new ReticleRenderer(robot) { Layer = 1000 });
+        robot.Controls = new PlayerControls(Vector2.UnitX, new Vector2(350, -210), true);
         for (var frame = 0; frame < 50; frame++)
         {
-            robot.Update(1f / 60, new PlayerControls(Vector2.UnitX, new Vector2(350, -210), true));
+            world.Update(1f / 60);
         }
         var camera = new Camera2D { Position = robot.Position };
         try
@@ -35,7 +40,7 @@ internal static class RobotRenderChecks
                     Graphite.Engine.UI.UI.Update(0);
                     device.SetRenderTarget(target);
                     device.Clear(GameThemes.DeepDrive.Background);
-                    renderer.Draw(robot, camera);
+                    renderer.Draw(world, camera);
                     device.SetRenderTarget(null);
                     var pixels = new Color[size.X * size.Y];
                     target.GetData(pixels);
@@ -58,12 +63,15 @@ internal static class RobotRenderChecks
         }
     }
 
-    private static void StaticLegPose(GraphicsDevice device, RobotRenderer renderer)
+    private static void StaticLegPose(GraphicsDevice device, WorldRenderer2D renderer)
     {
         var definition = RobotDefinition.FromChisel(ChiselRobotsId.STARTER_MECH);
-        var moving = new PlayerController(definition, new Vector2(0, 28));
-        moving.Update(.1f, new PlayerControls(-Vector2.UnitY, new Vector2(0, -100), false));
-        var idle = new PlayerController(definition, moving.Position);
+        using var movingWorld = new GameWorld();
+        using var idleWorld = new GameWorld();
+        var moving = RobotFactory.Create(movingWorld, definition, new Vector2(0, 28));
+        moving.Controls = new PlayerControls(-Vector2.UnitY, new Vector2(0, -100), false);
+        movingWorld.Update(.1f);
+        var idle = RobotFactory.Create(idleWorld, definition, moving.Position);
         var camera = new Camera2D { Position = moving.Position };
         camera.SetViewport(new Point(256, 256), 2);
         using var target = new RenderTarget2D(device, 256, 256);
@@ -72,7 +80,7 @@ internal static class RobotRenderChecks
         {
             device.SetRenderTarget(target);
             device.Clear(GameThemes.DeepDrive.Background);
-            renderer.Draw(player, camera, false);
+            renderer.Draw(player.World, camera);
             device.SetRenderTarget(null);
             var pixels = new Color[256 * 256];
             target.GetData(pixels);

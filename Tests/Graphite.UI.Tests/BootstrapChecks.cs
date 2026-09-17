@@ -58,7 +58,7 @@ internal static class BootstrapChecks
             {
                 Ui.Update(0);
                 var before = meter.Value;
-                SceneManager.Draw(new GameTime());
+                SceneManager.Draw(new GameTime(), device);
                 if (before == 1)
                 {
                     showedComplete = true;
@@ -115,7 +115,7 @@ internal static class BootstrapChecks
             "Play presents loading before preparing the new session");
         for (var frame = 0; frame < 2; frame++)
         {
-            SceneManager.Draw(new GameTime());
+            SceneManager.Draw(new GameTime(), device);
             SceneManager.Update(0);
             SceneManager.CommitPendingChanges();
             Program.Check(ReferenceEquals(SessionManager.ActiveSession, original), "Partial preload does not replace active session");
@@ -123,7 +123,7 @@ internal static class BootstrapChecks
         Program.Check(meter.Value == 1, "Session preload reaches completion before entry");
         Ui.Update(0);
         Capture(device, output, "session-preloaded");
-        SceneManager.Draw(new GameTime());
+        SceneManager.Draw(new GameTime(), device);
         SceneManager.Update(0);
         SceneManager.CommitPendingChanges();
         Program.Check(!ReferenceEquals(SessionManager.ActiveSession, original) && SessionManager.ActiveSession.ClearedSectors.Count == 0,
@@ -135,7 +135,7 @@ internal static class BootstrapChecks
         {
             device.SetRenderTarget(target);
             device.Clear(GameThemes.DeepDrive.Background);
-            SceneManager.Draw(new GameTime());
+            SceneManager.Draw(new GameTime(), device);
             device.SetRenderTarget(null);
             var pixels = new Color[target.Width * target.Height];
             target.GetData(pixels);

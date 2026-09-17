@@ -1,4 +1,5 @@
 using Graphite.Engine.Scenes;
+using Graphite.Engine.Objects;
 using Microsoft.Xna.Framework;
 
 namespace Graphite.UI.Tests;
@@ -38,6 +39,29 @@ internal static class SceneChecks
             SceneManager.Shutdown();
             Program.Check(Events.Count == eventCount && Events[^1] == "menu unload",
                 "Shutdown cancels queued loads and unloads once");
+
+            SceneManager.Load<ObjectScene>();
+            SceneManager.CommitPendingChanges();
+            var owned = ObjectScene.Instance ?? throw new InvalidOperationException("Missing fixture scene");
+            Events.Clear();
+            SceneManager.Update(.1f);
+            Program.Check(Events.SequenceEqual(new[] { "scene input", "component update", "component late", "scene late" }),
+                "Scenes automatically schedule object updates between input and the scene late-update hook");
+            SceneManager.Draw(new GameTime());
+            SceneManager.Shutdown();
+            Program.Check(owned.Objects.Roots.Count == 0 && owned.Objects.ComponentCount == 0 && Events.Count(value => value == "component removed") == 1,
+                "Scene shutdown disposes its objects exactly once without explicit scene cleanup code");
+            SceneManager.Load<FailedObjectScene>();
+            try
+            {
+                SceneManager.CommitPendingChanges();
+                throw new InvalidOperationException("Expected scene-load failure");
+            }
+            catch (NotSupportedException)
+            {
+                Program.Check(Events.Count(value => value == "component removed") == 2,
+                    "Failed scene loading also cleans up objects already created");
+            }
         }
         finally
         {
@@ -59,6 +83,34 @@ internal static class SceneChecks
         }
 
         protected internal override void OnUnload() => Events.Add("startup unload");
+    }
+
+    private sealed class ObjectScene : Scene
+    {
+        public static ObjectScene? Instance;
+        public ObjectScene() => Instance = this;
+        protected internal override void OnLoad() => Objects.Create("Root").CreateChild("Child").AddComponent(new ObjectProbe());
+        protected internal override void Update(float dt) => Events.Add("scene input");
+        protected internal override void LateUpdate(float dt) => Events.Add("scene late");
+    }
+
+    private sealed class FailedObjectScene : Scene
+    {
+        public FailedObjectScene()
+        {
+        }
+        protected internal override void OnLoad()
+        {
+            Objects.Create("Partial load").AddComponent(new ObjectProbe());
+            throw new NotSupportedException("Fixture load failure");
+        }
+    }
+
+    private sealed class ObjectProbe : Component
+    {
+        protected internal override void Update(float dt) => Events.Add("component update");
+        protected internal override void LateUpdate(float dt) => Events.Add("component late");
+        protected override void OnRemoved() => Events.Add("component removed");
     }
 
     private sealed class MenuScene : Scene

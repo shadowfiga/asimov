@@ -99,7 +99,7 @@ public sealed class GameHost : Microsoft.Xna.Framework.Game
 
     private void DrawFrame(GameTime gameTime)
     {
-        SceneManager.Draw(gameTime);
+        SceneManager.Draw(gameTime, GraphicsDevice);
         base.Draw(gameTime);
         Graphite.Engine.UI.UI.Draw();
     }

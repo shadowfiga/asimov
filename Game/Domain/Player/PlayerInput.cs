@@ -17,11 +17,6 @@ public sealed class PlayerInput
 
     public PlayerControls Read(KeyboardState keyboard, MouseState mouse, Point clientSize, Camera2D camera, bool active)
     {
-        ArgumentNullException.ThrowIfNull(camera);
-        if (clientSize.X <= 0 || clientSize.Y <= 0)
-        {
-            throw new ArgumentOutOfRangeException(nameof(clientSize));
-        }
         _actions.Update(keyboard, mouse);
         BackRequested = active && _actions.IsActionJustPressed(ChiselInputBindingsId.BACK);
         var firing = _actions.IsActionPressed(ChiselInputBindingsId.FIRE);

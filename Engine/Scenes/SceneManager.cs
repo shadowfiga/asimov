@@ -1,5 +1,6 @@
 using System.Reflection;
 using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework.Graphics;
 
 namespace Graphite.Engine.Scenes;
 
@@ -33,8 +34,16 @@ public static class SceneManager
         var previous = _activeScene;
         _activeScene = null;
         previous?.UnloadInternal();
-        _activeScene = scene;
-        scene.OnLoad();
+        try
+        {
+            scene.OnLoad();
+            _activeScene = scene;
+        }
+        catch
+        {
+            scene.UnloadInternal();
+            throw;
+        }
     }
 
     private static Type ResolveGameSceneType(string gameRelativeClass)
@@ -80,8 +89,8 @@ public static class SceneManager
         => (Scene)(Activator.CreateInstance(sceneType)
             ?? throw new InvalidOperationException($"Could not create scene '{sceneType.FullName}'."));
 
-    internal static void Update(float dt) => _activeScene?.Update(dt);
-    internal static void Draw(GameTime gameTime) => _activeScene?.Draw(gameTime);
+    internal static void Update(float dt) => _activeScene?.UpdateInternal(dt);
+    internal static void Draw(GameTime gameTime, GraphicsDevice? device = null) => _activeScene?.DrawInternal(gameTime, device);
 
     internal static void CommitPendingChanges()
     {
