@@ -20,9 +20,11 @@ public sealed class SandboxScene : Scene
 
     protected internal override void OnLoad()
     {
-        var loadout = SessionManager.ActiveSession.CurrentLoadout;
         var game = Myra.MyraEnvironment.Game;
         _previousCursorVisible = game.IsMouseVisible;
+        var session = SessionManager.ActiveSession;
+        _ = session.CurrentRun;
+        var loadout = session.CurrentLoadout;
         Objects.MaxDeltaTime = .1f;
         _player = Objects.Spawn(new RobotPrefab(loadout), Vector2.Zero);
         _reticle = Objects.Spawn(new SandboxPresentationPrefab(_player));

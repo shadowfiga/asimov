@@ -16,7 +16,8 @@ public sealed class SessionLoadingScene : LoadingScene
 
     protected override void Complete()
     {
-        // Publish only after preparation succeeds; scene code can use the fail-fast non-null getter.
+        // Publish a ready session only after preparation succeeds, before gameplay can access it.
+        _session.StartRun();
         SessionManager.ActiveSession = _session;
         SceneManager.Load<SandboxScene>();
     }

@@ -21,6 +21,9 @@ internal static class BootstrapChecks
         var originalScale = Preferences.Get(RuntimePreferences.UiScale);
         var session = new Session();
         session.ClearSector("fixture-sector");
+        session.StartRun();
+        var originalRun = session.CurrentRun;
+        originalRun.XP = 99;
         SessionManager.ActiveSession = session;
         try
         {
@@ -92,6 +95,9 @@ internal static class BootstrapChecks
                 "Bootstrap prepares UI resources and presents completed progress before opening the menu");
             Program.Check(ReferenceEquals(SessionManager.ActiveSession, session) && session.ClearedSectors.Contains("fixture-sector"),
                 "Bootstrap preloads presentation assets without replacing or advancing the active session");
+            Program.Check(ReferenceEquals(session.CurrentRun, originalRun) && originalRun.XP == 99,
+                "Bootstrap does not create or reset a run");
+            CheckSandboxRequiresRun(session);
             CheckPlay(desktop, session, device, output);
             SceneManager.Shutdown();
             Program.Check(Ui.HostCount == 0, "Scene teardown releases menu hosts after bootstrap");
@@ -105,6 +111,39 @@ internal static class BootstrapChecks
         }
     }
 
+    private static void CheckSandboxRequiresRun(Session original)
+    {
+        var unprepared = new Session();
+        SessionManager.ActiveSession = unprepared;
+        var cursorVisible = Myra.MyraEnvironment.Game.IsMouseVisible;
+        var rejected = false;
+        SceneManager.Load<SandboxScene>();
+        try
+        {
+            SceneManager.CommitPendingChanges();
+        }
+        catch (InvalidOperationException exception)
+        {
+            rejected = exception.Message.Contains("Session.StartRun", StringComparison.Ordinal);
+        }
+        Program.Check(rejected, "Direct sandbox entry fails when the session has no run");
+        Program.Check(Myra.MyraEnvironment.Game.IsMouseVisible == cursorVisible,
+            "Rejected sandbox entry preserves the previous cursor visibility");
+        var stillAbsent = false;
+        try
+        {
+            _ = unprepared.CurrentRun;
+        }
+        catch (InvalidOperationException)
+        {
+            stillAbsent = true;
+        }
+        Program.Check(stillAbsent, "Sandbox must not create a missing run itself");
+        SessionManager.ActiveSession = original;
+        SceneManager.Load<MainMenuScene>();
+        SceneManager.CommitPendingChanges();
+    }
+
     private static void CheckPlay(Desktop desktop, Session original, GraphicsDevice device, string output)
     {
         Ui.Update(0);
@@ -116,6 +155,7 @@ internal static class BootstrapChecks
         var play = buttons.Single(button => Text(button) == "PLAY");
         var cached = AudioManager.Current.CachedClipCount;
         var cursorVisible = Myra.MyraEnvironment.Game.IsMouseVisible;
+        var originalRun = original.CurrentRun;
         play.DoClick();
         play.DoClick();
         Program.Check(!play.Enabled && ReferenceEquals(SessionManager.ActiveSession, original),
@@ -132,15 +172,22 @@ internal static class BootstrapChecks
             SceneManager.Update(0);
             SceneManager.CommitPendingChanges();
             Program.Check(ReferenceEquals(SessionManager.ActiveSession, original), "Partial preload does not replace active session");
+            Program.Check(ReferenceEquals(original.CurrentRun, originalRun) && originalRun.XP == 99,
+                "Partial preload leaves the previous run untouched");
         }
         Program.Check(meter.Value == 1, "Session preload reaches completion before entry");
         Ui.Update(0);
         Capture(device, output, "session-preloaded");
         SceneManager.Draw(new GameTime(), device);
         SceneManager.Update(0);
-        SceneManager.CommitPendingChanges();
         Program.Check(!ReferenceEquals(SessionManager.ActiveSession, original) && SessionManager.ActiveSession.ClearedSectors.Count == 0,
             "Successful preload publishes a fresh non-null session");
+        var run = SessionManager.ActiveSession.CurrentRun;
+        Program.Check(desktop.Widgets.Contains(loading) && run.XP == 0 && run.Biomass == 0 && run.Kills == 0
+            && run.DurationMs == 0 && run.Modifiers.Length == 0,
+            "Loading creates and publishes an initialized run before Sandbox OnLoad executes");
+        SceneManager.CommitPendingChanges();
+        Program.Check(ReferenceEquals(SessionManager.ActiveSession.CurrentRun, run), "Sandbox consumes the prepared run without replacing it");
         Program.Check(desktop.Widgets.Count == 0 && AudioManager.Current.CachedClipCount == cached,
             "Session entry closes loading UI and reuses bootstrap audio assets");
         Program.Check(!Myra.MyraEnvironment.Game.IsMouseVisible, "Play hides the system pointer for the world-space reticle");

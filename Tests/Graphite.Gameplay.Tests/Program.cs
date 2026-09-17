@@ -22,6 +22,7 @@ internal static class Program
         ChiselIds();
         DirectChiselReferences();
         FailFast();
+        RunChecks.Run();
         ObjectChecks.Run();
         PrefabChecks.Run();
         Movement();
