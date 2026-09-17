@@ -14,6 +14,7 @@ public sealed class BootstrapScene : LoadingScene
         var sizes = Enum.GetValues<MenuButtonSize>().Select(theme.MenuButton.Size)
             .SelectMany(style => new[] { style.CompactFontSize, style.DefaultFontSize, style.ProminentFontSize })
             .Append(theme.Layout.MenuTitleFontSize)
+            .Append(theme.Layout.HudTitleFontSize).Append(theme.Layout.HudTimerFontSize)
             .Append(theme.ResourceHud.LabelFontSize).Append(theme.ResourceHud.ValueFontSize).Distinct();
         foreach (var size in sizes)
         {

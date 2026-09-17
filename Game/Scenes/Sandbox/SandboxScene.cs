@@ -3,6 +3,7 @@ using Graphite.Engine.Audio;
 using Graphite.Engine.Graphics;
 using Graphite.Game.Audio;
 using Graphite.Game.Domain.Player;
+using Graphite.Game.Domain.Run;
 using Graphite.Game.Sessions;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Input;
@@ -15,6 +16,9 @@ public sealed class SandboxScene : Scene
     private readonly PlayerInput _input = new();
     private PlayerController _player = null!;
     private ReticleRenderer _reticle = null!;
+    private SandboxUI _hud = null!;
+    private Run _run = null!;
+    private double _elapsedMilliseconds;
     private bool _previousCursorVisible;
 
     protected internal override void OnLoad()
@@ -22,12 +26,13 @@ public sealed class SandboxScene : Scene
         var game = Myra.MyraEnvironment.Game;
         _previousCursorVisible = game.IsMouseVisible;
         var session = SessionManager.ActiveSession;
-        _ = session.CurrentRun;
+        _run = session.CurrentRun;
+        _elapsedMilliseconds = _run.DurationMs;
         var loadout = session.CurrentLoadout;
         Objects.MaxDeltaTime = .1f;
         _player = Objects.Spawn(new MechPrefab(loadout), Vector2.Zero);
         _reticle = Objects.Spawn(new SandboxPresentationPrefab(_player));
-        UI.Open<SandboxUI>();
+        _hud = UI.Open<SandboxUI>();
         game.IsMouseVisible = false;
         RefreshCamera();
         GameAudio.PlaySession();
@@ -57,12 +62,15 @@ public sealed class SandboxScene : Scene
             return;
         }
         _player.Controls = controls;
+        _elapsedMilliseconds += dt * 1000d;
+        _run.DurationMs = (int)_elapsedMilliseconds;
     }
 
     protected internal override void LateUpdate(float dt)
     {
         Camera.Position = _player.Position;
         AudioManager.Current.Listener.Position = _player.Position;
+        _hud.Refresh();
     }
 
     protected internal override void Draw(GameTime gameTime)

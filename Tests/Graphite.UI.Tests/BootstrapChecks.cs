@@ -2,6 +2,7 @@ using System.Reflection;
 using Chisel.Generated;
 using Graphite.Engine.Persistence;
 using Graphite.Engine.Audio;
+using Graphite.Engine.Graphics;
 using Graphite.Engine.Scenes;
 using Graphite.Game.Data;
 using Graphite.Game.Scenes;
@@ -18,7 +19,7 @@ namespace Graphite.UI.Tests;
 
 internal static class BootstrapChecks
 {
-    internal static void Run(GraphicsDevice device, string output)
+    internal static void Run(GraphicsDevice device, string output, GraphicsDeviceManager graphics)
     {
         var desktop = (Desktop)typeof(Ui).GetField("_desktop", BindingFlags.Static | BindingFlags.NonPublic)!.GetValue(null)!;
         var originalScale = Preferences.Get(RuntimePreferences.UiScale);
@@ -30,6 +31,7 @@ internal static class BootstrapChecks
         SessionManager.ActiveSession = session;
         try
         {
+            CheckHudReadouts(desktop, originalRun);
             using (var screen = Ui.Open<LoadingUI>())
             {
                 screen.SetProgress(.5f);
@@ -101,7 +103,7 @@ internal static class BootstrapChecks
             Program.Check(ReferenceEquals(session.CurrentRun, originalRun) && originalRun.XP == 99,
                 "Bootstrap does not create or reset a run");
             CheckSandboxRequiresRun(session);
-            CheckPlay(desktop, session, device, output);
+            CheckPlay(desktop, session, device, output, graphics);
             SceneManager.Shutdown();
             Program.Check(Ui.HostCount == 0, "Scene teardown releases menu hosts after bootstrap");
         }
@@ -147,7 +149,7 @@ internal static class BootstrapChecks
         SceneManager.CommitPendingChanges();
     }
 
-    private static void CheckPlay(Desktop desktop, Session original, GraphicsDevice device, string output)
+    private static void CheckPlay(Desktop desktop, Session original, GraphicsDevice device, string output, GraphicsDeviceManager graphics)
     {
         Ui.Update(0);
         var buttons = desktop.Widgets.Single().GetChildren(true).OfType<MenuButton>().ToArray();
@@ -191,10 +193,11 @@ internal static class BootstrapChecks
             "Loading creates and publishes an initialized run before Sandbox OnLoad executes");
         SceneManager.CommitPendingChanges();
         Program.Check(ReferenceEquals(SessionManager.ActiveSession.CurrentRun, run), "Sandbox consumes the prepared run without replacing it");
-        Program.Check(desktop.Widgets.Count == 1 && desktop.Widgets.Single() is ResourceHud
+        Program.Check(desktop.Widgets.Count == 1 && desktop.Widgets.Single().GetChildren(true).OfType<ResourceHud>().Count() == 1
             && AudioManager.Current.CachedClipCount == cached,
             "Session entry replaces loading UI with the resource HUD and reuses bootstrap audio assets");
-        var hud = (ResourceHud)desktop.Widgets.Single();
+        var root = desktop.Widgets.Single();
+        var hud = root.GetChildren(true).OfType<ResourceHud>().Single();
         Program.Check(hud.OreAmount.Text == "0", "Sandbox HUD begins with the actual zero Ore balance");
         run.AddOre(4820);
         Program.Check(hud.OreAmount.Text == "4,820", "Sandbox HUD reacts directly to active run changes");
@@ -202,8 +205,11 @@ internal static class BootstrapChecks
         Program.Check(!run.TrySpendOre(4801) && hud.OreAmount.Text == "4,800", "Unaffordable purchases do not change the HUD");
         run.AddOre(20);
         run.RecordKill(ChiselEnemiesId.SWARMER);
+        SceneManager.Update(0);
         Program.Check(run.Kills == 1 && run.XP == ChiselEnemies.Experience[ChiselEnemiesId.SWARMER.ToInt()] && run.Ore == 4820,
             "Enemy reward entry point advances XP without paying an Ore bounty");
+        Program.Check(root.GetChildren(true).OfType<Label>().Any(label => label.Text == $"{run.XP} XP"),
+            "The sandbox refreshes the XP readout from the run each frame");
         Program.Check(hud.GetChildren(true).OfType<Label>().Select(label => label.Text).SequenceEqual(new[] { "ORE", "4,820" }),
             "The resource HUD shows only Ore, not Gold, Credits, or an XP wallet");
         var originalScale = Preferences.Get(RuntimePreferences.UiScale);
@@ -237,12 +243,17 @@ internal static class BootstrapChecks
             device.SetRenderTarget(null);
             var withHud = new Color[pixels.Length];
             target.GetData(withHud);
-            Program.Check(withHud.Take(pixels.Length / 2).SequenceEqual(pixels.Take(pixels.Length / 2)),
-                "The resource HUD leaves the world above it visible instead of covering the screen");
+            for (var y = target.Height / 3; y < target.Height * 2 / 3; y++)
+            {
+                Program.Check(withHud.AsSpan(y * target.Width + target.Width / 3, target.Width / 3)
+                    .SequenceEqual(pixels.AsSpan(y * target.Width + target.Width / 3, target.Width / 3)),
+                    "The HUD leaves the central gameplay area unobstructed");
+            }
             Program.Check(!withHud.SequenceEqual(pixels), "Resource HUD visibly renders over gameplay");
             using var stream = File.Create(Path.Combine(output, "session-mech.png"));
             target.SaveAsPng(stream, target.Width, target.Height);
         }
+        CheckHudLayout(device, output, graphics, root);
         SceneManager.Load<MainMenuScene>();
         SceneManager.CommitPendingChanges();
         Program.Check(desktop.Widgets.Count == 1, "The main menu can be re-entered after playing");
@@ -250,6 +261,127 @@ internal static class BootstrapChecks
         run.AddOre(9);
         Program.Check(hud.OreAmount.Text == "4,820", "Scene teardown removes the HUD's Ore subscription");
         AudioManager.Current.MusicPlayer.Stop(0);
+    }
+
+    private static void CheckHudReadouts(Desktop desktop, Graphite.Game.Domain.Run.Run run)
+    {
+        var originalXp = run.XP;
+        var originalDuration = run.DurationMs;
+        try
+        {
+            using var screen = Ui.Open<SandboxUI>();
+            var widgets = desktop.Widgets.Single().GetChildren(true).ToArray();
+            var timer = widgets.OfType<Label>().Single(label => label.Id == "hud-timer");
+            var xp = widgets.OfType<HorizontalProgressBar>().Single(bar => bar.Id == "hud-xp-bar");
+            var hp = widgets.OfType<HorizontalProgressBar>().Single(bar => bar.Id == "hud-hp-bar");
+            Program.Check(timer.Text == "10:00" && xp.Value == 0 && hp.Value == 1,
+                "HUD starts with ten minutes, an unconfigured XP progress bar and placeholder full health");
+            foreach (var (milliseconds, expected) in new[] { (1, "10:00"), (1000, "09:59"), (59_999, "09:01"),
+                (60_000, "09:00"), (599_999, "00:01"), (600_000, "00:00"), (610_000, "00:00") })
+            {
+                run.DurationMs = milliseconds;
+                screen.Refresh();
+                Program.Check(timer.Text == expected, "Timer counts remaining whole seconds and stops at zero");
+            }
+            run.XP = 1250;
+            screen.Refresh();
+            Program.Check(widgets.OfType<Label>().Any(label => label.Text == "1,250 XP") && xp.Value == 0,
+                "XP total uses run data without inventing a level-up threshold");
+            Program.Check(widgets.OfType<Label>().All(label => !label.Text.Contains("WAVE") && !label.Text.Contains("OBJECTIVE")),
+                "No wave or objective content is added to the stub HUD");
+        }
+        finally
+        {
+            run.XP = originalXp;
+            run.DurationMs = originalDuration;
+        }
+    }
+
+    private static void CheckHudLayout(GraphicsDevice device, string output, GraphicsDeviceManager graphics, Widget root)
+    {
+        var originalSize = new Point(device.PresentationParameters.BackBufferWidth, device.PresentationParameters.BackBufferHeight);
+        var originalScale = Preferences.Get(RuntimePreferences.UiScale);
+        var children = root.GetChildren(true).ToArray();
+        Widget Find(string id) => children.Single(widget => widget.Id == id);
+        Rectangle Bounds(Widget widget)
+        {
+            var start = widget.ToGlobal(Vector2.Zero);
+            var end = widget.ToGlobal(new Vector2(widget.Bounds.Width, widget.Bounds.Height));
+            return new Rectangle((int)start.X, (int)start.Y, (int)(end.X - start.X), (int)(end.Y - start.Y));
+        }
+        try
+        {
+            foreach (var size in new[] { new Point(1280, 720), new Point(1024, 768), new Point(2560, 1440) })
+            {
+                graphics.PreferredBackBufferWidth = size.X;
+                graphics.PreferredBackBufferHeight = size.Y;
+                graphics.ApplyChanges();
+                foreach (var scale in new[] { .75f, 1f, 1.75f })
+                {
+                    Preferences.Set(RuntimePreferences.UiScale, scale);
+                    Ui.Update(0);
+                    var ore = Bounds(Find("hud-ore"));
+                    var experience = Bounds(Find("hud-experience"));
+                    var map = Bounds(Find("hud-map"));
+                    var pilot = Bounds(Find("hud-pilot"));
+                    var regions = new[] { ore, experience, map, pilot };
+                    var viewport = new Rectangle(Point.Zero, size);
+                    Program.Check(regions.All(viewport.Contains), "Every HUD region stays on screen across resolutions and UI scales");
+                    for (var i = 0; i < regions.Length; i++)
+                    {
+                        for (var j = i + 1; j < regions.Length; j++)
+                        {
+                            Program.Check(!regions[i].Intersects(regions[j]), "HUD regions do not overlap at any supported UI scale");
+                        }
+                    }
+                    Program.Check(ore.Center.X > size.X / 2 && ore.Center.Y < size.Y / 2
+                        && pilot.Center.X > size.X / 2 && pilot.Center.Y > size.Y / 2
+                        && map.Center.X < size.X / 2 && map.Center.Y > size.Y / 2,
+                        "Ore stays top-right, pilot bottom-right, and the minimap bottom-left");
+                    Program.Check(Math.Abs(experience.Center.X - size.X / 2) <= 2 && experience.Center.Y < size.Y / 2,
+                        "XP and timer stay at top center");
+                    Program.Check(Bounds(Find("hud-map-name")).Bottom <= Bounds(Find("hud-minimap")).Top,
+                        "The map name is above the minimap, not in the top-left corner");
+                    Program.Check(root.InputFallsThrough(new Point(size.X / 2, size.Y / 2))
+                        && children.All(widget => !widget.AcceptsKeyboardFocus), "The HUD does not capture central gameplay input or focus");
+                    CaptureSandbox(device, output, $"sandbox-hud-{size.X}x{size.Y}-{scale:F2}");
+                    if (size.X == 2560 && scale == 1)
+                    {
+                        CaptureSandbox(device, output, "sandbox-hud-final");
+                    }
+                }
+            }
+        }
+        finally
+        {
+            graphics.PreferredBackBufferWidth = originalSize.X;
+            graphics.PreferredBackBufferHeight = originalSize.Y;
+            graphics.ApplyChanges();
+            Preferences.Set(RuntimePreferences.UiScale, originalScale);
+            Ui.Update(0);
+        }
+    }
+
+    private static void CaptureSandbox(GraphicsDevice device, string output, string name)
+    {
+        PostProcessing.Render(new GameTime(), GameThemes.DeepDrive.Background, time =>
+        {
+            SceneManager.Draw(time, device);
+            Ui.Draw();
+        });
+        EnvironmentOverlay.Draw();
+        var size = device.PresentationParameters;
+        var pixels = new Color[size.BackBufferWidth * size.BackBufferHeight];
+        device.GetBackBufferData(pixels);
+        using var capture = new Texture2D(device, size.BackBufferWidth, size.BackBufferHeight);
+        capture.SetData(pixels);
+        using var stream = File.Create(Path.Combine(output, name + ".png"));
+        capture.SaveAsPng(stream, capture.Width, capture.Height);
+        if (name == "sandbox-hud-final")
+        {
+            using var preview = File.Create(Path.Combine(output, name + ".jpg"));
+            capture.SaveAsJpeg(preview, capture.Width, capture.Height);
+        }
     }
 
     private static void Capture(GraphicsDevice device, string output, string name)

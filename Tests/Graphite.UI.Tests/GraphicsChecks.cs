@@ -82,7 +82,7 @@ internal sealed class GraphicsChecks : Microsoft.Xna.Framework.Game
         SettingsBorderChecks();
         DisplayChecks();
         SettingsDialogChecks();
-        BootstrapChecks.Run(GraphicsDevice, _output);
+        BootstrapChecks.Run(GraphicsDevice, _output, _graphics);
         MechRenderChecks.Run(GraphicsDevice, _output);
         WorldRenderingChecks.Run(GraphicsDevice);
         var hostCount = Ui.HostCount;

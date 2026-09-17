@@ -24,22 +24,24 @@ internal sealed class ResourceHud : Grid, IDisposable
         var theme = GameThemes.DeepDrive;
         var tokens = theme.ResourceHud;
         Width = tokens.Width;
-        Padding = new Thickness(theme.Spacing.Md);
-        ColumnSpacing = theme.Spacing.Md;
+        Padding = new Thickness(theme.Spacing.Md, theme.Spacing.Sm);
+        ColumnSpacing = theme.Spacing.Sm;
         Background = new RoundedRectangleBrush(new Color(theme.DeepBlack, tokens.SurfaceOpacity),
             theme.BorderRadius.Zero, theme.Border, 1);
         ColumnsProportions.Add(new Proportion(ProportionType.Pixels, tokens.IconSize));
+        ColumnsProportions.Add(Proportion.Auto);
         ColumnsProportions.Add(new Proportion(ProportionType.Fill));
         RowsProportions.Add(Proportion.Auto);
         var image = _assets.Icon("gem", tokens.IconSize, theme.PrimaryText);
         image.OverRenderable = image.FocusedRenderable = image.PressedRenderable = image.Renderable;
         Widgets.Add(image);
-        var text = new VerticalStackPanel { Spacing = theme.Spacing.Xs };
-        text.Widgets.Add(Text("ORE", tokens.LabelFontSize, theme.SecondaryText));
+        var label = Text("ORE", tokens.LabelFontSize, theme.SecondaryText);
+        Grid.SetColumn(label, 1);
+        Widgets.Add(label);
         OreAmount = Text("0", tokens.ValueFontSize, theme.PrimaryText);
-        text.Widgets.Add(OreAmount);
-        Grid.SetColumn(text, 1);
-        Widgets.Add(text);
+        OreAmount.HorizontalAlignment = HorizontalAlignment.Right;
+        Grid.SetColumn(OreAmount, 2);
+        Widgets.Add(OreAmount);
         _run.OreChanged += Refresh;
         Refresh();
     }
@@ -52,7 +54,8 @@ internal sealed class ResourceHud : Grid, IDisposable
         OverTextColor = color,
         FocusedTextColor = color,
         PressedTextColor = color,
-        HorizontalAlignment = HorizontalAlignment.Left
+        HorizontalAlignment = HorizontalAlignment.Left,
+        VerticalAlignment = VerticalAlignment.Center
     };
 
     private void Refresh()
