@@ -4,7 +4,7 @@ using Graphite.Game.Domain.Combat;
 
 namespace Graphite.Game.Domain.Player;
 
-/// <summary>Validated immutable projection of authored Chisel data, not mutable session state.</summary>
+/// <summary>Immutable projection of authored Chisel data, not mutable session state.</summary>
 public sealed record RobotDefinition(float MoveSpeed, float BodyRadius, float ArmSpacing, WeaponDefinition Weapon)
 {
     public static RobotDefinition FromChisel(ChiselRobotsId id)

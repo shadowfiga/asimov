@@ -20,7 +20,7 @@ internal static class WorldRenderingChecks
         using var target = new RenderTarget2D(device, 128, 128);
         var camera = new Camera2D();
         camera.SetViewport(new Point(128, 128), 3);
-        var parent = world.Create("Parent");
+        var parent = world.Spawn(new ObjectPrefab("Parent"));
         parent.Transform.LocalScale = new Vector2(2, 3);
         parent.Transform.LocalRotation = .4f;
         var child = parent.CreateChild("Sprite");
@@ -50,7 +50,7 @@ internal static class WorldRenderingChecks
             world.Update(.15f);
             Program.Check(animator.FrameIndex == 0, "Disabling an animator freezes frame playback");
 
-            var overlay = world.Create("Overlay");
+            var overlay = world.Spawn(new ObjectPrefab("Overlay"));
             overlay.Transform.WorldPosition = child.Transform.WorldPosition;
             overlay.Transform.LocalScale = new Vector2(4);
             overlay.AddComponent(new SpriteRenderer(texture) { SourceRectangle = new Rectangle(2, 0, 2, 2), Layer = 20 });
@@ -87,8 +87,8 @@ internal static class WorldRenderingChecks
         using var renderer = new WorldRenderer2D(device);
         var camera = new Camera2D();
         camera.SetViewport(new Point(128, 128), 1);
-        var player = RobotFactory.Create(world, RobotDefinition.FromChisel(ChiselRobotsId.STARTER_MECH), Vector2.Zero);
-        world.Create("Reticle").AddComponent(new ReticleRenderer(player));
+        var player = world.Spawn(new RobotPrefab(RobotDefinition.FromChisel(ChiselRobotsId.STARTER_MECH)), Vector2.Zero);
+        world.Spawn(new ObjectPrefab("Reticle")).AddComponent(new ReticleRenderer(player));
         player.Owner.Destroy();
         var rejected = false;
         try

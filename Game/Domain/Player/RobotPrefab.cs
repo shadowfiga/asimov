@@ -1,4 +1,5 @@
 using Graphite.Engine.Objects;
+using Chisel.Generated;
 using Graphite.Game.Domain.Combat;
 using Graphite.Game.Graphics;
 using Microsoft.Xna.Framework;
@@ -6,13 +7,23 @@ using Microsoft.Xna.Framework;
 namespace Graphite.Game.Domain.Player;
 
 /// <summary>Assembles the reusable robot hierarchy once; scenes do not manage its individual parts.</summary>
-public static class RobotFactory
+public sealed class RobotPrefab : Prefab<PlayerController>
 {
-    public static PlayerController Create(GameWorld world, RobotDefinition definition, Vector2 position)
+    private readonly RobotDefinition _definition;
+
+    public RobotPrefab(ChiselRobotsId id) : this(RobotDefinition.FromChisel(id))
     {
-        var root = world.Create("Robot");
-        root.Transform.LocalPosition = position;
-        var target = position - new Vector2(0, 100);
+    }
+
+    public RobotPrefab(RobotDefinition definition) : base("Robot")
+    {
+        _definition = definition;
+    }
+
+    protected internal override PlayerController Build(GameObject root)
+    {
+        var definition = _definition;
+        var target = root.Transform.TransformPoint(new Vector2(0, -100));
         var bottom = root.CreateChild("Bottom");
         bottom.Transform.LocalRotation = -MathHelper.PiOver2;
         bottom.AddComponent(new RobotPartRenderer(RobotPart.Bottom, definition.BodyRadius) { Layer = 10 });
@@ -21,7 +32,10 @@ public static class RobotFactory
         top.AddComponent(new RobotPartRenderer(RobotPart.Top, definition.BodyRadius) { Layer = 30 });
         var left = CreateWeapon(top, "LeftWeapon", -definition.ArmSpacing, definition.Weapon, target);
         var right = CreateWeapon(top, "RightWeapon", definition.ArmSpacing, definition.Weapon, target);
-        return root.AddComponent(new PlayerController(definition, bottom, torsoAim, left.Aim, right.Aim, left.Weapon, right.Weapon));
+        return root.AddComponent(new PlayerController(definition.MoveSpeed, bottom, torsoAim, left.Aim, right.Aim, left.Weapon, right.Weapon)
+        {
+            Controls = new PlayerControls(Vector2.Zero, target - root.Transform.WorldPosition, false)
+        });
     }
 
     private static (AimController Aim, WeaponComponent Weapon) CreateWeapon(GameObject top, string name,

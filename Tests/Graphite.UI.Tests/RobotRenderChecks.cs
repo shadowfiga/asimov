@@ -3,7 +3,7 @@ using Graphite.Engine.Graphics;
 using Graphite.Engine.Objects;
 using Graphite.Engine.Persistence;
 using Graphite.Game.Domain.Player;
-using Graphite.Game.Graphics;
+using Graphite.Game.Scenes;
 using Graphite.Game.UI.Theming;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
@@ -17,9 +17,8 @@ internal static class RobotRenderChecks
         var originalScale = Preferences.Get(RuntimePreferences.UiScale);
         using var renderer = new WorldRenderer2D(device);
         using var world = new GameWorld();
-        var robot = RobotFactory.Create(world, RobotDefinition.FromChisel(ChiselRobotsId.STARTER_MECH), Vector2.Zero);
-        world.Create("Grid").AddComponent(new PrototypeGridRenderer { Layer = -100 });
-        world.Create("Reticle").AddComponent(new ReticleRenderer(robot) { Layer = 1000 });
+        var robot = world.Spawn(new RobotPrefab(ChiselRobotsId.STARTER_MECH), Vector2.Zero);
+        world.Spawn(new SandboxPresentationPrefab(robot));
         robot.Controls = new PlayerControls(Vector2.UnitX, new Vector2(350, -210), true);
         for (var frame = 0; frame < 50; frame++)
         {
@@ -68,10 +67,10 @@ internal static class RobotRenderChecks
         var definition = RobotDefinition.FromChisel(ChiselRobotsId.STARTER_MECH);
         using var movingWorld = new GameWorld();
         using var idleWorld = new GameWorld();
-        var moving = RobotFactory.Create(movingWorld, definition, new Vector2(0, 28));
+        var moving = movingWorld.Spawn(new RobotPrefab(definition), new Vector2(0, 28));
         moving.Controls = new PlayerControls(-Vector2.UnitY, new Vector2(0, -100), false);
         movingWorld.Update(.1f);
-        var idle = RobotFactory.Create(idleWorld, definition, moving.Position);
+        var idle = idleWorld.Spawn(new RobotPrefab(definition), moving.Position);
         var camera = new Camera2D { Position = moving.Position };
         camera.SetViewport(new Point(256, 256), 2);
         using var target = new RenderTarget2D(device, 256, 256);

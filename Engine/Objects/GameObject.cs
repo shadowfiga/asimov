@@ -45,7 +45,7 @@ public sealed class GameObject : IDisposable
         Components = _components.AsReadOnly();
     }
 
-    public GameObject CreateChild(string name) => World.Create(name, this);
+    public GameObject CreateChild(string name) => World.CreateChild(this, name);
     public T AddComponent<T>(T component) where T : Component
     {
         ArgumentNullException.ThrowIfNull(component);
@@ -58,9 +58,16 @@ public sealed class GameObject : IDisposable
             component.Initialize();
             return component;
         }
-        catch
+        catch (Exception failure)
         {
-            RemoveComponent(component);
+            try
+            {
+                RemoveComponent(component);
+            }
+            catch (Exception cleanupError)
+            {
+                throw new AggregateException("Component initialization and cleanup failed.", failure, cleanupError);
+            }
             throw;
         }
     }

@@ -89,7 +89,7 @@ internal static class SceneChecks
     {
         public static ObjectScene? Instance;
         public ObjectScene() => Instance = this;
-        protected internal override void OnLoad() => Objects.Create("Root").CreateChild("Child").AddComponent(new ObjectProbe());
+        protected internal override void OnLoad() => Objects.Spawn(new ObjectProbePrefab());
         protected internal override void Update(float dt) => Events.Add("scene input");
         protected internal override void LateUpdate(float dt) => Events.Add("scene late");
     }
@@ -101,9 +101,14 @@ internal static class SceneChecks
         }
         protected internal override void OnLoad()
         {
-            Objects.Create("Partial load").AddComponent(new ObjectProbe());
+            Objects.Spawn(new ObjectProbePrefab());
             throw new NotSupportedException("Fixture load failure");
         }
+    }
+
+    private sealed class ObjectProbePrefab() : Prefab<ObjectProbe>("Root")
+    {
+        protected internal override ObjectProbe Build(GameObject root) => root.CreateChild("Child").AddComponent(new ObjectProbe());
     }
 
     private sealed class ObjectProbe : Component

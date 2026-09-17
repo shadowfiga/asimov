@@ -21,6 +21,7 @@ internal static class Program
         ChiselIds();
         FailFast();
         ObjectChecks.Run();
+        PrefabChecks.Run();
         Movement();
         Shooting();
         Inputs();
@@ -50,19 +51,19 @@ internal static class Program
     private static void FailFast()
     {
         using var world = new GameWorld();
-        var robot = RobotFactory.Create(world, Definition, Vector2.Zero);
+        var robot = world.Spawn(new RobotPrefab(Definition), Vector2.Zero);
         // Invalid game state must reach the engine's existing transform contract, not become idle/default input.
         Throws<ArgumentOutOfRangeException>(() => Step(robot, .1f, new PlayerControls(new Vector2(float.NaN, 0), Vector2.UnitX, false)));
         Throws<ArgumentOutOfRangeException>(() => Step(robot, .1f, new PlayerControls(Vector2.Zero, new Vector2(float.NaN, 0), false)));
         robot.Owner.Destroy();
-        var badSpeed = RobotFactory.Create(world, Definition with
+        var badSpeed = world.Spawn(new RobotPrefab(Definition with
         {
             MoveSpeed = float.NaN
-        }, Vector2.Zero);
+        }), Vector2.Zero);
         Throws<ArgumentOutOfRangeException>(() => Step(badSpeed, .1f, new PlayerControls(Vector2.UnitX, Vector2.Zero, false)));
         badSpeed.Owner.Destroy();
 
-        var gun = world.Create("Gun");
+        var gun = world.Spawn(new ObjectPrefab("Gun"));
         var muzzle = gun.CreateChild("Muzzle");
         foreach (var rate in new[] { 0f, -1f, float.NaN, float.PositiveInfinity })
         {
@@ -88,7 +89,7 @@ internal static class Program
     private static void Movement()
     {
         using var world = new GameWorld();
-        var robot = RobotFactory.Create(world, Definition, Vector2.Zero);
+        var robot = world.Spawn(new RobotPrefab(Definition), Vector2.Zero);
         Step(robot, .1f, new PlayerControls(Vector2.UnitX, new Vector2(0, -300), false));
         Near(robot.Position.X, 28, "Move speed comes from Chisel");
         Near(robot.LegsAngle, 0, "Legs face movement");
@@ -103,11 +104,11 @@ internal static class Program
         Step(robot, .1f, new PlayerControls(Vector2.Zero, new Vector2(-200, 0), false));
         Near(robot.LegsAngle, 0, "Idle legs retain the last driving direction");
         Near(MathHelper.WrapAngle(robot.TorsoAngle - MathHelper.Pi), 0, "Stationary torso can turn behind the legs");
-        var diagonal = RobotFactory.Create(world, Definition, Vector2.Zero);
+        var diagonal = world.Spawn(new RobotPrefab(Definition), Vector2.Zero);
         Step(diagonal, .1f, new PlayerControls(Vector2.One, Vector2.Zero, false));
         Near(diagonal.Position.Length(), 28, "Diagonal movement is normalized");
         Check(float.IsFinite(diagonal.TorsoAngle) && float.IsFinite(diagonal.LeftWeapon.Transform.Forward.X), "Aiming exactly at the robot stays finite");
-        var stationary = RobotFactory.Create(world, Definition, Vector2.Zero);
+        var stationary = world.Spawn(new RobotPrefab(Definition), Vector2.Zero);
         Step(stationary, .1f, new PlayerControls(Vector2.Zero, stationary.LeftWeapon.Transform.WorldPosition, true));
         Check(Projectiles(stationary).All(p => float.IsFinite(p.Position.X)), "Aiming at an arm pivot does not create NaN projectiles");
         Throws<ArgumentOutOfRangeException>(() => Step(robot, -1, new PlayerControls()));
@@ -116,7 +117,7 @@ internal static class Program
     private static void Shooting()
     {
         using var world = new GameWorld();
-        var robot = RobotFactory.Create(world, Definition, Vector2.Zero);
+        var robot = world.Spawn(new RobotPrefab(Definition), Vector2.Zero);
         var firing = new PlayerControls(Vector2.Zero, new Vector2(500, -200), true);
         Step(robot, .01f, firing);
         Check(Projectiles(robot).Length == 2, "Mouse-down fires bullets from both guns immediately");
@@ -131,7 +132,7 @@ internal static class Program
         foreach (var fps in new[] { 32, 64, 128 })
         {
             using var heldWorld = new GameWorld();
-            var held = RobotFactory.Create(heldWorld, Definition, Vector2.Zero);
+            var held = heldWorld.Spawn(new RobotPrefab(Definition), Vector2.Zero);
             for (var frame = 0; frame < fps; frame++)
             {
                 Step(held, 1f / fps, firing);

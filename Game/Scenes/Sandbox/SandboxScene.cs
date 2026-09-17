@@ -25,9 +25,8 @@ public sealed class SandboxScene : Scene
         var game = Myra.MyraEnvironment.Game;
         _previousCursorVisible = game.IsMouseVisible;
         Objects.MaxDeltaTime = .1f;
-        _player = RobotFactory.Create(Objects, RobotDefinition.FromChisel(ChiselRobotsId.STARTER_MECH), Vector2.Zero);
-        Objects.Create("Grid").AddComponent(new PrototypeGridRenderer { Layer = -100 });
-        _reticle = Objects.Create("Reticle").AddComponent(new ReticleRenderer(_player) { Layer = 1000 });
+        _player = Objects.Spawn(new RobotPrefab(ChiselRobotsId.STARTER_MECH), Vector2.Zero);
+        _reticle = Objects.Spawn(new SandboxPresentationPrefab(_player));
         game.IsMouseVisible = false;
         RefreshCamera();
         GameAudio.PlaySession();

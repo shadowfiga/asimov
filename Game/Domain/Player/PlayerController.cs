@@ -10,7 +10,7 @@ public readonly record struct PlayerControls(Vector2 Movement, Vector2 AimOffset
 public sealed class PlayerController : Component
 {
     private readonly AimController[] _aims = [];
-    public RobotDefinition Definition
+    public float MoveSpeed
     {
         get;
     }
@@ -40,10 +40,10 @@ public sealed class PlayerController : Component
     }
     public PlayerControls Controls { get; set; } = new(Vector2.Zero, new Vector2(0, -100), false);
 
-    internal PlayerController(RobotDefinition definition, GameObject bottom, AimController torsoAim,
+    internal PlayerController(float moveSpeed, GameObject bottom, AimController torsoAim,
         AimController leftAim, AimController rightAim, WeaponComponent leftWeapon, WeaponComponent rightWeapon)
     {
-        Definition = definition;
+        MoveSpeed = moveSpeed;
         Bottom = bottom;
         _aims = [torsoAim, leftAim, rightAim];
         LeftWeapon = leftWeapon;
@@ -62,7 +62,7 @@ public sealed class PlayerController : Component
         if (IsMoving)
         {
             Bottom.Transform.WorldRotation = MathF.Atan2(move.Y, move.X);
-            Transform.WorldPosition += move * (Definition.MoveSpeed * dt);
+            Transform.WorldPosition += move * (MoveSpeed * dt);
         }
         AimPosition = Position + Controls.AimOffset;
         foreach (var aim in _aims)

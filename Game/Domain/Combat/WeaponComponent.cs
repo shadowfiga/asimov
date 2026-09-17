@@ -1,5 +1,4 @@
 using Graphite.Engine.Objects;
-using Graphite.Game.Graphics;
 
 namespace Graphite.Game.Domain.Combat;
 
@@ -72,10 +71,7 @@ public sealed class WeaponComponent : Component
         }
         var velocity = Muzzle.Forward * Definition.ProjectileSpeed;
         // Scene root, deliberately not a weapon child: shots outlive and move independently of their gun.
-        var bullet = World.Create("Projectile");
-        bullet.Transform.WorldPosition = Muzzle.WorldPosition + velocity * age;
-        bullet.Transform.WorldRotation = Muzzle.WorldRotation;
-        bullet.AddComponent(new ProjectileComponent(velocity, Definition.ProjectileLifetime - age));
-        bullet.AddComponent(new ProjectileRenderer());
+        World.Spawn(new ProjectilePrefab(velocity, Definition.ProjectileLifetime - age),
+            Muzzle.WorldPosition + velocity * age, Muzzle.WorldRotation);
     }
 }

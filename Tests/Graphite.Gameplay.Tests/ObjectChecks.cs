@@ -20,7 +20,7 @@ internal static class ObjectChecks
     private static void Transforms()
     {
         using var world = new GameWorld();
-        var root = world.Create("Robot");
+        var root = world.Spawn(new ObjectPrefab("Robot"));
         root.Transform.LocalPosition = new Vector2(10, 20);
         root.Transform.LocalRotation = MathHelper.PiOver2;
         root.Transform.LocalScale = new Vector2(2, 3);
@@ -44,18 +44,18 @@ internal static class ObjectChecks
         Throws<InvalidOperationException>(() => root.SetParent(muzzle));
         Throws<InvalidOperationException>(() => top.SetParent(top));
         using var anotherWorld = new GameWorld();
-        Throws<InvalidOperationException>(() => top.SetParent(anotherWorld.Create("Other")));
+        Throws<InvalidOperationException>(() => top.SetParent(anotherWorld.Spawn(new ObjectPrefab("Other"))));
         Throws<ArgumentOutOfRangeException>(() => root.Transform.LocalScale = Vector2.Zero);
         Throws<ArgumentOutOfRangeException>(() => top.Transform.LocalRotation = float.NaN);
 
-        var oldParent = world.Create("Old");
+        var oldParent = world.Spawn(new ObjectPrefab("Old"));
         oldParent.Transform.LocalPosition = new Vector2(40, 100);
         oldParent.Transform.LocalRotation = .4f;
         oldParent.Transform.LocalScale = new Vector2(2);
         var child = oldParent.CreateChild("Child");
         child.Transform.LocalPosition = new Vector2(10, -30);
         var oldPoint = child.Transform.TransformPoint(new Vector2(9, 8));
-        var newParent = world.Create("New");
+        var newParent = world.Spawn(new ObjectPrefab("New"));
         newParent.Transform.LocalRotation = -.5f;
         child.SetParent(newParent, keepWorldTransform: true);
         Near(Vector2.Distance(child.Transform.TransformPoint(new Vector2(9, 8)), oldPoint), 0, "Reparent can preserve world pose");
@@ -68,7 +68,7 @@ internal static class ObjectChecks
         sheared.Transform.LocalRotation = .7f;
         Throws<InvalidOperationException>(() => sheared.SetParent(null, keepWorldTransform: true));
         Check(sheared.Parent == newParent, "Unsupported shear fails before changing the hierarchy");
-        var aimParent = world.Create("Aim parent");
+        var aimParent = world.Spawn(new ObjectPrefab("Aim parent"));
         var aimChild = aimParent.CreateChild("Aim child");
         aimChild.Transform.LocalPosition = new Vector2(0, 20);
         aimChild.AddComponent(new AimController(new Vector2(400, -100)));
@@ -81,7 +81,7 @@ internal static class ObjectChecks
     private static void Lifecycle()
     {
         using var world = new GameWorld();
-        var parent = world.Create("Parent");
+        var parent = world.Spawn(new ObjectPrefab("Parent"));
         var child = parent.CreateChild("Child");
         var probe = child.AddComponent(new Probe());
         Check(probe.Added == 1 && child.GetComponent<Probe>() == probe, "Attaching initializes and exposes a component once");
@@ -111,21 +111,21 @@ internal static class ObjectChecks
         parent.Destroy();
         Check(probe.Removed == 1 && child.IsDestroyed && world.Roots.Count == 0 && world.ComponentCount == 0, "Destruction cascades and cleanup runs exactly once");
         Throws<ObjectDisposedException>(() => child.AddComponent(new Probe()));
-        Throws<ObjectDisposedException>(() => world.Create("Live").AddComponent(probe));
-        var reentrant = world.Create("Reentrant");
+        Throws<ObjectDisposedException>(() => world.Spawn(new ObjectPrefab("Live")).AddComponent(probe));
+        var reentrant = world.Spawn(new ObjectPrefab("Reentrant"));
         reentrant.CreateChild("Child").AddComponent(new Probe { Removing = reentrant.Destroy }).Owner.Destroy();
         Check(reentrant.IsDestroyed, "Child cleanup can destroy its parent without reentrant loops");
-        var broken = world.Create("Broken").AddComponent(new Probe { FailRemove = true });
-        var survivor = world.Create("Survivor").AddComponent(new Probe());
+        var broken = world.Spawn(new ObjectPrefab("Broken")).AddComponent(new Probe { FailRemove = true });
+        var survivor = world.Spawn(new ObjectPrefab("Survivor")).AddComponent(new Probe());
         Throws<AggregateException>(world.Dispose);
         Check(broken.IsDisposed && survivor.IsDisposed && world.Roots.Count == 0 && world.ComponentCount == 0, "One cleanup failure does not leak other objects");
-        Throws<ObjectDisposedException>(() => world.Create("Too late"));
+        Throws<ObjectDisposedException>(() => world.Spawn(new ObjectPrefab("Too late")));
     }
 
     private static void Mutation()
     {
         using var world = new GameWorld();
-        var parent = world.Create("Parent");
+        var parent = world.Spawn(new ObjectPrefab("Parent"));
         var child = parent.CreateChild("Child");
         var later = child.AddComponent(new Probe { Order = 10 });
         var added = new Probe();
@@ -156,7 +156,7 @@ internal static class ObjectChecks
     {
         using var world = new GameWorld();
         var definition = RobotDefinition.FromChisel(ChiselRobotsId.STARTER_MECH);
-        var player = RobotFactory.Create(world, definition, Vector2.Zero);
+        var player = world.Spawn(new RobotPrefab(definition), Vector2.Zero);
         Check(player.Owner.Children.Select(value => value.Name).SequenceEqual(new[] { "Bottom", "Top" }), "Robot has bottom and top children");
         Check(player.Top.Children.Select(value => value.Name).SequenceEqual(new[] { "LeftWeapon", "RightWeapon" }), "Weapons are children of the torso");
         Check(player.LeftWeapon.Muzzle.Owner.Parent == player.LeftWeapon.Owner, "Each weapon owns a muzzle child");
@@ -178,7 +178,7 @@ internal static class ObjectChecks
 
         foreach (var rate in new[] { 4f, 8f })
         {
-            var gun = world.Create("Independent gun");
+            var gun = world.Spawn(new ObjectPrefab("Independent gun"));
             gun.Transform.LocalPosition = new Vector2(0, rate * 10);
             var muzzle = gun.CreateChild("Muzzle");
             muzzle.Transform.LocalPosition = new Vector2(definition.Weapon.BarrelLength, 0);

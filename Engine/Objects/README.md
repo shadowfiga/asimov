@@ -1,19 +1,39 @@
-# Objects and components
+# Prefabs, objects and components
 
-`Graphite.Engine.Objects` supplies a lightweight scene-owned hierarchy, not an ECS. Every `Scene` has `Objects` (`GameWorld`) and `Camera`. Scenes declare objects/components in `OnLoad`; the engine owns their subsequent update, rendering and destruction. Do not manually call component updates or dispose every child from a scene.
+`Graphite.Engine.Objects` supplies a lightweight scene-owned hierarchy, not an ECS. Every `Scene` has `Objects` (`GameWorld`) and `Camera`. Scenes spawn prefabs in `OnLoad`; prefabs assemble objects/components, and the engine owns their subsequent update, rendering and destruction. Do not manually call component updates or dispose every child from a scene.
 
 ```csharp
-var robot = Objects.Create("Robot");
-var bottom = robot.CreateChild("Bottom");
-var top = robot.CreateChild("Top");
-var gun = top.CreateChild("LeftWeapon");
-gun.Transform.LocalPosition = new Vector2(0, -26);
-var muzzle = gun.CreateChild("Muzzle");
-muzzle.Transform.LocalPosition = new Vector2(30, 0);
-gun.AddComponent(new WeaponComponent(definition, muzzle.Transform));
+var player = Objects.Spawn(
+    new RobotPrefab(ChiselRobotsId.STARTER_MECH),
+    new Vector2(100, 200));
 ```
 
-The game-specific `RobotFactory.Create(Objects, definition, position)` assembles the complete robot, returning its `PlayerController`. Other entities can attach the same game `WeaponComponent` without player input: set `TriggerHeld`, and optionally add an `AimController` with a world-space `Target`. Chisel remains the definition authority; component instances contain runtime state, not export data. Runtime objects, textures and components are not save records.
+The game-specific `RobotPrefab` assembles the complete robot and returns its `PlayerController`. It accepts a Chisel robot ID or a `RobotDefinition`; only `MoveSpeed` is passed to the controller. Other entities can attach the same game `WeaponComponent` without player input: set `TriggerHeld`, and optionally add an `AimController` with a world-space `Target`. Chisel remains the definition authority; component instances contain runtime state, not export data. Runtime objects, textures and components are not save records.
+
+## Writing a prefab
+
+Derive from `Prefab<T>`, supply the root name, and implement `Build(GameObject root)`. `T` is a reference-type result, normally the root or a component that callers need. The engine supplies a live root with the requested position and rotation already applied; use `root.World` for the owning world. Example game-assembly code:
+
+```csharp
+public sealed class GunPrefab(WeaponDefinition definition) : Prefab<WeaponComponent>("Gun")
+{
+    protected internal override WeaponComponent Build(GameObject root)
+    {
+        var muzzle = root.CreateChild("Muzzle");
+        muzzle.Transform.LocalPosition = new Vector2(definition.BarrelLength, 0);
+        return root.AddComponent(new WeaponComponent(definition, muzzle.Transform));
+    }
+}
+```
+
+An external assembly overrides `Build` as `protected override` instead. Scenes/components call `World.Spawn(prefab, position, rotation)` (position defaults to zero; rotation defaults to zero radians). There is no public raw-root factory. Use `CreateChild` for ordinary hierarchy nodes; a muzzle or leg does not need a separate prefab class.
+
+- A prefab is a reusable recipe, not a component or a live object. Store construction inputs in it; create new mutable components/objects inside each `Build`. Spawning the same recipe twice creates independent runtime state.
+- Return a non-null result and leave the supplied root alive and unparented. Object/component results must belong to that root's hierarchy. Reference-type result bundles are also possible; their contents are the prefab's responsibility.
+- Component `OnAdded` still runs immediately on attachment, in build order. Position/rotation are already set, but the rest of the hierarchy may still be under construction. Do not tick or render the world during a build.
+- Build only new objects in the supplied world. Do not mutate pre-existing objects, create objects in other worlds, or acquire unowned resources in `Build`; those side effects are not transactional. Attach owned resource cleanup to components via `OnRemoved`.
+- The engine tracks all objects created during the build. Failure destroys partial objects, detached children, and nested root spawns. It rethrows the original exception; if cleanup also fails, an aggregate preserves both errors. Cleanup cannot spawn more objects during rollback. Game prefabs need no defensive catch/recovery wrapper.
+- `ProjectilePrefab` creates scene-root bullets through the same API; they are deliberately not children of the firing weapon. `SandboxPresentationPrefab` groups the sandbox grid and reticle.
 
 ## Transforms and ownership
 

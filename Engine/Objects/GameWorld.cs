@@ -1,4 +1,5 @@
 using Graphite.Engine.Graphics;
+using Microsoft.Xna.Framework;
 
 namespace Graphite.Engine.Objects;
 
@@ -9,6 +10,9 @@ public sealed class GameWorld : IDisposable
     private readonly List<Component> _components = [];
     private readonly List<Component> _updates = [];
     private readonly List<RenderComponent> _draws = [];
+    private readonly List<GameObject> _building = [];
+    private int _buildDepth;
+    private bool _rollingBack;
     private long _nextOrder;
     private bool _updating;
     private bool _disposed;
@@ -37,18 +41,120 @@ public sealed class GameWorld : IDisposable
     }
     public GameWorld() => Roots = _roots.AsReadOnly();
 
-    public GameObject Create(string name, GameObject? parent = null)
+    public T Spawn<T>(Prefab<T> prefab, Vector2 position = default, float rotation = 0) where T : class
     {
-        ObjectDisposedException.ThrowIf(_disposed, this);
-        ArgumentException.ThrowIfNullOrWhiteSpace(name);
-        if (parent is not null && (parent.World != this || parent.IsDestroyed))
+        EnsureCanCreate();
+        ArgumentNullException.ThrowIfNull(prefab);
+        Transform2D.Validate(position);
+        if (!float.IsFinite(rotation))
+        {
+            throw new ArgumentOutOfRangeException(nameof(rotation));
+        }
+        var start = _building.Count;
+        _buildDepth++;
+        try
+        {
+            var root = CreateObject(prefab.Name);
+            root.Transform.LocalPosition = position;
+            root.Transform.LocalRotation = rotation;
+            var result = prefab.Build(root)
+                ?? throw new InvalidOperationException($"Prefab '{prefab.Name}' returned null.");
+            if (root.IsDestroyed || root.Parent is not null)
+            {
+                throw new InvalidOperationException("A prefab must leave its supplied root alive and unparented.");
+            }
+            var resultObject = result switch
+            {
+                GameObject value => value,
+                Component component => component.Owner,
+                _ => null
+            };
+            if (resultObject is not null)
+            {
+                var ancestor = resultObject;
+                while (ancestor != root && ancestor.Parent is not null)
+                {
+                    ancestor = ancestor.Parent;
+                }
+                if (resultObject.IsDestroyed || ancestor != root)
+                {
+                    throw new InvalidOperationException("A prefab's object/component result must belong to its supplied root.");
+                }
+            }
+            return result;
+        }
+        catch (Exception failure)
+        {
+            List<Exception> cleanupErrors = [];
+            _rollingBack = true;
+            try
+            {
+                // Track every new object, including detached children and nested root spawns.
+                for (var index = _building.Count - 1; index >= start; index--)
+                {
+                    try
+                    {
+                        _building[index].Destroy();
+                    }
+                    catch (Exception cleanupError)
+                    {
+                        cleanupErrors.Add(cleanupError);
+                    }
+                }
+            }
+            finally
+            {
+                _rollingBack = false;
+                _building.RemoveRange(start, _building.Count - start);
+            }
+            if (cleanupErrors.Count > 0)
+            {
+                throw new AggregateException("Prefab construction and cleanup failed.", new[] { failure }.Concat(cleanupErrors));
+            }
+            throw;
+        }
+        finally
+        {
+            _buildDepth--;
+            if (_buildDepth == 0)
+            {
+                _building.Clear();
+            }
+        }
+    }
+
+    internal GameObject CreateChild(GameObject parent, string name)
+    {
+        EnsureCanCreate();
+        ArgumentNullException.ThrowIfNull(parent);
+        if (parent.World != this || parent.IsDestroyed)
         {
             throw new InvalidOperationException("Parent must be a live object in this world.");
         }
+        var child = CreateObject(name);
+        child.SetParent(parent);
+        return child;
+    }
+
+    private GameObject CreateObject(string name)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(name);
         var value = new GameObject(this, name);
         AddRoot(value);
-        value.SetParent(parent);
+        if (_buildDepth > 0)
+        {
+            _building.Add(value);
+        }
         return value;
+    }
+
+    private void EnsureCanCreate()
+    {
+        ObjectDisposedException.ThrowIf(_disposed, this);
+        if (_rollingBack)
+        {
+            throw new InvalidOperationException("Objects cannot be created during prefab rollback.");
+        }
     }
 
     public IEnumerable<T> GetComponents<T>() where T : Component => _components.OfType<T>();
@@ -68,9 +174,9 @@ public sealed class GameWorld : IDisposable
         {
             throw new ArgumentOutOfRangeException(nameof(dt));
         }
-        if (_updating)
+        if (_updating || _buildDepth > 0)
         {
-            throw new InvalidOperationException("World updates cannot be nested.");
+            throw new InvalidOperationException("World updates cannot be nested or run during prefab construction.");
         }
         if (Paused)
         {
@@ -117,6 +223,10 @@ public sealed class GameWorld : IDisposable
     internal IReadOnlyList<RenderComponent> RenderQueue()
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
+        if (_buildDepth > 0)
+        {
+            throw new InvalidOperationException("A world cannot render during prefab construction.");
+        }
         _draws.Clear();
         foreach (var component in _components)
         {
