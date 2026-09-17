@@ -84,7 +84,8 @@ public sealed class GameHost : Microsoft.Xna.Framework.Game
         DisplaySettings.Update((float)(displayTime - _lastDisplayUpdate).TotalSeconds);
         _lastDisplayUpdate = displayTime;
         Graphite.Engine.UI.UI.Update(dt);
-        SceneManager.Update(dt);
+        var presentation = GraphicsDevice.PresentationParameters;
+        SceneManager.Update(dt, new Point(presentation.BackBufferWidth, presentation.BackBufferHeight));
         SceneManager.CommitPendingChanges();
         AudioManager.Current.Update(dt);
 

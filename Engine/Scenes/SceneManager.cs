@@ -89,7 +89,7 @@ public static class SceneManager
         => (Scene)(Activator.CreateInstance(sceneType)
             ?? throw new InvalidOperationException($"Could not create scene '{sceneType.FullName}'."));
 
-    internal static void Update(float dt) => _activeScene?.UpdateInternal(dt);
+    internal static void Update(float dt, Point? viewportSize = null) => _activeScene?.UpdateInternal(dt, viewportSize);
     internal static void Draw(GameTime gameTime, GraphicsDevice? device = null) => _activeScene?.DrawInternal(gameTime, device);
 
     internal static void CommitPendingChanges()

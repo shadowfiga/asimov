@@ -1,11 +1,12 @@
 # Prefabs, objects and components
 
-`Graphite.Engine.Objects` supplies a lightweight scene-owned hierarchy, not an ECS. Every `Scene` has `Objects` (`GameWorld`) and `Camera`. Scenes spawn prefabs in `OnLoad`; prefabs assemble objects/components, and the engine owns their subsequent update, rendering and destruction. Do not manually call component updates or dispose every child from a scene.
+`Graphite.Engine.Objects` supplies a lightweight scene-owned hierarchy, not an ECS. Every `Scene` owns `Objects` (`GameWorld`); cameras are components on objects in that world. Scenes spawn prefabs in `OnLoad`; prefabs assemble objects/components, and the engine owns their subsequent update, rendering and destruction. Do not manually call component updates or dispose every child from a scene.
 
 ```csharp
 var player = Objects.Spawn(
     new MechPrefab(SessionManager.ActiveSession.CurrentLoadout),
     new Vector2(100, 200));
+Objects.Spawn(new PlayerCameraPrefab(player));
 ```
 
 The game-specific `MechPrefab` assembles the complete mech and returns its `PlayerController`. It accepts the game's `Loadout` and captures the selected chassis, pilot, and separate arm weapon IDs. It reads chassis/weapon columns directly; movement speed and pilot identity are passed to the controller. Pilot identity is cosmetic and does not modify combat stats. Other entities can attach the same game `WeaponComponent` with a Chisel weapon ID without player input: set `TriggerHeld`, and optionally add an `AimController` with a world-space `Target`. Chisel remains the definition authority; components reference Chisel IDs instead of copying export data into wrapper definitions. Runtime objects, textures and components are not save records.
@@ -56,6 +57,14 @@ Each engine tick runs:
 4. `Scene.LateUpdate`: camera/listener following sees the final simulation positions.
 
 Movement currently uses order 0, frame playback 50, aiming 100, and firing 200. Newly attached components start updating next tick; removals take effect immediately. Reparenting during a tick never causes a duplicate update; its new ordering applies next tick. `Objects.Paused` stops component simulation, not drawing. `Objects.MaxDeltaTime` optionally caps simulation steps (the Play scene uses 0.1 seconds). Scene unload and failed scene load clean up objects, GPU rendering resources, audio and UI scopes.
+
+## Camera objects
+
+`CameraComponent` lives in `Graphite.Engine.Graphics`. Attach it to a prefab's root with a positive reference resolution and an optional `FollowTarget` (`Transform2D`). It owns the `Camera2D` projection and synchronizes it with the camera object's world position. With a target, it follows position in late update (`UpdateOrder = int.MaxValue`); it does not copy rotation or scale. With no target, move the camera object's transform directly. Targets must be live objects in the same world.
+
+The game `PlayerCameraPrefab` creates a separate root with 1600×900 reference framing and follows the player. The host supplies the actual backbuffer dimensions before scene input; the rendering backend refreshes again before drawing. Zoom is `min(width / referenceWidth, height / referenceHeight)`, independent of UI scale. Resizing remains reactive while simulation is paused and when a draw precedes the first update. Scenes do not poll viewport dimensions or update camera positions.
+
+`Scene.Camera` resolves the enabled, active camera component's projection; it does not create or own a fallback camera. One active camera per scene is supported. Disable the old camera before enabling another. Multiple active cameras throw; requesting `Scene.Camera` with none also throws. UI-only scenes need no camera: without one, automatic world rendering is skipped. Disabled/inactive cameras are excluded and destroyed cameras disappear from selection automatically. World teardown disposes camera components and releases follow targets.
 
 ## Rendering and frames
 

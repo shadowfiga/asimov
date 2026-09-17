@@ -26,6 +26,7 @@ internal static class Program
         ObjectChecks.Run();
         PrefabChecks.Run();
         Movement();
+        CameraObjects();
         Shooting();
         Inputs();
         Console.WriteLine($"Gameplay checks passed ({_assertions} assertions).");
@@ -234,6 +235,52 @@ internal static class Program
         Check(input.BackRequested, "Escape is a Chisel action edge");
         input.Read(new KeyboardState(Keys.Escape), Mouse(false), client, camera, true);
         Check(!input.BackRequested, "Holding Escape does not retrigger");
+    }
+
+    private static void CameraObjects()
+    {
+        using var world = new GameWorld();
+        var player = world.Spawn(new MechPrefab(new Loadout()), new Vector2(300, -500));
+        var camera = world.Spawn(new PlayerCameraPrefab(player));
+        Check(camera.Owner.Parent is null && camera.Owner != player.Owner && world.Roots.Contains(camera.Owner),
+            "Player camera is a standalone root, not part of the mech hierarchy");
+        Check(camera.ReferenceSize == new Point(1600, 900) && camera.Transform.WorldPosition == player.Position
+            && camera.Camera.Position == player.Position, "Camera prefab starts on its player immediately");
+        player.Controls = new PlayerControls(Vector2.UnitX, Vector2.UnitY * 100, false);
+        world.Update(.1f);
+        Check(camera.Camera.Position == player.Position && camera.Transform.WorldPosition == player.Position,
+            "Camera follows the current frame's movement without scene callbacks");
+        player.Transform.LocalRotation = .7f;
+        player.Transform.LocalScale = new Vector2(2, 3);
+        world.Update(0);
+        Check(camera.Transform.WorldRotation == 0 && camera.Transform.LocalScale == Vector2.One,
+            "Following does not inherit target rotation or scale");
+        camera.Enabled = false;
+        var position = camera.Transform.WorldPosition;
+        world.Update(.1f);
+        Check(camera.Transform.WorldPosition == position && player.Position != position,
+            "Disabling the camera component stops its scheduled follow behavior");
+        camera.Enabled = true;
+        world.Update(0);
+        Check(camera.Camera.Position == player.Position, "Re-enabling the camera resumes following");
+        camera.FollowTarget = null;
+        camera.Transform.WorldPosition = new Vector2(12, 34);
+        world.Update(0);
+        Check(camera.Camera.Position == new Vector2(12, 34), "A camera without a follow target uses its own transform");
+
+        Throws<ArgumentOutOfRangeException>(() => new CameraComponent(Point.Zero));
+        Throws<ArgumentOutOfRangeException>(() => new CameraComponent(new Point(100, -1)));
+        using var other = new GameWorld();
+        Throws<InvalidOperationException>(() => other.Spawn(new PlayerCameraPrefab(player)));
+        Check(other.Roots.Count == 0 && other.ComponentCount == 0, "Cross-world follow targets fail and roll back the camera prefab");
+        var stale = world.Spawn(new ObjectPrefab("Stale target"));
+        camera.FollowTarget = stale.Transform;
+        stale.Destroy();
+        Throws<ObjectDisposedException>(() => world.Update(0));
+        camera.FollowTarget = player.Transform;
+        world.Dispose();
+        Check(camera.IsDisposed && camera.FollowTarget is null && world.Roots.Count == 0,
+            "World disposal removes the camera and releases its follow target");
     }
 
     private static ProjectileComponent[] Projectiles(PlayerController player) => player.World.GetComponents<ProjectileComponent>().ToArray();

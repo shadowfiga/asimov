@@ -1,6 +1,5 @@
 using Graphite.Engine.Scenes;
 using Graphite.Engine.Audio;
-using Graphite.Engine.Graphics;
 using Graphite.Game.Audio;
 using Graphite.Game.Domain.Player;
 using Graphite.Game.Domain.Run;
@@ -29,24 +28,19 @@ public sealed class SandboxScene : Scene
         var loadout = session.CurrentLoadout;
         Objects.MaxDeltaTime = .1f;
         _player = Objects.Spawn(new MechPrefab(loadout), Vector2.Zero);
+        Objects.Spawn(new PlayerCameraPrefab(_player));
         _reticle = Objects.Spawn(new SandboxPresentationPrefab(_player));
         _hud = UI.Open<SandboxUI>();
         game.IsMouseVisible = false;
-        RefreshCamera();
         GameAudio.PlaySession();
     }
 
     protected internal override void Update(float dt)
     {
         var game = Myra.MyraEnvironment.Game;
-        RefreshCamera();
         var client = game.Window.ClientBounds.Size;
         Objects.Paused = !game.IsActive || client.X <= 0 || client.Y <= 0;
         _reticle.Enabled = !Objects.Paused;
-        if (client.X <= 0 || client.Y <= 0)
-        {
-            return;
-        }
         var controls = _input.Read(Keyboard.GetState(), Mouse.GetState(), client, Camera, game.IsActive);
         if (_input.BackRequested)
         {
@@ -65,22 +59,8 @@ public sealed class SandboxScene : Scene
 
     protected internal override void LateUpdate(float dt)
     {
-        Camera.Position = _player.Position;
         AudioManager.Current.Listener.Position = _player.Position;
         _hud.Refresh();
-    }
-
-    protected internal override void Draw(GameTime gameTime)
-    {
-        RefreshCamera();
-    }
-
-    private void RefreshCamera()
-    {
-        var presentation = Myra.MyraEnvironment.Game.GraphicsDevice.PresentationParameters;
-        var size = new Point(presentation.BackBufferWidth, presentation.BackBufferHeight);
-        Camera.SetViewport(size, Math.Min(size.X / 1600f, size.Y / 900f));
-        Camera.Position = _player.Position;
     }
 
     protected internal override void OnUnload()

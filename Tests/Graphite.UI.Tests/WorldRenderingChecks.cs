@@ -11,6 +11,7 @@ internal static class WorldRenderingChecks
 {
     internal static void Run(GraphicsDevice device)
     {
+        SceneChecks.CameraRendering(device);
         StaleReticleFails(device);
         using var texture = new Texture2D(device, 4, 2);
         texture.SetData(new[] { Color.Red, Color.Red, Color.Green, Color.Green, Color.Red, Color.Red, Color.Green, Color.Green });
