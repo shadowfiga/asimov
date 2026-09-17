@@ -9,6 +9,7 @@ public sealed class GameTheme
     public UIBorderRadii BorderRadius { get; init; } = UIBorderRadii.Square;
     public MenuButtonTokens MenuButton { get; init; } = MenuButtonTokens.Default;
     public ScreenLayoutTokens Layout { get; init; } = new();
+    public ResourceHudTokens ResourceHud { get; init; } = new();
 
     // Monochrome terminal surfaces
     public required Color DeepBlack

@@ -5,9 +5,9 @@ namespace Chisel.Generated
     public static class ChiselManifest
     {
         public const string ProjectId = "M7gzZK-ELqR9WTLlI15uz";
-        public const string ProjectName = "Deep Dive";
-        public const string GeneratedAt = "2026-09-17T19:42:24.000Z";
-        public const int TableCount = 4;
+        public const string ProjectName = "Girls & Mine";
+        public const string GeneratedAt = "2026-09-17T20:51:04.713Z";
+        public const int TableCount = 5;
         public const int AssetCount = 0;
         public const int TranslationCount = 0;
     }

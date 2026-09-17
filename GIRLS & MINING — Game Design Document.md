@@ -341,6 +341,8 @@ The core loop is:
 
 → defend against larger swarms
 
+→ earn XP from kills and choose survivor-style run upgrade cards
+
 → current deposits begin to become insufficient
 
 → expand toward richer deposits
@@ -355,7 +357,7 @@ The core loop is:
 
 → extract or continue for score
 
-→ receive Research Cores
+→ settle the expedition's Ore for research
 
 → buy permanent upgrades
 
@@ -539,7 +541,7 @@ Ore is:
 * automatically added to the operation;
 * spent on structures;
 * spent on structure upgrades;
-* spent on the in-run technology tree.
+* used for permanent research and incremental progression.
 
 This deliberately creates competition between:
 
@@ -547,9 +549,21 @@ This deliberately creates competition between:
 
 and
 
-> **investing in long-term run efficiency.**
+> **investing in stronger future operations.**
+
+Ore funds ordinary research rather than converting into a separate Research Core currency. The rules for carrying Ore out of a run, rewards on failure, and separating field spending from the permanent research balance still need to be designed. The current prototype only holds the run's Ore balance; it does not yet bank Ore or implement research purchases.
 
 Do not add wood, metal, energy crystals, credits and five additional materials.
+
+## Experience from combat
+
+Killing enemies awards **experience (XP)**, not Gold, Credits or Ore. XP accumulates on the current run alongside the kill count and resets for each new expedition. It is progression, not a spendable resource, and is kept separate from the Ore balance.
+
+XP earns **survivor-style upgrade card choices** for the current run (Section 24). The level-up curve, offer count and card balance remain to be defined. Ore is not required to claim an XP-earned upgrade.
+
+Chisel owns each enemy's base `experience` reward. The death-handling system calls `Run.RecordKill(enemyId)` once per death; the run resolves that enemy's Chisel reward directly and increments XP and kills. The initial `SWARMER` definition awards a provisional **10 XP**. Enemy death handling, level-ups and card selection are not implemented yet.
+
+The resource HUD displays Ore only. Experience is not presented as a second wallet balance.
 
 ---
 
@@ -793,19 +807,19 @@ The base visual assets can remain relatively simple because the final image is c
 
 ---
 
-# 24. In-Run Upgrade Tree
+# 24. In-Run Upgrade Cards
 
-The run does **not** use random card drafting.
+The run uses **survivor-style upgrade card choices earned through XP**.
 
-Instead the player has access to a large terminal-style **Field Technology Tree**.
+At a level-up, the player chooses an upgrade from a small randomized offer. The chosen effect applies to the current run. These are passive upgrades, not combat cards to draw and play or a persistent deck to collect.
 
-The tree should look enormous but remain cheap to implement.
+This replaces the previous Ore-funded Field Technology Tree; do not build both progression systems. Retain the terminal presentation and reuse the existing upgrade ideas.
 
 Target:
 
-**approximately 32 meaningful nodes.**
+**approximately 32 meaningful upgrades**, replacing the old in-run node budget rather than adding another content set.
 
-Four branches:
+Four upgrade groups:
 
 ### Mining
 
@@ -823,13 +837,13 @@ Weapon, mining tool, movement, armor, repair capability.
 
 Economy, construction, global support, Threat manipulation.
 
-Nodes can have multiple ranks where appropriate.
+Cards can have multiple ranks where appropriate. XP thresholds, the number of choices, offer eligibility, duplicate/rank rules and selection timing remain balancing decisions. They are not runtime systems in the current prototype.
 
 ---
 
 # 25. Run Upgrade Philosophy
 
-Most nodes should fall into three groups.
+Most upgrade cards should fall into three groups.
 
 ### Basic numerical improvements
 
@@ -851,10 +865,10 @@ Gun Turrets can hit an additional target.
 
 Example:
 
-**Salvage Protocol**
-Elite enemies have a chance to generate Ore.
+**Combat Telemetry**
+Elite enemies award increased experience.
 
-The tree should gradually turn the player's operation from:
+The chosen upgrades should gradually turn the player's operation from:
 
 > mining equipment with guns
 
@@ -868,23 +882,22 @@ All in-run upgrades reset after the mission.
 
 # 26. Permanent Incremental Progression
 
-There is **no additional prestige reset system**.
+**Ore funds permanent research and the ordinary incremental progression layer.**
 
-The permanent progression system is already the incremental layer.
+Research makes future expeditions stronger. Even failed runs should award some progress, but the Ore banking and failure-retention rules remain undecided. No persistent Ore wallet or settlement logic is implemented yet.
 
-Currency:
+## Possible rare progression material — not yet committed
 
-# RESEARCH CORES
+One separate rare material is being considered for **prestige and/or advanced mech progression**, not routine research. **Research Cores**, **Xenonite** and **Animerium** are alternative names for that possible resource, not three new currencies.
 
-Research Cores are awarded after expeditions based on:
+Before implementing it, decide:
 
-* mission progress;
-* extracted Ore;
-* new records;
-* sector completion;
-* optional objectives.
+* whether it is earned through prestige, spent on prestige, or used only for mech improvements;
+* how it is earned and retained;
+* what a prestige resets and what remains permanent;
+* whether better mechs mean improving the existing chassis or adding chassis, with an explicit scope revision for the latter.
 
-Even failed runs should award some progress.
+Prestige, a rare-resource balance and additional playable chassis are **not approved for implementation yet**. The confirmed economy remains Ore plus run-local XP; there is no Gold/Credits bounty currency.
 
 ---
 
@@ -958,7 +971,7 @@ If the Core reaches zero health:
 
 The game does not erase progression.
 
-The Results screen calculates Research Cores and records the attempt.
+The Results screen records the attempt and settles Ore-based research progress under the eventual banking/failure rules.
 
 The player returns to the Command Center and may immediately purchase improvements.
 
@@ -1063,7 +1076,7 @@ Displays:
 * enemies destroyed;
 * structures lost;
 * best-record indicators;
-* Research Cores earned.
+* Ore retained for research (settlement rules pending).
 
 Actions:
 
@@ -1099,7 +1112,7 @@ Contains:
 
 * full permanent research tree;
 * selected-node details;
-* Research Core balance.
+* Ore available for research.
 
 No additional hub screens are required.
 
@@ -1115,7 +1128,7 @@ The complete production UI is:
 4. **Command Center — Mission tab**
 5. **Command Center — Research tab**
 6. **Gameplay HUD**
-7. **In-Run Upgrade Tree**
+7. **XP Level-Up / Upgrade Card Selection**
 8. **Results / Operation Report**
 
 Plus lightweight:
@@ -1161,7 +1174,7 @@ Autosave:
 **LMB** — primary tool/weapon
 **E** — interact/build
 **R** — repair where appropriate
-**Tab** — in-run technology tree
+**Tab** — run-upgrade overview (final interaction pending)
 **Esc** — pause
 
 Exact mapping remains remappable once the required system exists.
@@ -1294,15 +1307,18 @@ For 1.0:
 | Buildable structures     |                        **5** |
 | Enemy archetypes         |                        **5** |
 | Boss family              |                        **1** |
-| In-run tech nodes        |                      **~32** |
+| In-run upgrade cards     |                      **~32** |
 | Permanent research nodes |                      **~24** |
 | Standard waves/sector    |                       **12** |
-| Currencies               |     **Ore + Research Cores** |
+| Confirmed currency       |                      **Ore** |
+| Run progression          |       **XP → upgrade cards** |
 | Command Center tabs      |                        **2** |
 | Endgame mode             |     **Endless continuation** |
 | Narrative cinematics     |                        **0** |
 
 Approved presentation/audio additions: anime-style female pilot portraits for the existing mech, and one shared adaptive music system with a small encounter-based cue set. These do not increase the chassis, enemy or screen counts. Final portrait and track counts are pending asset selection; begin with one portrait and the two-cue audio validation described above.
+
+Approved progression revision: XP-earned survivor-style upgrade cards replace the in-run technology tree, and Ore funds ordinary research/incremental progression. A single rare resource for prestige and/or better mechs is under consideration in Section 26; its name, mechanics and any chassis-count increase are not committed scope.
 
 Anything outside this table should be treated with suspicion.
 
@@ -1324,9 +1340,8 @@ No:
 * resource chains with multiple materials;
 * dialogue trees;
 * weapon collection;
-* deckbuilding;
-* random card drafting;
-* second prestige currency;
+* persistent deckbuilding or combat-card hands (XP-earned upgrade choices are allowed);
+* implemented prestige or additional currencies before the Section 26 decisions are approved;
 * New Game+ progression layer;
 * huge boss roster;
 * multiple mechanically distinct player characters (cosmetic pilot portraits are allowed).

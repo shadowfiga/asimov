@@ -1,10 +1,13 @@
 using System.Reflection;
+using Chisel.Generated;
 using Graphite.Engine.Persistence;
 using Graphite.Engine.Audio;
 using Graphite.Engine.Scenes;
+using Graphite.Game.Data;
 using Graphite.Game.Scenes;
 using Graphite.Game.Sessions;
 using Graphite.Game.UI;
+using Graphite.Game.UI.Hud;
 using Graphite.Game.UI.Theming;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
@@ -188,8 +191,35 @@ internal static class BootstrapChecks
             "Loading creates and publishes an initialized run before Sandbox OnLoad executes");
         SceneManager.CommitPendingChanges();
         Program.Check(ReferenceEquals(SessionManager.ActiveSession.CurrentRun, run), "Sandbox consumes the prepared run without replacing it");
-        Program.Check(desktop.Widgets.Count == 0 && AudioManager.Current.CachedClipCount == cached,
-            "Session entry closes loading UI and reuses bootstrap audio assets");
+        Program.Check(desktop.Widgets.Count == 1 && desktop.Widgets.Single() is ResourceHud
+            && AudioManager.Current.CachedClipCount == cached,
+            "Session entry replaces loading UI with the resource HUD and reuses bootstrap audio assets");
+        var hud = (ResourceHud)desktop.Widgets.Single();
+        Program.Check(hud.OreAmount.Text == "0", "Sandbox HUD begins with the actual zero Ore balance");
+        run.AddOre(4820);
+        Program.Check(hud.OreAmount.Text == "4,820", "Sandbox HUD reacts directly to active run changes");
+        Program.Check(run.TrySpendOre(20) && hud.OreAmount.Text == "4,800", "Spending Ore refreshes the HUD");
+        Program.Check(!run.TrySpendOre(4801) && hud.OreAmount.Text == "4,800", "Unaffordable purchases do not change the HUD");
+        run.AddOre(20);
+        run.RecordKill(ChiselEnemiesId.SWARMER);
+        Program.Check(run.Kills == 1 && run.XP == ChiselEnemies.Experience[ChiselEnemiesId.SWARMER.ToInt()] && run.Ore == 4820,
+            "Enemy reward entry point advances XP without paying an Ore bounty");
+        Program.Check(hud.GetChildren(true).OfType<Label>().Select(label => label.Text).SequenceEqual(new[] { "ORE", "4,820" }),
+            "The resource HUD shows only Ore, not Gold, Credits, or an XP wallet");
+        var originalScale = Preferences.Get(RuntimePreferences.UiScale);
+        foreach (var scale in new[] { .75f, 1.75f, originalScale })
+        {
+            Preferences.Set(RuntimePreferences.UiScale, scale);
+            Ui.Update(0);
+            Program.Check(hud.Width == GameThemes.DeepDrive.ResourceHud.Width && hud.Bounds.Width <= Ui.LayoutSize.X,
+                "The compact Ore HUD uses its theme width at every supported scale");
+            var icon = hud.GetChildren(true).OfType<Image>().Single();
+            Program.Check(icon.Bounds.Width == icon.Bounds.Height && icon.Bounds.Width == GameThemes.DeepDrive.ResourceHud.IconSize,
+                "The Ore icon stays square when scaling the HUD");
+            Program.Check(hud.InputFallsThrough(Point.Zero) && !hud.AcceptsKeyboardFocus,
+                "The read-only resource HUD does not capture gameplay input or keyboard focus");
+        }
+        Ui.Update(0);
         Program.Check(!Myra.MyraEnvironment.Game.IsMouseVisible, "Play hides the system pointer for the world-space reticle");
         using (var target = new RenderTarget2D(device, device.PresentationParameters.BackBufferWidth, device.PresentationParameters.BackBufferHeight))
         {
@@ -199,7 +229,17 @@ internal static class BootstrapChecks
             device.SetRenderTarget(null);
             var pixels = new Color[target.Width * target.Height];
             target.GetData(pixels);
-            Program.Check(pixels.Count(pixel => pixel.R > 180) > 100, "Play draws the mech as scene content with no UI hosts");
+            Program.Check(pixels.Count(pixel => pixel.R > 180) > 100, "Play draws the mech as scene content independently of the HUD");
+            device.SetRenderTarget(target);
+            device.Clear(GameThemes.DeepDrive.Background);
+            SceneManager.Draw(new GameTime(), device);
+            Ui.Draw();
+            device.SetRenderTarget(null);
+            var withHud = new Color[pixels.Length];
+            target.GetData(withHud);
+            Program.Check(withHud.Take(pixels.Length / 2).SequenceEqual(pixels.Take(pixels.Length / 2)),
+                "The resource HUD leaves the world above it visible instead of covering the screen");
+            Program.Check(!withHud.SequenceEqual(pixels), "Resource HUD visibly renders over gameplay");
             using var stream = File.Create(Path.Combine(output, "session-mech.png"));
             target.SaveAsPng(stream, target.Width, target.Height);
         }
@@ -207,6 +247,8 @@ internal static class BootstrapChecks
         SceneManager.CommitPendingChanges();
         Program.Check(desktop.Widgets.Count == 1, "The main menu can be re-entered after playing");
         Program.Check(Myra.MyraEnvironment.Game.IsMouseVisible == cursorVisible, "Leaving play restores the menu cursor");
+        run.AddOre(9);
+        Program.Check(hud.OreAmount.Text == "4,820", "Scene teardown removes the HUD's Ore subscription");
         AudioManager.Current.MusicPlayer.Stop(0);
     }
 

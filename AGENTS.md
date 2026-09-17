@@ -12,6 +12,11 @@
 - Never inline `if`, `else`, loops, `try`, `catch`, `finally`, or method bodies inside `{ ... }`, even for one statement.
 - Follow `.editorconfig`; do not preserve single-line blocks or put multiple statements on one line.
 
+# Simplicity and new classes
+
+- Ask the user before introducing any new class. Do not add wrappers, managers, containers, or other abstractions without explicit approval.
+- Keep implementations simple and light. Prefer plain fields and straightforward public methods on existing classes; for example, Ore is an integer on Run, not a separate resource container.
+
 # Collections
 
 - Arrays, lists, dictionaries, sets, and other collection-like fields and properties must default to an empty collection of the appropriate type, never `null` or `null!`.

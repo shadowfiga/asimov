@@ -140,6 +140,39 @@
       ]
     },
     {
+      "id": "enemies",
+      "name": "Enemies",
+      "description": "Enemy experience rewards. Swarmer XP is provisional tuning.",
+      "kind": "user",
+      "isSystemTable": false,
+      "lastChangeAt": "2026-09-17T20:51:04.713Z",
+      "version": 1,
+      "columns": [
+        {
+          "id": "enemies_experience000",
+          "name": "experience",
+          "type": "integer",
+          "defaultValue": 0,
+          "required": true,
+          "unique": false,
+          "min": 0
+        }
+      ],
+      "rows": [
+        {
+          "id": "row_SWARMER0000000000",
+          "slug": "SWARMER",
+          "values": [
+            {
+              "columnId": "enemies_experience000",
+              "type": "integer",
+              "value": 10
+            }
+          ]
+        }
+      ]
+    },
+    {
       "id": "pilots",
       "name": "Pilot",
       "description": "Cosmetic pilot identities. Add presentation fields here; pilots do not alter chassis stats.",

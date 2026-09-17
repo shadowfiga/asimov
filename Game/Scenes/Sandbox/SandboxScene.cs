@@ -27,6 +27,7 @@ public sealed class SandboxScene : Scene
         Objects.MaxDeltaTime = .1f;
         _player = Objects.Spawn(new MechPrefab(loadout), Vector2.Zero);
         _reticle = Objects.Spawn(new SandboxPresentationPrefab(_player));
+        UI.Open<SandboxUI>();
         game.IsMouseVisible = false;
         RefreshCamera();
         GameAudio.PlaySession();
