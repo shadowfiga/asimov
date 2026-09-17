@@ -1,5 +1,6 @@
 using Graphite.Engine.Objects;
 using Chisel.Generated;
+using Graphite.Game.Data;
 using Graphite.Game.Domain.Combat;
 using Graphite.Game.Graphics;
 using Microsoft.Xna.Framework;
@@ -9,45 +10,40 @@ namespace Graphite.Game.Domain.Player;
 /// <summary>Assembles the reusable robot hierarchy once; scenes do not manage its individual parts.</summary>
 public sealed class RobotPrefab : Prefab<PlayerController>
 {
-    private readonly RobotDefinition _definition;
+    private readonly int _robotId;
 
-    public RobotPrefab(ChiselRobotsId id) : this(RobotDefinition.FromChisel(id))
+    public RobotPrefab(ChiselRobotsId id) : base(id.ToString())
     {
-    }
-
-    public RobotPrefab(RobotDefinition definition) : base("Robot")
-    {
-        _definition = definition;
+        _robotId = id.ToInt();
     }
 
     protected internal override PlayerController Build(GameObject root)
     {
-        var definition = _definition;
         var target = root.Transform.TransformPoint(new Vector2(0, -100));
         var bottom = root.CreateChild("Bottom");
         bottom.Transform.LocalRotation = -MathHelper.PiOver2;
-        bottom.AddComponent(new RobotPartRenderer(RobotPart.Bottom, definition.BodyRadius) { Layer = 10 });
+        bottom.AddComponent(new RobotPartRenderer(RobotPart.Bottom, ChiselRobots.BodyRadius[_robotId]) { Layer = 10 });
         var top = root.CreateChild("Top");
         var torsoAim = top.AddComponent(new AimController(target));
-        top.AddComponent(new RobotPartRenderer(RobotPart.Top, definition.BodyRadius) { Layer = 30 });
-        var left = CreateWeapon(top, "LeftWeapon", -definition.ArmSpacing, definition.Weapon, target);
-        var right = CreateWeapon(top, "RightWeapon", definition.ArmSpacing, definition.Weapon, target);
-        return root.AddComponent(new PlayerController(definition.MoveSpeed, bottom, torsoAim, left.Aim, right.Aim, left.Weapon, right.Weapon)
+        top.AddComponent(new RobotPartRenderer(RobotPart.Top, ChiselRobots.BodyRadius[_robotId]) { Layer = 30 });
+        var left = CreateWeapon(top, "LeftWeapon", -ChiselRobots.ArmSpacing[_robotId], ChiselRobots.Weapon[_robotId], target);
+        var right = CreateWeapon(top, "RightWeapon", ChiselRobots.ArmSpacing[_robotId], ChiselRobots.Weapon[_robotId], target);
+        return root.AddComponent(new PlayerController(ChiselRobots.MoveSpeed[_robotId], bottom, torsoAim, left.Aim, right.Aim, left.Weapon, right.Weapon)
         {
             Controls = new PlayerControls(Vector2.Zero, target - root.Transform.WorldPosition, false)
         });
     }
 
     private static (AimController Aim, WeaponComponent Weapon) CreateWeapon(GameObject top, string name,
-        float offset, WeaponDefinition definition, Vector2 target)
+        float offset, ChiselWeaponsId weaponId, Vector2 target)
     {
         var gun = top.CreateChild(name);
         gun.Transform.LocalPosition = new Vector2(0, offset);
         var aim = gun.AddComponent(new AimController(target));
         var muzzle = gun.CreateChild("Muzzle");
-        muzzle.Transform.LocalPosition = new Vector2(definition.BarrelLength, 0);
-        var weapon = gun.AddComponent(new WeaponComponent(definition, muzzle.Transform));
-        gun.AddComponent(new RobotPartRenderer(RobotPart.Weapon, definition.BarrelLength) { Layer = 20 });
+        muzzle.Transform.LocalPosition = new Vector2(ChiselWeapons.BarrelLength[weaponId.ToInt()], 0);
+        var weapon = gun.AddComponent(new WeaponComponent(weaponId, muzzle.Transform));
+        gun.AddComponent(new RobotPartRenderer(RobotPart.Weapon, ChiselWeapons.BarrelLength[weaponId.ToInt()]) { Layer = 20 });
         return (aim, weapon);
     }
 }

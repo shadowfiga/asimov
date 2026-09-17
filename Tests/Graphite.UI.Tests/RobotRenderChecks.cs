@@ -64,13 +64,12 @@ internal static class RobotRenderChecks
 
     private static void StaticLegPose(GraphicsDevice device, WorldRenderer2D renderer)
     {
-        var definition = RobotDefinition.FromChisel(ChiselRobotsId.STARTER_MECH);
         using var movingWorld = new GameWorld();
         using var idleWorld = new GameWorld();
-        var moving = movingWorld.Spawn(new RobotPrefab(definition), new Vector2(0, 28));
+        var moving = movingWorld.Spawn(new RobotPrefab(ChiselRobotsId.STARTER_MECH), new Vector2(0, 28));
         moving.Controls = new PlayerControls(-Vector2.UnitY, new Vector2(0, -100), false);
         movingWorld.Update(.1f);
-        var idle = idleWorld.Spawn(new RobotPrefab(definition), moving.Position);
+        var idle = idleWorld.Spawn(new RobotPrefab(ChiselRobotsId.STARTER_MECH), moving.Position);
         var camera = new Camera2D { Position = moving.Position };
         camera.SetViewport(new Point(256, 256), 2);
         using var target = new RenderTarget2D(device, 256, 256);

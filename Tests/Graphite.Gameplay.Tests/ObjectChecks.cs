@@ -1,5 +1,6 @@
 using Chisel.Generated;
 using Graphite.Engine.Objects;
+using Graphite.Game.Data;
 using Graphite.Game.Domain.Combat;
 using Graphite.Game.Domain.Player;
 using Microsoft.Xna.Framework;
@@ -155,8 +156,7 @@ internal static class ObjectChecks
     private static void Weapons()
     {
         using var world = new GameWorld();
-        var definition = RobotDefinition.FromChisel(ChiselRobotsId.STARTER_MECH);
-        var player = world.Spawn(new RobotPrefab(definition), Vector2.Zero);
+        var player = world.Spawn(new RobotPrefab(ChiselRobotsId.STARTER_MECH), Vector2.Zero);
         Check(player.Owner.Children.Select(value => value.Name).SequenceEqual(new[] { "Bottom", "Top" }), "Robot has bottom and top children");
         Check(player.Top.Children.Select(value => value.Name).SequenceEqual(new[] { "LeftWeapon", "RightWeapon" }), "Weapons are children of the torso");
         Check(player.LeftWeapon.Muzzle.Owner.Parent == player.LeftWeapon.Owner, "Each weapon owns a muzzle child");
@@ -178,16 +178,19 @@ internal static class ObjectChecks
 
         foreach (var rate in new[] { 4f, 8f })
         {
-            var gun = world.Spawn(new ObjectPrefab("Independent gun"));
-            gun.Transform.LocalPosition = new Vector2(0, rate * 10);
-            var muzzle = gun.CreateChild("Muzzle");
-            muzzle.Transform.LocalPosition = new Vector2(definition.Weapon.BarrelLength, 0);
-            gun.AddComponent(new WeaponComponent(definition.Weapon with { RoundsPerSecond = rate }, muzzle.Transform) { TriggerHeld = true });
+            var weaponId = ChiselRobots.Weapon[ChiselRobotsId.STARTER_MECH.ToInt()];
+            WithChiselValue(ChiselWeapons.RoundsPerSecond, weaponId.ToInt(), rate, () =>
+            {
+                using var gunWorld = new GameWorld();
+                var gun = gunWorld.Spawn(new ObjectPrefab("Independent gun"));
+                var muzzle = gun.CreateChild("Muzzle");
+                muzzle.Transform.LocalPosition = new Vector2(ChiselWeapons.BarrelLength[weaponId.ToInt()], 0);
+                gun.AddComponent(new WeaponComponent(weaponId, muzzle.Transform) { TriggerHeld = true });
+                gunWorld.Update(1);
+                Check(gunWorld.GetComponents<ProjectileComponent>().Count() == rate,
+                    "Weapon components use the authored rate without any player or mouse input");
+            });
         }
-        world.Update(1);
-        bullets = world.GetComponents<ProjectileComponent>().ToArray();
-        Check(bullets.Count(bullet => bullet.Position.Y == 40) == 4 && bullets.Count(bullet => bullet.Position.Y == 80) == 8,
-            "Weapon components can fire at independent rates without any player or mouse input");
     }
 
     private sealed class Probe : Component

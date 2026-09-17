@@ -1,4 +1,6 @@
+using Chisel.Generated;
 using Graphite.Engine.Objects;
+using Graphite.Game.Data;
 
 namespace Graphite.Game.Domain.Combat;
 
@@ -6,7 +8,7 @@ namespace Graphite.Game.Domain.Combat;
 public sealed class WeaponComponent : Component
 {
     private double _cooldown;
-    public WeaponDefinition Definition
+    public ChiselWeaponsId WeaponId
     {
         get;
     }
@@ -20,19 +22,21 @@ public sealed class WeaponComponent : Component
     }
     public override int UpdateOrder => 200;
 
-    public WeaponComponent(WeaponDefinition definition, Transform2D muzzle)
+    public WeaponComponent(ChiselWeaponsId weaponId, Transform2D muzzle)
     {
+        var roundsPerSecond = ChiselWeapons.RoundsPerSecond[weaponId.ToInt()];
+        var projectileLifetime = ChiselWeapons.ProjectileLifetime[weaponId.ToInt()];
         // Non-positive cadence would make the firing loop stop advancing.
-        if (!float.IsFinite(definition.RoundsPerSecond) || definition.RoundsPerSecond <= 0)
+        if (!float.IsFinite(roundsPerSecond) || roundsPerSecond <= 0)
         {
             throw new InvalidDataException("Weapon firing rate must be finite and positive.");
         }
         // Catch-up skips expired rounds; an invalid lifetime would otherwise silently suppress every shot.
-        if (!float.IsFinite(definition.ProjectileLifetime) || definition.ProjectileLifetime <= 0)
+        if (!float.IsFinite(projectileLifetime) || projectileLifetime <= 0)
         {
             throw new InvalidDataException("Weapon projectile lifetime must be finite and positive.");
         }
-        Definition = definition;
+        WeaponId = weaponId;
         Muzzle = muzzle;
     }
 
@@ -49,10 +53,11 @@ public sealed class WeaponComponent : Component
         if (TriggerHeld)
         {
             ObjectDisposedException.ThrowIf(Muzzle.Owner.IsDestroyed, Muzzle.Owner);
-            var interval = 1d / Definition.RoundsPerSecond;
-            if (nextShot < dt - Definition.ProjectileLifetime)
+            var interval = 1d / ChiselWeapons.RoundsPerSecond[WeaponId.ToInt()];
+            var projectileLifetime = ChiselWeapons.ProjectileLifetime[WeaponId.ToInt()];
+            if (nextShot < dt - projectileLifetime)
             {
-                nextShot += Math.Ceiling((dt - Definition.ProjectileLifetime - nextShot) / interval) * interval;
+                nextShot += Math.Ceiling((dt - projectileLifetime - nextShot) / interval) * interval;
             }
             while (nextShot < dt)
             {
@@ -65,13 +70,14 @@ public sealed class WeaponComponent : Component
 
     private void Spawn(float age)
     {
-        if (age >= Definition.ProjectileLifetime)
+        var projectileLifetime = ChiselWeapons.ProjectileLifetime[WeaponId.ToInt()];
+        if (age >= projectileLifetime)
         {
             return;
         }
-        var velocity = Muzzle.Forward * Definition.ProjectileSpeed;
+        var velocity = Muzzle.Forward * ChiselWeapons.ProjectileSpeed[WeaponId.ToInt()];
         // Scene root, deliberately not a weapon child: shots outlive and move independently of their gun.
-        World.Spawn(new ProjectilePrefab(velocity, Definition.ProjectileLifetime - age),
+        World.Spawn(new ProjectilePrefab(velocity, projectileLifetime - age),
             Muzzle.WorldPosition + velocity * age, Muzzle.WorldRotation);
     }
 }

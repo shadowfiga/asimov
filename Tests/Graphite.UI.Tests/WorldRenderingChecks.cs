@@ -87,7 +87,7 @@ internal static class WorldRenderingChecks
         using var renderer = new WorldRenderer2D(device);
         var camera = new Camera2D();
         camera.SetViewport(new Point(128, 128), 1);
-        var player = world.Spawn(new RobotPrefab(RobotDefinition.FromChisel(ChiselRobotsId.STARTER_MECH)), Vector2.Zero);
+        var player = world.Spawn(new RobotPrefab(ChiselRobotsId.STARTER_MECH), Vector2.Zero);
         world.Spawn(new ObjectPrefab("Reticle")).AddComponent(new ReticleRenderer(player));
         player.Owner.Destroy();
         var rejected = false;

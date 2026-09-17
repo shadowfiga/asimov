@@ -12,13 +12,15 @@ namespace Graphite.Gameplay.Tests;
 internal static class Program
 {
     private static int _assertions;
-    private static readonly RobotDefinition Definition = RobotDefinition.FromChisel(ChiselRobotsId.STARTER_MECH);
+    private const ChiselRobotsId RobotId = ChiselRobotsId.STARTER_MECH;
+    private static ChiselWeaponsId WeaponId => ChiselRobots.Weapon[RobotId.ToInt()];
 
     public static void Main()
     {
-        Check(Definition.MoveSpeed == 280 && Definition.Weapon.RoundsPerSecond == 8, "Actual exported robot and weapon definitions load");
-        Throws<IndexOutOfRangeException>(() => RobotDefinition.FromChisel(ChiselRobotsId.Invalid));
+        Check(ChiselRobots.MoveSpeed[RobotId.ToInt()] == 280 && ChiselWeapons.RoundsPerSecond[WeaponId.ToInt()] == 8,
+            "Actual exported robot and weapon columns load directly");
         ChiselIds();
+        DirectChiselReferences();
         FailFast();
         ObjectChecks.Run();
         PrefabChecks.Run();
@@ -30,6 +32,7 @@ internal static class Program
 
     private static void ChiselIds()
     {
+        using var world = new GameWorld();
         var id = ChiselRobotsId.STARTER_MECH;
         Check(id.ToInt() == 0, "Generated enum IDs convert to array indexes with ToInt");
         Near(ChiselRobots.MoveSpeed[id.ToInt()], 280, "Robot column access uses the extension inline");
@@ -43,53 +46,90 @@ internal static class Program
         foreach (var invalid in new[] { -1, -2, ChiselRobots.Count, int.MaxValue })
         {
             Check(((ChiselRobotsId)invalid).ToInt() == invalid, "ID conversion does not validate or substitute a fallback");
-            Throws<IndexOutOfRangeException>(() => RobotDefinition.FromChisel((ChiselRobotsId)invalid));
+            Throws<IndexOutOfRangeException>(() => world.Spawn(new RobotPrefab((ChiselRobotsId)invalid)));
         }
-        Throws<IndexOutOfRangeException>(() => WeaponDefinition.FromChisel(ChiselWeaponsId.Invalid));
+        Check(world.Roots.Count == 0 && world.ComponentCount == 0, "Invalid Chisel robot IDs fail without leaking partial prefabs");
+        var gun = world.Spawn(new ObjectPrefab("Gun"));
+        var muzzle = gun.CreateChild("Muzzle");
+        Throws<IndexOutOfRangeException>(() => new WeaponComponent(ChiselWeaponsId.Invalid, muzzle.Transform));
+    }
+
+    private static void DirectChiselReferences()
+    {
+        using var world = new GameWorld();
+        var prefab = new RobotPrefab(RobotId);
+        WithChiselValue(ChiselRobots.Weapon, RobotId.ToInt(), ChiselWeaponsId.Invalid, () =>
+            Throws<IndexOutOfRangeException>(() => world.Spawn(prefab)));
+        Check(world.Roots.Count == 0 && world.ComponentCount == 0, "Invalid weapon references fail and roll back the robot hierarchy");
+        WithChiselValue(ChiselRobots.ArmSpacing, RobotId.ToInt(), 42f, () =>
+            WithChiselValue(ChiselWeapons.BarrelLength, WeaponId.ToInt(), 53f, () =>
+        {
+            var robot = world.Spawn(prefab);
+            Check(robot.LeftWeapon.WeaponId == WeaponId && robot.RightWeapon.WeaponId == WeaponId,
+                "Both mounts keep the weapon ID referenced by the Chisel robot");
+            Near(robot.LeftWeapon.Transform.LocalPosition.Y, -42, "Left mount reads Chisel arm spacing at build time");
+            Near(robot.RightWeapon.Transform.LocalPosition.Y, 42, "Right mount reads Chisel arm spacing at build time");
+            Near(robot.LeftWeapon.Muzzle.LocalPosition.X, 53, "Left muzzle reads Chisel barrel length directly");
+            Near(robot.RightWeapon.Muzzle.LocalPosition.X, 53, "Right muzzle reads Chisel barrel length directly");
+            WithChiselValue(ChiselWeapons.RoundsPerSecond, WeaponId.ToInt(), 4f, () =>
+                WithChiselValue(ChiselWeapons.ProjectileSpeed, WeaponId.ToInt(), 321f, () =>
+                    WithChiselValue(ChiselWeapons.ProjectileLifetime, WeaponId.ToInt(), 3f, () =>
+            {
+                Step(robot, .5f, new PlayerControls(Vector2.Zero, Vector2.UnitX * 200, true));
+                var bullets = Projectiles(robot);
+                Check(bullets.Length == 4, "Weapon cadence reads Chisel instead of retaining a copied definition");
+                Check(bullets.All(bullet => Math.Abs(bullet.Velocity.Length() - 321) < .002f), "Projectile speed comes directly from the referenced Chisel weapon");
+                Check(bullets.All(bullet => bullet.RemainingLife >= 2.5f), "Projectile lifetime comes directly from the referenced Chisel weapon");
+            })));
+        }));
     }
 
     private static void FailFast()
     {
         using var world = new GameWorld();
-        var robot = world.Spawn(new RobotPrefab(Definition), Vector2.Zero);
+        var robot = world.Spawn(new RobotPrefab(RobotId), Vector2.Zero);
         // Invalid game state must reach the engine's existing transform contract, not become idle/default input.
         Throws<ArgumentOutOfRangeException>(() => Step(robot, .1f, new PlayerControls(new Vector2(float.NaN, 0), Vector2.UnitX, false)));
         Throws<ArgumentOutOfRangeException>(() => Step(robot, .1f, new PlayerControls(Vector2.Zero, new Vector2(float.NaN, 0), false)));
         robot.Owner.Destroy();
-        var badSpeed = world.Spawn(new RobotPrefab(Definition with
+        WithChiselValue(ChiselRobots.MoveSpeed, RobotId.ToInt(), float.NaN, () =>
         {
-            MoveSpeed = float.NaN
-        }), Vector2.Zero);
-        Throws<ArgumentOutOfRangeException>(() => Step(badSpeed, .1f, new PlayerControls(Vector2.UnitX, Vector2.Zero, false)));
-        badSpeed.Owner.Destroy();
+            var badSpeed = world.Spawn(new RobotPrefab(RobotId), Vector2.Zero);
+            Throws<ArgumentOutOfRangeException>(() => Step(badSpeed, .1f, new PlayerControls(Vector2.UnitX, Vector2.Zero, false)));
+            badSpeed.Owner.Destroy();
+        });
 
         var gun = world.Spawn(new ObjectPrefab("Gun"));
         var muzzle = gun.CreateChild("Muzzle");
         foreach (var rate in new[] { 0f, -1f, float.NaN, float.PositiveInfinity })
         {
-            Throws<InvalidDataException>(() => new WeaponComponent(Definition.Weapon with { RoundsPerSecond = rate }, muzzle.Transform));
+            WithChiselValue(ChiselWeapons.RoundsPerSecond, WeaponId.ToInt(), rate, () =>
+                Throws<InvalidDataException>(() => new WeaponComponent(WeaponId, muzzle.Transform)));
         }
         foreach (var lifetime in new[] { 0f, -1f, float.NaN, float.PositiveInfinity })
         {
-            Throws<InvalidDataException>(() => new WeaponComponent(Definition.Weapon with { ProjectileLifetime = lifetime }, muzzle.Transform));
+            WithChiselValue(ChiselWeapons.ProjectileLifetime, WeaponId.ToInt(), lifetime, () =>
+                Throws<InvalidDataException>(() => new WeaponComponent(WeaponId, muzzle.Transform)));
             Throws<ArgumentOutOfRangeException>(() => new ProjectileComponent(Vector2.UnitX, lifetime));
         }
-        var fastWeapon = gun.AddComponent(new WeaponComponent(Definition.Weapon with
+        WithChiselValue(ChiselWeapons.RoundsPerSecond, WeaponId.ToInt(), 120f, () =>
+            WithChiselValue(ChiselWeapons.ProjectileLifetime, WeaponId.ToInt(), 12f, () =>
         {
-            RoundsPerSecond = 120,
-            ProjectileLifetime = 12
-        }, muzzle.Transform));
-        Check(fastWeapon.Definition.RoundsPerSecond == 120 && fastWeapon.Definition.ProjectileLifetime == 12,
-            "Authored weapons are not restricted by arbitrary prototype caps");
-        fastWeapon.TriggerHeld = true;
-        muzzle.Destroy();
-        Throws<ObjectDisposedException>(() => world.Update(.1f));
+            var fastWeapon = gun.AddComponent(new WeaponComponent(WeaponId, muzzle.Transform) { TriggerHeld = true });
+            world.Update(.12f);
+            var bullets = world.GetComponents<ProjectileComponent>().ToArray();
+            Check(bullets.Length == 15 && bullets.All(bullet => bullet.RemainingLife > 11),
+                "Authored weapons are not restricted by arbitrary prototype caps");
+            Check(fastWeapon.WeaponId == WeaponId, "Weapon components retain the Chisel ID, not a copied definition");
+            muzzle.Destroy();
+            Throws<ObjectDisposedException>(() => world.Update(.1f));
+        }));
     }
 
     private static void Movement()
     {
         using var world = new GameWorld();
-        var robot = world.Spawn(new RobotPrefab(Definition), Vector2.Zero);
+        var robot = world.Spawn(new RobotPrefab(RobotId), Vector2.Zero);
         Step(robot, .1f, new PlayerControls(Vector2.UnitX, new Vector2(0, -300), false));
         Near(robot.Position.X, 28, "Move speed comes from Chisel");
         Near(robot.LegsAngle, 0, "Legs face movement");
@@ -98,17 +138,17 @@ internal static class Program
         foreach (var gun in new[] { robot.LeftWeapon, robot.RightWeapon })
         {
             Near(Vector2.Dot(gun.Transform.Forward, Vector2.Normalize(robot.AimPosition - gun.Transform.WorldPosition)), 1, "Each arm converges independently on the reticle");
-            Near(Vector2.Distance(gun.Muzzle.WorldPosition, gun.Transform.WorldPosition), Definition.Weapon.BarrelLength, "Muzzle uses authored barrel length");
+            Near(Vector2.Distance(gun.Muzzle.WorldPosition, gun.Transform.WorldPosition), ChiselWeapons.BarrelLength[WeaponId.ToInt()], "Muzzle uses authored barrel length");
         }
         Check(robot.LeftWeapon.Transform.Forward != robot.RightWeapon.Transform.Forward, "Separated arm mounts do not use parallel aiming");
         Step(robot, .1f, new PlayerControls(Vector2.Zero, new Vector2(-200, 0), false));
         Near(robot.LegsAngle, 0, "Idle legs retain the last driving direction");
         Near(MathHelper.WrapAngle(robot.TorsoAngle - MathHelper.Pi), 0, "Stationary torso can turn behind the legs");
-        var diagonal = world.Spawn(new RobotPrefab(Definition), Vector2.Zero);
+        var diagonal = world.Spawn(new RobotPrefab(RobotId), Vector2.Zero);
         Step(diagonal, .1f, new PlayerControls(Vector2.One, Vector2.Zero, false));
         Near(diagonal.Position.Length(), 28, "Diagonal movement is normalized");
         Check(float.IsFinite(diagonal.TorsoAngle) && float.IsFinite(diagonal.LeftWeapon.Transform.Forward.X), "Aiming exactly at the robot stays finite");
-        var stationary = world.Spawn(new RobotPrefab(Definition), Vector2.Zero);
+        var stationary = world.Spawn(new RobotPrefab(RobotId), Vector2.Zero);
         Step(stationary, .1f, new PlayerControls(Vector2.Zero, stationary.LeftWeapon.Transform.WorldPosition, true));
         Check(Projectiles(stationary).All(p => float.IsFinite(p.Position.X)), "Aiming at an arm pivot does not create NaN projectiles");
         Throws<ArgumentOutOfRangeException>(() => Step(robot, -1, new PlayerControls()));
@@ -117,12 +157,12 @@ internal static class Program
     private static void Shooting()
     {
         using var world = new GameWorld();
-        var robot = world.Spawn(new RobotPrefab(Definition), Vector2.Zero);
+        var robot = world.Spawn(new RobotPrefab(RobotId), Vector2.Zero);
         var firing = new PlayerControls(Vector2.Zero, new Vector2(500, -200), true);
         Step(robot, .01f, firing);
         Check(Projectiles(robot).Length == 2, "Mouse-down fires bullets from both guns immediately");
         var first = Projectiles(robot)[0];
-        Near(Vector2.Distance(first.Position, robot.LeftWeapon.Muzzle.WorldPosition), Definition.Weapon.ProjectileSpeed * .01f, "First shot advances for its time inside the frame");
+        Near(Vector2.Distance(first.Position, robot.LeftWeapon.Muzzle.WorldPosition), ChiselWeapons.ProjectileSpeed[WeaponId.ToInt()] * .01f, "First shot advances for its time inside the frame");
         Step(robot, .01f, firing with
         {
             Fire = false
@@ -132,7 +172,7 @@ internal static class Program
         foreach (var fps in new[] { 32, 64, 128 })
         {
             using var heldWorld = new GameWorld();
-            var held = heldWorld.Spawn(new RobotPrefab(Definition), Vector2.Zero);
+            var held = heldWorld.Spawn(new RobotPrefab(RobotId), Vector2.Zero);
             for (var frame = 0; frame < fps; frame++)
             {
                 Step(held, 1f / fps, firing);
@@ -198,6 +238,21 @@ internal static class Program
 
     private static MouseState Mouse(bool down, int x = 800) => new(x, 360, 0,
         down ? ButtonState.Pressed : ButtonState.Released, ButtonState.Released, ButtonState.Released, ButtonState.Released, ButtonState.Released);
+
+    // Only test fixtures mutate exported array values; always restore them, including on failed assertions.
+    internal static void WithChiselValue<T>(T[] column, int index, T value, Action check)
+    {
+        var original = column[index];
+        try
+        {
+            column[index] = value;
+            check();
+        }
+        finally
+        {
+            column[index] = original;
+        }
+    }
 
     internal static void Near(float actual, float expected, string message) => Check(Math.Abs(actual - expected) < .002f, message);
     internal static void Check(bool result, string message)

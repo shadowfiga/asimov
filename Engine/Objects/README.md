@@ -8,20 +8,20 @@ var player = Objects.Spawn(
     new Vector2(100, 200));
 ```
 
-The game-specific `RobotPrefab` assembles the complete robot and returns its `PlayerController`. It accepts a Chisel robot ID or a `RobotDefinition`; only `MoveSpeed` is passed to the controller. Other entities can attach the same game `WeaponComponent` without player input: set `TriggerHeld`, and optionally add an `AimController` with a world-space `Target`. Chisel remains the definition authority; component instances contain runtime state, not export data. Runtime objects, textures and components are not save records.
+The game-specific `RobotPrefab` assembles the complete robot and returns its `PlayerController`. It accepts a Chisel robot ID and reads the generated columns directly; only `MoveSpeed` is passed to the controller. Other entities can attach the same game `WeaponComponent` with a Chisel weapon ID without player input: set `TriggerHeld`, and optionally add an `AimController` with a world-space `Target`. Chisel remains the definition authority; components reference Chisel IDs instead of copying export data into wrapper definitions. Runtime objects, textures and components are not save records.
 
 ## Writing a prefab
 
 Derive from `Prefab<T>`, supply the root name, and implement `Build(GameObject root)`. `T` is a reference-type result, normally the root or a component that callers need. The engine supplies a live root with the requested position and rotation already applied; use `root.World` for the owning world. Example game-assembly code:
 
 ```csharp
-public sealed class GunPrefab(WeaponDefinition definition) : Prefab<WeaponComponent>("Gun")
+public sealed class GunPrefab(ChiselWeaponsId weaponId) : Prefab<WeaponComponent>("Gun")
 {
     protected internal override WeaponComponent Build(GameObject root)
     {
         var muzzle = root.CreateChild("Muzzle");
-        muzzle.Transform.LocalPosition = new Vector2(definition.BarrelLength, 0);
-        return root.AddComponent(new WeaponComponent(definition, muzzle.Transform));
+        muzzle.Transform.LocalPosition = new Vector2(ChiselWeapons.BarrelLength[weaponId.ToInt()], 0);
+        return root.AddComponent(new WeaponComponent(weaponId, muzzle.Transform));
     }
 }
 ```
