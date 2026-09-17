@@ -2,7 +2,6 @@ using Chisel.Generated;
 using Graphite.Engine.Graphics;
 using Graphite.Engine.Objects;
 using Graphite.Engine.Persistence;
-using Graphite.Game.Domain;
 using Graphite.Game.Domain.Player;
 using Graphite.Game.Scenes;
 using Graphite.Game.UI.Theming;

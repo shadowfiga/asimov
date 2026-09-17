@@ -2,7 +2,6 @@ using System.Reflection;
 using Chisel.Generated;
 using Graphite.Engine.Objects;
 using Graphite.Game.Domain.Combat;
-using Graphite.Game.Domain;
 using Graphite.Game.Domain.Player;
 using Microsoft.Xna.Framework;
 using static Graphite.Gameplay.Tests.Program;

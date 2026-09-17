@@ -3,7 +3,6 @@ using Graphite.Engine.Graphics;
 using Graphite.Engine.Objects;
 using Graphite.Game.Data;
 using Graphite.Game.Domain.Combat;
-using Graphite.Game.Domain;
 using Graphite.Game.Domain.Player;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Input;

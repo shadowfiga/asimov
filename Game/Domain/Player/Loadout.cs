@@ -1,7 +1,7 @@
 using Chisel.Generated;
 using Graphite.Engine.Persistence;
 
-namespace Graphite.Game.Domain;
+namespace Graphite.Game.Domain.Player;
 
 [SaveContract("deep-drive.loadout", Version = 1)]
 public sealed class Loadout

@@ -7,7 +7,7 @@ using Graphite.Engine.Configuration;
 using Graphite.Engine.Persistence;
 using Graphite.Game.Configuration;
 using Chisel.Generated;
-using Graphite.Game.Domain;
+using Graphite.Game.Domain.Player;
 using Graphite.Game.Sessions;
 
 namespace Graphite.Persistence.Tests;

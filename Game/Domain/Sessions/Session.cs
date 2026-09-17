@@ -1,5 +1,5 @@
 using Graphite.Engine.Persistence;
-using Graphite.Game.Domain;
+using Graphite.Game.Domain.Player;
 
 namespace Graphite.Game.Sessions;
 

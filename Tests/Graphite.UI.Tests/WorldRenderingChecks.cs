@@ -1,7 +1,6 @@
 using Graphite.Engine.Graphics;
 using Graphite.Engine.Objects;
 using Chisel.Generated;
-using Graphite.Game.Domain;
 using Graphite.Game.Domain.Player;
 using Graphite.Game.Graphics;
 using Microsoft.Xna.Framework;
