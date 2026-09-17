@@ -10,14 +10,14 @@ namespace Graphite.Game.Domain.Player;
 /// <summary>Assembles the reusable robot hierarchy once; scenes do not manage its individual parts.</summary>
 public sealed class RobotPrefab : Prefab<PlayerController>
 {
-    private readonly int _robotId;
+    private readonly int _chassisId;
     private readonly ChiselPilotId _pilotId;
     private readonly ChiselWeaponsId _weaponLeftId;
     private readonly ChiselWeaponsId _weaponRightId;
 
     public RobotPrefab(Loadout loadout) : base(loadout.ChassisId.ToString())
     {
-        _robotId = loadout.ChassisId.ToInt();
+        _chassisId = loadout.ChassisId.ToInt();
         _pilotId = loadout.PilotId;
         _weaponLeftId = loadout.WeaponLeftId;
         _weaponRightId = loadout.WeaponRightId;
@@ -28,13 +28,13 @@ public sealed class RobotPrefab : Prefab<PlayerController>
         var target = root.Transform.TransformPoint(new Vector2(0, -100));
         var bottom = root.CreateChild("Bottom");
         bottom.Transform.LocalRotation = -MathHelper.PiOver2;
-        bottom.AddComponent(new RobotPartRenderer(RobotPart.Bottom, ChiselRobots.BodyRadius[_robotId]) { Layer = 10 });
+        bottom.AddComponent(new RobotPartRenderer(RobotPart.Bottom, ChiselChassis.BodyRadius[_chassisId]) { Layer = 10 });
         var top = root.CreateChild("Top");
         var torsoAim = top.AddComponent(new AimController(target));
-        top.AddComponent(new RobotPartRenderer(RobotPart.Top, ChiselRobots.BodyRadius[_robotId]) { Layer = 30 });
-        var left = CreateWeapon(top, "LeftWeapon", -ChiselRobots.ArmSpacing[_robotId], _weaponLeftId, target);
-        var right = CreateWeapon(top, "RightWeapon", ChiselRobots.ArmSpacing[_robotId], _weaponRightId, target);
-        return root.AddComponent(new PlayerController(ChiselRobots.MoveSpeed[_robotId], _pilotId, bottom, torsoAim, left.Aim, right.Aim, left.Weapon, right.Weapon)
+        top.AddComponent(new RobotPartRenderer(RobotPart.Top, ChiselChassis.BodyRadius[_chassisId]) { Layer = 30 });
+        var left = CreateWeapon(top, "LeftWeapon", -ChiselChassis.ArmSpacing[_chassisId], _weaponLeftId, target);
+        var right = CreateWeapon(top, "RightWeapon", ChiselChassis.ArmSpacing[_chassisId], _weaponRightId, target);
+        return root.AddComponent(new PlayerController(ChiselChassis.MoveSpeed[_chassisId], _pilotId, bottom, torsoAim, left.Aim, right.Aim, left.Weapon, right.Weapon)
         {
             Controls = new PlayerControls(Vector2.Zero, target - root.Transform.WorldPosition, false)
         });

@@ -1,9 +1,9 @@
 {
   "schemaVersion": 1,
   "table": {
-    "id": "robots",
-    "name": "Robots",
-    "description": "Robot chassis definitions. Pilot and arm weapons are selected by the game loadout.",
+    "id": "chassis",
+    "name": "Chassis",
+    "description": "Chassis definitions. Pilot and arm weapons are selected by the game loadout.",
     "kind": "user",
     "isSystemTable": false,
     "lastChangeAt": "2026-09-17T19:42:24.000Z",

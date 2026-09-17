@@ -129,7 +129,7 @@ internal static class Program
         Throws<InvalidDataException>(() => serializer.Deserialize<Loadout>("null"u8));
         Throws<JsonException>(() => serializer.Deserialize<Session>("{\"currentLoadout\":{\"pilot\":\"missing\"}}"u8));
         var oldSession = serializer.Deserialize<Session>("{\"clearedSectors\":[]}"u8);
-        Check(oldSession.CurrentLoadout.ChassisId == ChiselRobotsId.STARTER_MECH
+        Check(oldSession.CurrentLoadout.ChassisId == ChiselChassisId.STARTER_MECH
             && oldSession.CurrentLoadout.PilotId == ChiselPilotId.STARTER_PILOT,
             "Sessions without an authored loadout retain the explicit starter defaults");
     }

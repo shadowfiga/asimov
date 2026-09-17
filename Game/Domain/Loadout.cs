@@ -7,7 +7,7 @@ namespace Graphite.Game.Domain;
 public sealed class Loadout
 {
     [SaveMember("chassis")]
-    public ChiselRobotsId ChassisId = ChiselRobotsId.STARTER_MECH;
+    public ChiselChassisId ChassisId = ChiselChassisId.STARTER_MECH;
 
     [SaveMember("pilot")]
     public ChiselPilotId PilotId = ChiselPilotId.STARTER_PILOT;

@@ -6,17 +6,17 @@ using Microsoft.Xna.Framework;
 namespace Chisel.Generated
 {
     [System.Runtime.Serialization.DataContract]
-    public enum ChiselRobotsId
+    public enum ChiselChassisId
     {
         Invalid = -1,
         [System.Runtime.Serialization.EnumMember(Value = "STARTER_MECH")]
         STARTER_MECH = 0
     }
 
-    public static class ChiselRobots
+    public static class ChiselChassis
     {
-        public const string TableId = "robots";
-        public const string TableName = "Robots";
+        public const string TableId = "chassis";
+        public const string TableName = "Chassis";
         public const int Count = 1;
         public static readonly string[] Slugs = new string[] { "STARTER_MECH" };
         public static readonly float[] MoveSpeed = new float[] { 280.0f };
