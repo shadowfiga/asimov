@@ -10,21 +10,21 @@ using Microsoft.Xna.Framework.Graphics;
 
 namespace Graphite.UI.Tests;
 
-internal static class RobotRenderChecks
+internal static class MechRenderChecks
 {
     internal static void Run(GraphicsDevice device, string output)
     {
         var originalScale = Preferences.Get(RuntimePreferences.UiScale);
         using var renderer = new WorldRenderer2D(device);
         using var world = new GameWorld();
-        var robot = world.Spawn(new RobotPrefab(new Loadout()), Vector2.Zero);
-        world.Spawn(new SandboxPresentationPrefab(robot));
-        robot.Controls = new PlayerControls(Vector2.UnitX, new Vector2(350, -210), true);
+        var mech = world.Spawn(new MechPrefab(new Loadout()), Vector2.Zero);
+        world.Spawn(new SandboxPresentationPrefab(mech));
+        mech.Controls = new PlayerControls(Vector2.UnitX, new Vector2(350, -210), true);
         for (var frame = 0; frame < 50; frame++)
         {
             world.Update(1f / 60);
         }
-        var camera = new Camera2D { Position = robot.Position };
+        var camera = new Camera2D { Position = mech.Position };
         try
         {
             StaticLegPose(device, renderer);
@@ -45,12 +45,12 @@ internal static class RobotRenderChecks
                     target.GetData(pixels);
                     if (baseline.Length > 0)
                     {
-                        Program.Check(pixels.SequenceEqual(baseline), "Robot, world, projectiles and reticle do not scale with UI preferences");
+                        Program.Check(pixels.SequenceEqual(baseline), "Mech, world, projectiles and reticle do not scale with UI preferences");
                     }
                     baseline = pixels;
-                    Program.Check(pixels.Count(pixel => pixel.R > 180) > 100, "Prototype visibly renders robot, aim reticle and shots");
+                    Program.Check(pixels.Count(pixel => pixel.R > 180) > 100, "Prototype visibly renders mech, aim reticle and shots");
                 }
-                using var stream = File.Create(Path.Combine(output, $"robot-prototype-{size.X}.png"));
+                using var stream = File.Create(Path.Combine(output, $"mech-prototype-{size.X}.png"));
                 target.SaveAsPng(stream, size.X, size.Y);
             }
         }
@@ -66,10 +66,10 @@ internal static class RobotRenderChecks
     {
         using var movingWorld = new GameWorld();
         using var idleWorld = new GameWorld();
-        var moving = movingWorld.Spawn(new RobotPrefab(new Loadout()), new Vector2(0, 28));
+        var moving = movingWorld.Spawn(new MechPrefab(new Loadout()), new Vector2(0, 28));
         moving.Controls = new PlayerControls(-Vector2.UnitY, new Vector2(0, -100), false);
         movingWorld.Update(.1f);
-        var idle = idleWorld.Spawn(new RobotPrefab(new Loadout()), moving.Position);
+        var idle = idleWorld.Spawn(new MechPrefab(new Loadout()), moving.Position);
         var camera = new Camera2D { Position = moving.Position };
         camera.SetViewport(new Point(256, 256), 2);
         using var target = new RenderTarget2D(device, 256, 256);
@@ -84,7 +84,7 @@ internal static class RobotRenderChecks
             target.GetData(pixels);
             if (baseline.Length > 0)
             {
-                Program.Check(pixels.SequenceEqual(baseline), "Moving and idle robots keep the same static leg pose at matching position and facing");
+                Program.Check(pixels.SequenceEqual(baseline), "Moving and idle mechs keep the same static leg pose at matching position and facing");
             }
             baseline = pixels;
         }

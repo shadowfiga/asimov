@@ -13,7 +13,7 @@ internal static class PrefabChecks
     internal static void Run()
     {
         Construction();
-        IndependentRobots();
+        IndependentMechs();
         Rollback();
         InvalidResults();
         FailureDuringComponentInitialization();
@@ -42,7 +42,7 @@ internal static class PrefabChecks
         Check(result.Updates == 1, "A completed prefab uses the existing world scheduler");
         Check(typeof(GameWorld).GetMethod("Create", BindingFlags.Instance | BindingFlags.Public) is null
             && typeof(GameObject).GetConstructors().Length == 0, "Raw root construction is not a public API");
-        Check(typeof(PlayerController).GetProperty("Definition") is null, "PlayerController no longer retains the entire robot definition");
+        Check(typeof(PlayerController).GetProperty("Definition") is null, "PlayerController no longer retains the entire mech definition");
         Throws<ArgumentNullException>(() => world.Spawn<Probe>(null!));
         Throws<ArgumentOutOfRangeException>(() => world.Spawn(prefab, new Vector2(float.NaN, 0)));
         Throws<ArgumentOutOfRangeException>(() => world.Spawn(prefab, rotation: float.PositiveInfinity));
@@ -52,10 +52,10 @@ internal static class PrefabChecks
         Throws<ObjectDisposedException>(() => world.Spawn(new ObjectPrefab("Too late")));
     }
 
-    private static void IndependentRobots()
+    private static void IndependentMechs()
     {
         using var world = new GameWorld();
-        var prefab = new RobotPrefab(new Loadout());
+        var prefab = new MechPrefab(new Loadout());
         var first = world.Spawn(prefab, new Vector2(100, 200));
         var second = world.Spawn(prefab, new Vector2(-300, 400));
         Check(first.Owner != second.Owner && first.Bottom != second.Bottom && first.Top != second.Top

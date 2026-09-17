@@ -4,11 +4,11 @@
 
 ```csharp
 var player = Objects.Spawn(
-    new RobotPrefab(SessionManager.ActiveSession.CurrentLoadout),
+    new MechPrefab(SessionManager.ActiveSession.CurrentLoadout),
     new Vector2(100, 200));
 ```
 
-The game-specific `RobotPrefab` assembles the complete robot and returns its `PlayerController`. It accepts the game's `Loadout` and captures the selected chassis, pilot, and separate arm weapon IDs. It reads chassis/weapon columns directly; movement speed and pilot identity are passed to the controller. Pilot identity is cosmetic and does not modify combat stats. Other entities can attach the same game `WeaponComponent` with a Chisel weapon ID without player input: set `TriggerHeld`, and optionally add an `AimController` with a world-space `Target`. Chisel remains the definition authority; components reference Chisel IDs instead of copying export data into wrapper definitions. Runtime objects, textures and components are not save records.
+The game-specific `MechPrefab` assembles the complete mech and returns its `PlayerController`. It accepts the game's `Loadout` and captures the selected chassis, pilot, and separate arm weapon IDs. It reads chassis/weapon columns directly; movement speed and pilot identity are passed to the controller. Pilot identity is cosmetic and does not modify combat stats. Other entities can attach the same game `WeaponComponent` with a Chisel weapon ID without player input: set `TriggerHeld`, and optionally add an `AimController` with a world-space `Target`. Chisel remains the definition authority; components reference Chisel IDs instead of copying export data into wrapper definitions. Runtime objects, textures and components are not save records.
 
 ## Writing a prefab
 
@@ -42,7 +42,7 @@ An external assembly overrides `Build` as `protected override` instead. Scenes/c
 - `SetParent(parent)` keeps local values. `SetParent(parent, keepWorldTransform: true)` preserves world pose where a local position/rotation/scale can represent it. It rejects shear/reflection before changing ownership. Full affine parent transforms still render correctly; this restriction applies only to decomposing a preserved world pose during reparenting.
 - `SetParent(null)` makes a scene root. Cycles, destroyed parents, and cross-world parenting fail immediately.
 - Parents own children. `Destroy()` recursively removes children and components once. `Active = false` suppresses the entire subtree without destroying it; `Component.Enabled = false` suppresses only that component.
-- In-flight bullets belong to scene roots. They continue moving when the robot turns, is disabled, or is destroyed, and remove their own object when their lifetime expires.
+- In-flight bullets belong to scene roots. They continue moving when the mech turns, is disabled, or is destroyed, and remove their own object when their lifetime expires.
 
 ## Component lifecycle
 
@@ -72,4 +72,4 @@ var animator = bottom.AddComponent(new FrameAnimator(sprite, new[]
 }));
 ```
 
-Attach the sprite before its animator on the same object. Frames must fit the texture and have positive durations. Playback loops by default; `Loop = false` holds the last frame. `Playing = false` pauses, and `Restart()` starts from frame zero. No robot animations or new art are enabled by this infrastructure.
+Attach the sprite before its animator on the same object. Frames must fit the texture and have positive durations. Playback loops by default; `Loop = false` holds the last frame. `Playing = false` pauses, and `Restart()` starts from frame zero. No mech animations or new art are enabled by this infrastructure.

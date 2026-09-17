@@ -21,7 +21,7 @@ internal static class ObjectChecks
     private static void Transforms()
     {
         using var world = new GameWorld();
-        var root = world.Spawn(new ObjectPrefab("Robot"));
+        var root = world.Spawn(new ObjectPrefab("Mech"));
         root.Transform.LocalPosition = new Vector2(10, 20);
         root.Transform.LocalRotation = MathHelper.PiOver2;
         root.Transform.LocalScale = new Vector2(2, 3);
@@ -156,8 +156,8 @@ internal static class ObjectChecks
     private static void Weapons()
     {
         using var world = new GameWorld();
-        var player = world.Spawn(new RobotPrefab(new Loadout()), Vector2.Zero);
-        Check(player.Owner.Children.Select(value => value.Name).SequenceEqual(new[] { "Bottom", "Top" }), "Robot has bottom and top children");
+        var player = world.Spawn(new MechPrefab(new Loadout()), Vector2.Zero);
+        Check(player.Owner.Children.Select(value => value.Name).SequenceEqual(new[] { "Bottom", "Top" }), "Mech has bottom and top children");
         Check(player.Top.Children.Select(value => value.Name).SequenceEqual(new[] { "LeftWeapon", "RightWeapon" }), "Weapons are children of the torso");
         Check(player.LeftWeapon.Muzzle.Owner.Parent == player.LeftWeapon.Owner, "Each weapon owns a muzzle child");
         player.Controls = new PlayerControls(Vector2.UnitX, new Vector2(400, -100), true);
@@ -168,9 +168,9 @@ internal static class ObjectChecks
         var position = shot.Position;
         player.Transform.WorldPosition += new Vector2(500, 300);
         player.Top.Transform.LocalRotation += 2;
-        Near(Vector2.Distance(shot.Position, position), 0, "Moving and turning the robot does not drag its shots");
+        Near(Vector2.Distance(shot.Position, position), 0, "Moving and turning the mech does not drag its shots");
         player.Owner.Destroy();
-        Check(player.LeftWeapon.IsDisposed && !shot.IsDisposed, "Removing the robot destroys its weapons but not in-flight bullets");
+        Check(player.LeftWeapon.IsDisposed && !shot.IsDisposed, "Removing the mech destroys its weapons but not in-flight bullets");
         world.Update(.1f);
         Near(Vector2.Distance(shot.Position, position + shot.Velocity * .1f), 0, "Detached shots keep simulating after the shooter is gone");
         world.Update(2);

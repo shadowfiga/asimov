@@ -2,20 +2,19 @@ using Graphite.Engine.Objects;
 using Chisel.Generated;
 using Graphite.Game.Data;
 using Graphite.Game.Domain.Combat;
-using Graphite.Game.Graphics;
 using Microsoft.Xna.Framework;
 
 namespace Graphite.Game.Domain.Player;
 
-/// <summary>Assembles the reusable robot hierarchy once; scenes do not manage its individual parts.</summary>
-public sealed class RobotPrefab : Prefab<PlayerController>
+/// <summary>Assembles the reusable mech hierarchy once; scenes do not manage its individual parts.</summary>
+public sealed class MechPrefab : Prefab<PlayerController>
 {
     private readonly int _chassisId;
     private readonly ChiselPilotId _pilotId;
     private readonly ChiselWeaponsId _weaponLeftId;
     private readonly ChiselWeaponsId _weaponRightId;
 
-    public RobotPrefab(Loadout loadout) : base(loadout.ChassisId.ToString())
+    public MechPrefab(Loadout loadout) : base(loadout.ChassisId.ToString())
     {
         _chassisId = loadout.ChassisId.ToInt();
         _pilotId = loadout.PilotId;
@@ -28,10 +27,10 @@ public sealed class RobotPrefab : Prefab<PlayerController>
         var target = root.Transform.TransformPoint(new Vector2(0, -100));
         var bottom = root.CreateChild("Bottom");
         bottom.Transform.LocalRotation = -MathHelper.PiOver2;
-        bottom.AddComponent(new RobotPartRenderer(RobotPart.Bottom, ChiselChassis.BodyRadius[_chassisId]) { Layer = 10 });
+        bottom.AddComponent(new MechPartRenderer(MechPart.Bottom, ChiselChassis.BodyRadius[_chassisId]) { Layer = 10 });
         var top = root.CreateChild("Top");
         var torsoAim = top.AddComponent(new AimController(target));
-        top.AddComponent(new RobotPartRenderer(RobotPart.Top, ChiselChassis.BodyRadius[_chassisId]) { Layer = 30 });
+        top.AddComponent(new MechPartRenderer(MechPart.Top, ChiselChassis.BodyRadius[_chassisId]) { Layer = 30 });
         var left = CreateWeapon(top, "LeftWeapon", -ChiselChassis.ArmSpacing[_chassisId], _weaponLeftId, target);
         var right = CreateWeapon(top, "RightWeapon", ChiselChassis.ArmSpacing[_chassisId], _weaponRightId, target);
         return root.AddComponent(new PlayerController(ChiselChassis.MoveSpeed[_chassisId], _pilotId, bottom, torsoAim, left.Aim, right.Aim, left.Weapon, right.Weapon)
@@ -49,7 +48,7 @@ public sealed class RobotPrefab : Prefab<PlayerController>
         var muzzle = gun.CreateChild("Muzzle");
         muzzle.Transform.LocalPosition = new Vector2(ChiselWeapons.BarrelLength[weaponId.ToInt()], 0);
         var weapon = gun.AddComponent(new WeaponComponent(weaponId, muzzle.Transform));
-        gun.AddComponent(new RobotPartRenderer(RobotPart.Weapon, ChiselWeapons.BarrelLength[weaponId.ToInt()]) { Layer = 20 });
+        gun.AddComponent(new MechPartRenderer(MechPart.Weapon, ChiselWeapons.BarrelLength[weaponId.ToInt()]) { Layer = 20 });
         return (aim, weapon);
     }
 }

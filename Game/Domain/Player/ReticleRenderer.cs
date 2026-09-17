@@ -1,9 +1,8 @@
 using Graphite.Engine.Graphics;
-using Graphite.Game.Domain.Player;
 using Graphite.Game.UI.Theming;
 using Microsoft.Xna.Framework;
 
-namespace Graphite.Game.Graphics;
+namespace Graphite.Game.Domain.Player;
 
 public sealed class ReticleRenderer : RenderComponent
 {

@@ -18,7 +18,7 @@
 
 ## Elevator Pitch
 
-**GIRLS & MINING is a top-down mining-defense game where you control an industrial robot, establish automated mining operations, fortify them with turrets and support structures, and extract as much ore as possible while increasingly massive alien swarms attack the operation.**
+**GIRLS & MINING is a top-down mining-defense game where you control an industrial mech, establish automated mining operations, fortify them with turrets and support structures, and extract as much ore as possible while increasingly massive alien swarms attack the operation.**
 
 Mining faster makes you richer.
 
@@ -78,7 +78,7 @@ Expansion improves income but stretches the defensive perimeter.
 
 Mining activity attracts increasingly large alien populations.
 
-The player constructs automated defenses while personally intervening with the robot.
+The player constructs automated defenses while personally intervening with the mech.
 
 ---
 
@@ -363,13 +363,13 @@ The core loop is:
 
 ---
 
-# 10. Player Robot
+# 10. Player Mech
 
 The player directly controls **Miner-01**.
 
 Miner-01 is the industrial mech; its human pilot is represented through the portrait direction in Section 5. Pilot presentation does not change the chassis or its abilities.
 
-The robot gives the player something active to do while the base operates automatically.
+The mech gives the player something active to do while the base operates automatically.
 
 ## Core actions
 
@@ -385,7 +385,7 @@ No enormous weapon inventory.
 
 ### Mining
 
-The robot can manually mine designated resource deposits early in a run.
+The mech can manually mine designated resource deposits early in a run.
 
 ### Building
 
@@ -393,11 +393,11 @@ Approach an available hardpoint and choose a structure.
 
 ### Repairing
 
-The robot can repair damaged structures directly.
+The mech can repair damaged structures directly.
 
 ---
 
-# 11. Robot progression during a run
+# 11. Mech progression during a run
 
 Run upgrades can improve:
 
@@ -408,7 +408,7 @@ Run upgrades can improve:
 * survivability;
 * utility.
 
-The robot should begin useful but not capable of replacing an entire defensive network.
+The mech should begin useful but not capable of replacing an entire defensive network.
 
 Its role is:
 
@@ -416,7 +416,7 @@ Its role is:
 
 Turrets hold territory.
 
-The robot fixes whatever is going wrong.
+The mech fixes whatever is going wrong.
 
 ---
 
@@ -515,7 +515,7 @@ Essential against dense groups.
 
 ## Repair Station
 
-Automatically repairs nearby infrastructure and can support the player robot.
+Automatically repairs nearby infrastructure and can support the player mech.
 
 ---
 
@@ -815,7 +815,7 @@ Extraction speed, deposit efficiency, scanning, automated handling.
 
 Turret damage, AoE, range, barricades, repairs.
 
-### Robot
+### Mech
 
 Weapon, mining tool, movement, armor, repair capability.
 
@@ -906,7 +906,7 @@ Better starting mining capability.
 
 Stronger initial base/turrets.
 
-### Robot
+### Mech
 
 Permanent chassis improvements.
 
@@ -934,7 +934,7 @@ Core durability.
 Basic defenses begin with an improvement.
 
 **Improved Chassis**
-Robot durability.
+Mech durability.
 
 **Emergency Stores**
 Begin each mission with additional Ore.
@@ -964,9 +964,9 @@ The player returns to the Command Center and may immediately purchase improvemen
 
 ---
 
-# 30. Robot Destruction
+# 30. Mech Destruction
 
-Robot death does **not** immediately end the mission.
+Mech death does **not** immediately end the mission.
 
 Miner-01 becomes disabled and is reconstructed by the Outpost after a short delay.
 
@@ -976,7 +976,7 @@ During this period:
 * defenses operate automatically;
 * repair capacity is reduced.
 
-This makes robot death meaningful without abruptly ending a strong run.
+This makes mech death meaningful without abruptly ending a strong run.
 
 The Core remains the true fail condition.
 
@@ -1154,7 +1154,7 @@ Autosave:
 
 # 38. Controls
 
-## Robot
+## Mech
 
 **WASD** — movement
 **Mouse** — aiming
@@ -1289,7 +1289,7 @@ For 1.0:
 | ------------------------ | ---------------------------: |
 | Sectors                  |                        **6** |
 | Main environments        | **1 modular kit + variants** |
-| Player robot             |                        **1** |
+| Player mech              |                        **1** |
 | Player primary weapons   |     **1 core weapon family** |
 | Buildable structures     |                        **5** |
 | Enemy archetypes         |                        **5** |
@@ -1339,7 +1339,7 @@ The first playable prototype needs only:
 
 **1 map**
 
-**1 robot**
+**1 mech**
 
 **1 ore deposit**
 
@@ -1430,7 +1430,7 @@ The world is:
 
 The progression fantasy is:
 
-> One robot and one drill
+> One mech and one drill
 > → a mining operation
 > → a fortified industrial network
 > → a war machine

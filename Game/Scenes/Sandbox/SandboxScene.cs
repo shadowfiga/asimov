@@ -3,7 +3,6 @@ using Graphite.Engine.Audio;
 using Graphite.Engine.Graphics;
 using Graphite.Game.Audio;
 using Graphite.Game.Domain.Player;
-using Graphite.Game.Graphics;
 using Graphite.Game.Sessions;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Input;
@@ -26,7 +25,7 @@ public sealed class SandboxScene : Scene
         _ = session.CurrentRun;
         var loadout = session.CurrentLoadout;
         Objects.MaxDeltaTime = .1f;
-        _player = Objects.Spawn(new RobotPrefab(loadout), Vector2.Zero);
+        _player = Objects.Spawn(new MechPrefab(loadout), Vector2.Zero);
         _reticle = Objects.Spawn(new SandboxPresentationPrefab(_player));
         game.IsMouseVisible = false;
         RefreshCamera();

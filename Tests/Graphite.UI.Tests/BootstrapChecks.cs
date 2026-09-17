@@ -199,8 +199,8 @@ internal static class BootstrapChecks
             device.SetRenderTarget(null);
             var pixels = new Color[target.Width * target.Height];
             target.GetData(pixels);
-            Program.Check(pixels.Count(pixel => pixel.R > 180) > 100, "Play draws the robot as scene content with no UI hosts");
-            using var stream = File.Create(Path.Combine(output, "session-robot.png"));
+            Program.Check(pixels.Count(pixel => pixel.R > 180) > 100, "Play draws the mech as scene content with no UI hosts");
+            using var stream = File.Create(Path.Combine(output, "session-mech.png"));
             target.SaveAsPng(stream, target.Width, target.Height);
         }
         SceneManager.Load<MainMenuScene>();

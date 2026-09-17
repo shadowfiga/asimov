@@ -2,7 +2,6 @@ using Graphite.Engine.Graphics;
 using Graphite.Engine.Objects;
 using Chisel.Generated;
 using Graphite.Game.Domain.Player;
-using Graphite.Game.Graphics;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 
@@ -87,7 +86,7 @@ internal static class WorldRenderingChecks
         using var renderer = new WorldRenderer2D(device);
         var camera = new Camera2D();
         camera.SetViewport(new Point(128, 128), 1);
-        var player = world.Spawn(new RobotPrefab(new Loadout()), Vector2.Zero);
+        var player = world.Spawn(new MechPrefab(new Loadout()), Vector2.Zero);
         world.Spawn(new ObjectPrefab("Reticle")).AddComponent(new ReticleRenderer(player));
         player.Owner.Destroy();
         var rejected = false;

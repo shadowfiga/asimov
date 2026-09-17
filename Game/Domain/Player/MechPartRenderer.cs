@@ -2,9 +2,9 @@ using Graphite.Engine.Graphics;
 using Graphite.Game.UI.Theming;
 using Microsoft.Xna.Framework;
 
-namespace Graphite.Game.Graphics;
+namespace Graphite.Game.Domain.Player;
 
-public enum RobotPart
+public enum MechPart
 {
     Bottom,
     Top,
@@ -12,11 +12,11 @@ public enum RobotPart
 }
 
 /// <summary>Static local-space placeholder art. Replace with SpriteRenderer when art is ready.</summary>
-public sealed class RobotPartRenderer : RenderComponent
+public sealed class MechPartRenderer : RenderComponent
 {
-    private readonly RobotPart _part;
+    private readonly MechPart _part;
     private readonly float _size;
-    public RobotPartRenderer(RobotPart part, float size)
+    public MechPartRenderer(MechPart part, float size)
     {
         _part = part;
         _size = size;
@@ -26,7 +26,7 @@ public sealed class RobotPartRenderer : RenderComponent
         var theme = GameThemes.DeepDrive;
         switch (_part)
         {
-            case RobotPart.Bottom:
+            case MechPart.Bottom:
                 for (var sign = -1; sign <= 1; sign += 2)
                 {
                     var foot = new Vector2(-_size * .25f, _size * .65f * sign);
@@ -35,19 +35,19 @@ public sealed class RobotPartRenderer : RenderComponent
                 }
                 context.Box(Vector2.Zero, new Vector2(_size * .8f, _size * 1.8f), theme.Border);
                 break;
-            case RobotPart.Top:
+            case MechPart.Top:
                 context.Box(Vector2.Zero, new Vector2(_size * 1.6f, _size * 1.8f), theme.SecondaryText);
                 context.Box(Vector2.Zero, new Vector2(_size * 1.35f, _size * 1.5f), theme.ControlSurface);
                 context.Box(new Vector2(_size * .45f, 0), new Vector2(_size * .45f, _size * 1.1f), theme.PrimaryText);
                 context.Box(new Vector2(_size * .7f, 0), new Vector2(_size * .15f, _size * .65f), theme.Selection);
                 break;
-            case RobotPart.Weapon:
+            case MechPart.Weapon:
                 context.Box(Vector2.Zero, new Vector2(17, 16), theme.SecondaryText);
                 context.Line(Vector2.Zero, new Vector2(_size, 0), 9, theme.Border);
                 context.Line(new Vector2(5, 0), new Vector2(_size, 0), 4, theme.SecondaryText);
                 break;
             default:
-                throw new InvalidOperationException("Unknown robot part.");
+                throw new InvalidOperationException("Unknown mech part.");
         }
     }
 }

@@ -83,7 +83,7 @@ internal sealed class GraphicsChecks : Microsoft.Xna.Framework.Game
         DisplayChecks();
         SettingsDialogChecks();
         BootstrapChecks.Run(GraphicsDevice, _output);
-        RobotRenderChecks.Run(GraphicsDevice, _output);
+        MechRenderChecks.Run(GraphicsDevice, _output);
         WorldRenderingChecks.Run(GraphicsDevice);
         var hostCount = Ui.HostCount;
         try
