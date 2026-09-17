@@ -11,8 +11,8 @@ using Microsoft.Xna.Framework.Input;
 
 namespace Graphite.Game.Scenes;
 
-/// <summary>First top-down movement/aim/fire prototype. Game behavior stays in PlayerController.</summary>
-public sealed class SessionScene : Scene
+/// <summary>Sandbox for the top-down movement/aim/fire prototype. Game behavior stays in PlayerController.</summary>
+public sealed class SandboxScene : Scene
 {
     private readonly PlayerInput _input = new();
     private PlayerController _player = null!;

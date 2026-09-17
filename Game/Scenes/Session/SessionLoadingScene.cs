@@ -18,6 +18,6 @@ public sealed class SessionLoadingScene : LoadingScene
     {
         // Publish only after preparation succeeds; scene code can use the fail-fast non-null getter.
         SessionManager.ActiveSession = _session;
-        SceneManager.Load<SessionScene>();
+        SceneManager.Load<SandboxScene>();
     }
 }
