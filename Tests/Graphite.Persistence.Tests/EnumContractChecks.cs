@@ -45,11 +45,11 @@ internal static class EnumContractChecks
 
     internal static void GeneratedIds()
     {
+        Check(ChiselPilotIds.STARTER_PILOT == 0 && ChiselPilot.Slugs[ChiselPilotIds.STARTER_PILOT] == "STARTER_PILOT",
+            "Generated table IDs are named integer constants that index their table directly");
+        Check(ChiselWeaponsIds.AUTOCANNON == 0 && ChiselWeaponsIds.Invalid == -1,
+            "Generated table ID constants expose zero-based rows and an invalid sentinel");
         var serializer = new SaveSerializer();
-        Check(Encoding.UTF8.GetString(serializer.Serialize(ChiselPilotId.STARTER_PILOT)) == "\"STARTER_PILOT\"",
-            "Generated IDs serialize directly without a game-class converter");
-        var ids = new[] { ChiselWeaponsId.AUTOCANNON, ChiselWeaponsId.AUTOCANNON };
-        Check(serializer.Deserialize<ChiselWeaponsId[]>(serializer.Serialize(ids)).SequenceEqual(ids), "Generated ID arrays round trip automatically");
         Throws<JsonException>(() => serializer.Serialize(ChiselAssetId.Invalid));
         Throws<JsonException>(() => serializer.Serialize(ChiselLocalizationId.Invalid));
     }

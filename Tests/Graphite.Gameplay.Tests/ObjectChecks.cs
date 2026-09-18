@@ -1,6 +1,5 @@
 using Chisel.Generated;
 using Graphite.Engine.Objects;
-using Graphite.Game.Data;
 using Graphite.Game.Domain.Combat;
 using Graphite.Game.Domain.Player;
 using Microsoft.Xna.Framework;
@@ -202,12 +201,12 @@ internal static class ObjectChecks
         foreach (var rate in new[] { 4f, 8f })
         {
             var weaponId = new Loadout().WeaponLeftId;
-            WithChiselValue(ChiselWeapons.RoundsPerSecond, weaponId.ToInt(), rate, () =>
+            WithChiselValue(ChiselWeapons.RoundsPerSecond, weaponId, rate, () =>
             {
                 using var gunWorld = new GameWorld();
                 var gun = gunWorld.Spawn(new ObjectPrefab("Independent gun"));
                 var muzzle = gun.CreateChild("Muzzle");
-                muzzle.Transform.LocalPosition = new Vector2(ChiselWeapons.BarrelLength[weaponId.ToInt()], 0);
+                muzzle.Transform.LocalPosition = new Vector2(ChiselWeapons.BarrelLength[weaponId], 0);
                 gun.AddComponent(new WeaponComponent(weaponId, muzzle.Transform) { TriggerHeld = true });
                 gunWorld.Update(1);
                 Check(gunWorld.GetComponents<ProjectileComponent>().Count() == rate,

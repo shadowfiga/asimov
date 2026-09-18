@@ -5,7 +5,6 @@ using Graphite.Engine.Audio;
 using Graphite.Engine.Graphics;
 using Graphite.Engine.Scenes;
 using Graphite.Engine.Objects;
-using Graphite.Game.Data;
 using Graphite.Game.Domain.Combat;
 using Graphite.Game.Scenes;
 using Graphite.Game.Sessions;
@@ -206,9 +205,9 @@ internal static class BootstrapChecks
         Program.Check(run.TrySpendOre(20) && hud.OreAmount.Text == "4,800", "Spending Ore refreshes the HUD");
         Program.Check(!run.TrySpendOre(4801) && hud.OreAmount.Text == "4,800", "Unaffordable purchases do not change the HUD");
         run.AddOre(20);
-        run.RecordKill(ChiselEnemiesId.SWARMER);
+        run.RecordKill(ChiselEnemiesIds.SWARMER);
         SceneManager.Update(0);
-        Program.Check(run.Kills == 1 && run.XP == ChiselEnemies.Experience[ChiselEnemiesId.SWARMER.ToInt()] && run.Ore == 4820,
+        Program.Check(run.Kills == 1 && run.XP == ChiselEnemies.Experience[ChiselEnemiesIds.SWARMER] && run.Ore == 4820,
             "Enemy reward entry point advances XP without paying an Ore bounty");
         Program.Check(root.GetChildren(true).OfType<Label>().Any(label => label.Text == $"{run.XP} XP"),
             "The sandbox refreshes the XP readout from the run each frame");

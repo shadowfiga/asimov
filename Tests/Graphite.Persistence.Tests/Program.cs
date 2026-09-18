@@ -102,13 +102,13 @@ internal static class Program
             && json["pilot"]!.GetValue<string>() == "STARTER_PILOT"
             && json["weaponLeft"]!.GetValue<string>() == "AUTOCANNON"
             && json["weaponRight"]!.GetValue<string>() == "AUTOCANNON",
-            "Loadouts save stable Chisel slugs under the four explicit save keys, not dense enum indexes");
+            "Loadouts save stable Chisel slugs under the four explicit save keys, not dense integer indexes");
         var copy = serializer.Deserialize<Loadout>(bytes);
         Check(copy.ChassisId == source.ChassisId && copy.PilotId == source.PilotId
             && copy.WeaponLeftId == source.WeaponLeftId && copy.WeaponRightId == source.WeaponRightId,
-            "All typed loadout selections round trip through stable slugs");
-        copy.WeaponLeftId = ChiselWeaponsId.Invalid;
-        Check(source.WeaponLeftId == ChiselWeaponsId.AUTOCANNON && copy.WeaponRightId == ChiselWeaponsId.AUTOCANNON,
+            "All integer loadout selections round trip through stable slugs");
+        copy.WeaponLeftId = ChiselWeaponsIds.Invalid;
+        Check(source.WeaponLeftId == ChiselWeaponsIds.AUTOCANNON && copy.WeaponRightId == ChiselWeaponsIds.AUTOCANNON,
             "Loaded loadouts and their two arm selections are independent");
         Throws<JsonException>(() => serializer.Serialize(copy));
         foreach (var key in new[] { "chassis", "pilot", "weaponLeft", "weaponRight" })
@@ -129,8 +129,8 @@ internal static class Program
         Throws<InvalidDataException>(() => serializer.Deserialize<Loadout>("null"u8));
         Throws<JsonException>(() => serializer.Deserialize<Session>("{\"currentLoadout\":{\"pilot\":\"missing\"}}"u8));
         var oldSession = serializer.Deserialize<Session>("{\"clearedSectors\":[]}"u8);
-        Check(oldSession.CurrentLoadout.ChassisId == ChiselChassisId.STARTER_MECH
-            && oldSession.CurrentLoadout.PilotId == ChiselPilotId.STARTER_PILOT,
+        Check(oldSession.CurrentLoadout.ChassisId == ChiselChassisIds.STARTER_MECH
+            && oldSession.CurrentLoadout.PilotId == ChiselPilotIds.STARTER_PILOT,
             "Sessions without an authored loadout retain the explicit starter defaults");
     }
 

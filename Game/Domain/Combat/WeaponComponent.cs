@@ -1,6 +1,5 @@
 using Chisel.Generated;
 using Graphite.Engine.Objects;
-using Graphite.Game.Data;
 
 namespace Graphite.Game.Domain.Combat;
 
@@ -8,7 +7,7 @@ namespace Graphite.Game.Domain.Combat;
 public sealed class WeaponComponent : Component
 {
     private double _cooldown;
-    public ChiselWeaponsId WeaponId
+    public int WeaponId
     {
         get;
     }
@@ -22,10 +21,10 @@ public sealed class WeaponComponent : Component
     }
     public override int UpdateOrder => 200;
 
-    public WeaponComponent(ChiselWeaponsId weaponId, Transform2D muzzle)
+    public WeaponComponent(int weaponId, Transform2D muzzle)
     {
-        var roundsPerSecond = ChiselWeapons.RoundsPerSecond[weaponId.ToInt()];
-        var projectileLifetime = ChiselWeapons.ProjectileLifetime[weaponId.ToInt()];
+        var roundsPerSecond = ChiselWeapons.RoundsPerSecond[weaponId];
+        var projectileLifetime = ChiselWeapons.ProjectileLifetime[weaponId];
         // Non-positive cadence would make the firing loop stop advancing.
         if (!float.IsFinite(roundsPerSecond) || roundsPerSecond <= 0)
         {
@@ -53,8 +52,8 @@ public sealed class WeaponComponent : Component
         if (TriggerHeld)
         {
             ObjectDisposedException.ThrowIf(Muzzle.Owner.IsDestroyed, Muzzle.Owner);
-            var interval = 1d / ChiselWeapons.RoundsPerSecond[WeaponId.ToInt()];
-            var projectileLifetime = ChiselWeapons.ProjectileLifetime[WeaponId.ToInt()];
+            var interval = 1d / ChiselWeapons.RoundsPerSecond[WeaponId];
+            var projectileLifetime = ChiselWeapons.ProjectileLifetime[WeaponId];
             if (nextShot < dt - projectileLifetime)
             {
                 nextShot += Math.Ceiling((dt - projectileLifetime - nextShot) / interval) * interval;
@@ -70,16 +69,16 @@ public sealed class WeaponComponent : Component
 
     private void Spawn(float age)
     {
-        var projectileLifetime = ChiselWeapons.ProjectileLifetime[WeaponId.ToInt()];
+        var projectileLifetime = ChiselWeapons.ProjectileLifetime[WeaponId];
         if (age >= projectileLifetime)
         {
             return;
         }
-        var velocity = Muzzle.Forward * ChiselWeapons.ProjectileSpeed[WeaponId.ToInt()];
+        var velocity = Muzzle.Forward * ChiselWeapons.ProjectileSpeed[WeaponId];
         var origin = Muzzle.WorldPosition;
         // Scene root, deliberately not a weapon child: shots outlive and move independently of their gun.
         World.Spawn(new ProjectilePrefab(velocity, projectileLifetime - age,
-                ChiselWeapons.ProjectileDamage[WeaponId.ToInt()], origin),
+                ChiselWeapons.ProjectileDamage[WeaponId], origin),
             origin + velocity * age, Muzzle.WorldRotation);
     }
 }

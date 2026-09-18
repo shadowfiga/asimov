@@ -2,7 +2,6 @@ using Chisel.Generated;
 using System.Reflection;
 using Graphite.Engine.Graphics;
 using Graphite.Engine.Objects;
-using Graphite.Game.Data;
 using Graphite.Game.Domain.Combat;
 using Graphite.Game.Domain.Enemies;
 using Graphite.Game.Domain.Player;
@@ -16,14 +15,14 @@ namespace Graphite.Gameplay.Tests;
 internal static class Program
 {
     private static int _assertions;
-    private const ChiselChassisId ChassisId = ChiselChassisId.STARTER_MECH;
-    private const ChiselWeaponsId WeaponId = ChiselWeaponsId.AUTOCANNON;
+    private const int ChassisId = ChiselChassisIds.STARTER_MECH;
+    private const int WeaponId = ChiselWeaponsIds.AUTOCANNON;
 
     public static void Main()
     {
-        Check(ChiselChassis.MoveSpeed[ChassisId.ToInt()] == 280 && ChiselChassis.MaxHealth[ChassisId.ToInt()] == 100
-            && ChiselWeapons.RoundsPerSecond[WeaponId.ToInt()] == 8 && ChiselWeapons.ProjectileDamage[WeaponId.ToInt()] == 1
-            && ChiselEnemies.MaxHealth[ChiselEnemiesId.SWARMER.ToInt()] == 3,
+        Check(ChiselChassis.MoveSpeed[ChassisId] == 280 && ChiselChassis.MaxHealth[ChassisId] == 100
+            && ChiselWeapons.RoundsPerSecond[WeaponId] == 8 && ChiselWeapons.ProjectileDamage[WeaponId] == 1
+            && ChiselEnemies.MaxHealth[ChiselEnemiesIds.SWARMER] == 3,
             "Actual exported chassis, weapon, and enemy columns load directly");
         ChiselIds();
         DirectChiselReferences();
@@ -45,56 +44,55 @@ internal static class Program
     private static void ChiselIds()
     {
         using var world = new GameWorld();
-        var id = ChiselChassisId.STARTER_MECH;
+        var id = ChiselChassisIds.STARTER_MECH;
         Check(ChiselChassis.TableId == "chassis" && ChiselChassis.TableName == "Chassis",
             "Chisel exports the chassis table under its canonical ID and name");
-        Check(id.ToInt() == 0, "Generated enum IDs convert to array indexes with ToInt");
-        Near(ChiselChassis.MoveSpeed[id.ToInt()], 280, "Chassis column access uses the extension inline");
-        Check(ChiselChassis.Slugs[id.ToInt()] == "STARTER_MECH", "Stable slug lookup uses the same extension");
+        Check(id == 0, "Generated integer ID constants are direct array indexes");
+        Near(ChiselChassis.MoveSpeed[id], 280, "Chassis columns accept generated IDs directly");
+        Check(ChiselChassis.Slugs[id] == "STARTER_MECH", "Stable slugs use the same direct index");
         var weapon = new Loadout().WeaponLeftId;
-        Near(ChiselWeapons.RoundsPerSecond[weapon.ToInt()], 8, "Referenced IDs use the extension without table-specific helpers");
-        Check(ChiselInputBindings.Bindings[ChiselInputBindingsId.FIRE.ToInt()].SequenceEqual(new[] { "MOUSE_BUTTON_LEFT" }),
-            "System table IDs work with the extension as well");
+        Near(ChiselWeapons.RoundsPerSecond[weapon], 8, "Referenced IDs are ordinary integers");
+        Check(ChiselInputBindings.Bindings[ChiselInputBindingsIds.FIRE].SequenceEqual(new[] { "MOUSE_BUTTON_LEFT" }),
+            "System table IDs are direct indexes as well");
         Check(ChiselChassis.MoveSpeed.GetType() == typeof(float[]) && ChiselWeapons.RoundsPerSecond.GetType() == typeof(float[]),
             "Chisel's generated array contract stays unchanged");
         foreach (var invalid in new[] { -1, -2, ChiselChassis.Count, int.MaxValue })
         {
-            Check(((ChiselChassisId)invalid).ToInt() == invalid, "ID conversion does not validate or substitute a fallback");
-            Throws<IndexOutOfRangeException>(() => world.Spawn(new MechPrefab(new Loadout { ChassisId = (ChiselChassisId)invalid })));
+            Throws<IndexOutOfRangeException>(() => world.Spawn(new MechPrefab(new Loadout { ChassisId = invalid })));
         }
         Check(world.Roots.Count == 0 && world.ComponentCount == 0, "Invalid Chisel chassis IDs fail without leaking partial prefabs");
         var gun = world.Spawn(new ObjectPrefab("Gun"));
         var muzzle = gun.CreateChild("Muzzle");
-        Throws<IndexOutOfRangeException>(() => new WeaponComponent(ChiselWeaponsId.Invalid, muzzle.Transform));
+        Throws<IndexOutOfRangeException>(() => new WeaponComponent(ChiselWeaponsIds.Invalid, muzzle.Transform));
     }
 
     private static void DirectChiselReferences()
     {
         using var world = new GameWorld();
         var prefab = new MechPrefab(new Loadout { ChassisId = ChassisId });
-        Throws<IndexOutOfRangeException>(() => world.Spawn(new MechPrefab(new Loadout { WeaponLeftId = ChiselWeaponsId.Invalid })));
-        Throws<IndexOutOfRangeException>(() => world.Spawn(new MechPrefab(new Loadout { WeaponRightId = ChiselWeaponsId.Invalid })));
+        Throws<IndexOutOfRangeException>(() => world.Spawn(new MechPrefab(new Loadout { WeaponLeftId = ChiselWeaponsIds.Invalid })));
+        Throws<IndexOutOfRangeException>(() => world.Spawn(new MechPrefab(new Loadout { WeaponRightId = ChiselWeaponsIds.Invalid })));
         Check(world.Roots.Count == 0 && world.ComponentCount == 0, "Invalid weapon references fail and roll back the mech hierarchy");
-        WithChiselValue(ChiselChassis.ArmSpacing, ChassisId.ToInt(), 42f, () =>
-            WithChiselValue(ChiselWeapons.BarrelLength, WeaponId.ToInt(), 53f, () =>
+        WithChiselValue(ChiselChassis.ArmSpacing, ChassisId, 42f, () =>
+            WithChiselValue(ChiselWeapons.BarrelLength, WeaponId, 53f, () =>
         {
             var mech = world.Spawn(prefab);
             Check(mech.LeftWeapon.WeaponId == WeaponId && mech.RightWeapon.WeaponId == WeaponId,
                 "Both mounts keep the weapon IDs selected by the loadout");
-            Check(mech.PilotId == ChiselPilotId.STARTER_PILOT, "The spawned player retains the selected pilot ID");
-            Check(mech.Health.Maximum == ChiselChassis.MaxHealth[ChassisId.ToInt()]
-                && mech.BodyRadius == ChiselChassis.BodyRadius[ChassisId.ToInt()],
+            Check(mech.PilotId == ChiselPilotIds.STARTER_PILOT, "The spawned player retains the selected pilot ID");
+            Check(mech.Health.Maximum == ChiselChassis.MaxHealth[ChassisId]
+                && mech.BodyRadius == ChiselChassis.BodyRadius[ChassisId],
                 "The mech receives authored health and contact dimensions");
-            Check(ChiselPilot.DisplayName[mech.PilotId.ToInt()] == "Starter Pilot"
-                && ChiselPilot.Portrait[mech.PilotId.ToInt()] == ChiselAssetId.Invalid,
+            Check(ChiselPilot.DisplayName[mech.PilotId] == "Starter Pilot"
+                && ChiselPilot.Portrait[mech.PilotId] == ChiselAssetId.Invalid,
                 "Pilot presentation data comes directly from Chisel and the initial portrait is intentionally unassigned");
             Near(mech.LeftWeapon.Transform.LocalPosition.Y, -42, "Left mount reads Chisel arm spacing at build time");
             Near(mech.RightWeapon.Transform.LocalPosition.Y, 42, "Right mount reads Chisel arm spacing at build time");
             Near(mech.LeftWeapon.Muzzle.LocalPosition.X, 53, "Left muzzle reads Chisel barrel length directly");
             Near(mech.RightWeapon.Muzzle.LocalPosition.X, 53, "Right muzzle reads Chisel barrel length directly");
-            WithChiselValue(ChiselWeapons.RoundsPerSecond, WeaponId.ToInt(), 4f, () =>
-                WithChiselValue(ChiselWeapons.ProjectileSpeed, WeaponId.ToInt(), 321f, () =>
-                    WithChiselValue(ChiselWeapons.ProjectileLifetime, WeaponId.ToInt(), 3f, () =>
+            WithChiselValue(ChiselWeapons.RoundsPerSecond, WeaponId, 4f, () =>
+                WithChiselValue(ChiselWeapons.ProjectileSpeed, WeaponId, 321f, () =>
+                    WithChiselValue(ChiselWeapons.ProjectileLifetime, WeaponId, 3f, () =>
             {
                 Step(mech, .5f, new PlayerControls(Vector2.Zero, Vector2.UnitX * 200, true));
                 var bullets = Projectiles(mech);
@@ -113,7 +111,7 @@ internal static class Program
         Throws<ArgumentOutOfRangeException>(() => Step(mech, .1f, new PlayerControls(new Vector2(float.NaN, 0), Vector2.UnitX, false)));
         Throws<ArgumentOutOfRangeException>(() => Step(mech, .1f, new PlayerControls(Vector2.Zero, new Vector2(float.NaN, 0), false)));
         mech.Owner.Destroy();
-        WithChiselValue(ChiselChassis.MoveSpeed, ChassisId.ToInt(), float.NaN, () =>
+        WithChiselValue(ChiselChassis.MoveSpeed, ChassisId, float.NaN, () =>
         {
             var badSpeed = world.Spawn(new MechPrefab(new Loadout { ChassisId = ChassisId }), Vector2.Zero);
             Throws<ArgumentOutOfRangeException>(() => Step(badSpeed, .1f, new PlayerControls(Vector2.UnitX, Vector2.Zero, false)));
@@ -124,19 +122,19 @@ internal static class Program
         var muzzle = gun.CreateChild("Muzzle");
         foreach (var rate in new[] { 0f, -1f, float.NaN, float.PositiveInfinity })
         {
-            WithChiselValue(ChiselWeapons.RoundsPerSecond, WeaponId.ToInt(), rate, () =>
+            WithChiselValue(ChiselWeapons.RoundsPerSecond, WeaponId, rate, () =>
                 Throws<InvalidDataException>(() => new WeaponComponent(WeaponId, muzzle.Transform)));
         }
         foreach (var lifetime in new[] { 0f, -1f, float.NaN, float.PositiveInfinity })
         {
-            WithChiselValue(ChiselWeapons.ProjectileLifetime, WeaponId.ToInt(), lifetime, () =>
+            WithChiselValue(ChiselWeapons.ProjectileLifetime, WeaponId, lifetime, () =>
                 Throws<InvalidDataException>(() => new WeaponComponent(WeaponId, muzzle.Transform)));
             Throws<ArgumentOutOfRangeException>(() => new ProjectileComponent(Vector2.UnitX, lifetime));
         }
         Throws<ArgumentOutOfRangeException>(() => new HealthComponent(0));
         Throws<ArgumentOutOfRangeException>(() => new ProjectileComponent(Vector2.UnitX, 1, 0));
-        WithChiselValue(ChiselWeapons.RoundsPerSecond, WeaponId.ToInt(), 120f, () =>
-            WithChiselValue(ChiselWeapons.ProjectileLifetime, WeaponId.ToInt(), 12f, () =>
+        WithChiselValue(ChiselWeapons.RoundsPerSecond, WeaponId, 120f, () =>
+            WithChiselValue(ChiselWeapons.ProjectileLifetime, WeaponId, 12f, () =>
         {
             var fastWeapon = gun.AddComponent(new WeaponComponent(WeaponId, muzzle.Transform) { TriggerHeld = true });
             world.Update(.12f);
@@ -161,7 +159,7 @@ internal static class Program
         foreach (var gun in new[] { mech.LeftWeapon, mech.RightWeapon })
         {
             Near(Vector2.Dot(gun.Transform.Forward, Vector2.Normalize(mech.AimPosition - gun.Transform.WorldPosition)), 1, "Each arm converges independently on the reticle");
-            Near(Vector2.Distance(gun.Muzzle.WorldPosition, gun.Transform.WorldPosition), ChiselWeapons.BarrelLength[WeaponId.ToInt()], "Muzzle uses authored barrel length");
+            Near(Vector2.Distance(gun.Muzzle.WorldPosition, gun.Transform.WorldPosition), ChiselWeapons.BarrelLength[WeaponId], "Muzzle uses authored barrel length");
         }
         Check(mech.LeftWeapon.Transform.Forward != mech.RightWeapon.Transform.Forward, "Separated arm mounts do not use parallel aiming");
         Step(mech, .1f, new PlayerControls(Vector2.Zero, new Vector2(-200, 0), false));
@@ -233,8 +231,8 @@ internal static class Program
         Step(mech, .01f, firing);
         Check(Projectiles(mech).Length == 2, "Mouse-down fires bullets from both guns immediately");
         var first = Projectiles(mech)[0];
-        Near(Vector2.Distance(first.Position, mech.LeftWeapon.Muzzle.WorldPosition), ChiselWeapons.ProjectileSpeed[WeaponId.ToInt()] * .01f, "First shot advances for its time inside the frame");
-        Check(first.Damage == ChiselWeapons.ProjectileDamage[WeaponId.ToInt()]
+        Near(Vector2.Distance(first.Position, mech.LeftWeapon.Muzzle.WorldPosition), ChiselWeapons.ProjectileSpeed[WeaponId] * .01f, "First shot advances for its time inside the frame");
+        Check(first.Damage == ChiselWeapons.ProjectileDamage[WeaponId]
             && first.PreviousPosition == mech.LeftWeapon.Muzzle.WorldPosition,
             "Shots carry authored damage and preserve their swept origin");
         Step(mech, .01f, firing with
@@ -294,35 +292,35 @@ internal static class Program
         var player = world.Spawn(new MechPrefab(new Loadout()), Vector2.Zero);
         var playerObject = world.GetGameObjectByName(MechPrefab.PlayerObjectName);
         Check(playerObject == player.Owner, "The scene can discover the spawned player by its stable object name");
-        var enemy = world.Spawn(new EnemyPrefab(ChiselEnemiesId.SWARMER), new Vector2(200, 0));
+        var enemy = world.Spawn(new EnemyPrefab(ChiselEnemiesIds.SWARMER), new Vector2(200, 0));
         Throws<InvalidOperationException>(() => world.Update(0));
         enemy.SetTarget(playerObject);
-        Check(enemy.Health.Maximum == ChiselEnemies.MaxHealth[enemy.EnemyId.ToInt()]
-            && enemy.MoveSpeed == ChiselEnemies.MoveSpeed[enemy.EnemyId.ToInt()]
-            && enemy.BodyRadius == ChiselEnemies.BodyRadius[enemy.EnemyId.ToInt()]
-            && enemy.ContactDamage == ChiselEnemies.ContactDamage[enemy.EnemyId.ToInt()]
+        Check(enemy.Health.Maximum == ChiselEnemies.MaxHealth[enemy.EnemyId]
+            && enemy.MoveSpeed == ChiselEnemies.MoveSpeed[enemy.EnemyId]
+            && enemy.BodyRadius == ChiselEnemies.BodyRadius[enemy.EnemyId]
+            && enemy.ContactDamage == ChiselEnemies.ContactDamage[enemy.EnemyId]
             && enemy.Target == playerObject,
             "The enemy prefab uses authored values and accepts its scene-assigned target");
         world.Update(.5f);
         Near(enemy.Position.X, 130, "The Swarmer pursues the player directly");
 
-        var contact = world.Spawn(new EnemyPrefab(ChiselEnemiesId.SWARMER), new Vector2(40, 0));
+        var contact = world.Spawn(new EnemyPrefab(ChiselEnemiesIds.SWARMER), new Vector2(40, 0));
         contact.SetTarget(playerObject);
         world.Update(.1f);
         Check(contact.IsDisposed && player.Health.Current == player.Health.Maximum - ChiselEnemies.ContactDamage[0],
             "Reaching the mech deals one contact hit and consumes the Swarmer");
 
-        var second = world.Spawn(new EnemyPrefab(ChiselEnemiesId.SWARMER), new Vector2(300, 0));
+        var second = world.Spawn(new EnemyPrefab(ChiselEnemiesIds.SWARMER), new Vector2(300, 0));
         second.SetTarget(playerObject);
         Check(!ReferenceEquals(enemy.Health, second.Health), "Enemy prefab instances own independent health components");
         var alternatePlayer = world.Spawn(new MechPrefab(new Loadout()), new Vector2(600, 0));
         enemy.SetTarget(alternatePlayer.Owner);
         Check(enemy.Target == alternatePlayer.Owner, "SetTarget can explicitly retarget an existing enemy");
         var roots = world.Roots.Count;
-        Throws<IndexOutOfRangeException>(() => world.Spawn(new EnemyPrefab(ChiselEnemiesId.Invalid)));
+        Throws<IndexOutOfRangeException>(() => world.Spawn(new EnemyPrefab(ChiselEnemiesIds.Invalid)));
         Check(world.Roots.Count == roots, "Invalid enemy IDs roll back without leaking a root");
 
-        var targetless = world.Spawn(new EnemyPrefab(ChiselEnemiesId.SWARMER));
+        var targetless = world.Spawn(new EnemyPrefab(ChiselEnemiesIds.SWARMER));
         var missingHealth = world.Spawn(new ObjectPrefab("Missing health"));
         Throws<InvalidOperationException>(() => targetless.SetTarget(missingHealth));
         Throws<InvalidOperationException>(() => _ = targetless.Target);
@@ -331,7 +329,7 @@ internal static class Program
         Throws<ObjectDisposedException>(() => targetless.SetTarget(destroyedTarget));
 
         using var other = new GameWorld();
-        var foreignEnemy = other.Spawn(new EnemyPrefab(ChiselEnemiesId.SWARMER));
+        var foreignEnemy = other.Spawn(new EnemyPrefab(ChiselEnemiesIds.SWARMER));
         Throws<InvalidOperationException>(() => foreignEnemy.SetTarget(playerObject));
         Throws<InvalidOperationException>(() => _ = foreignEnemy.Target);
     }
@@ -341,7 +339,7 @@ internal static class Program
         using var world = new GameWorld();
         var player = world.Spawn(new MechPrefab(new Loadout()), new Vector2(1000, 0));
         var playerObject = world.GetGameObjectByName(MechPrefab.PlayerObjectName);
-        var enemy = world.Spawn(new EnemyPrefab(ChiselEnemiesId.SWARMER), new Vector2(100, 0));
+        var enemy = world.Spawn(new EnemyPrefab(ChiselEnemiesIds.SWARMER), new Vector2(100, 0));
         enemy.SetTarget(playerObject);
         var projectile = world.Spawn(new ProjectilePrefab(Vector2.Zero, 1, enemy.Health.Maximum, Vector2.Zero),
             new Vector2(200, 0));
@@ -351,12 +349,12 @@ internal static class Program
         var run = new Run();
         ResolveProjectileHits(world, run);
         Check(projectile.IsDisposed && enemy.IsDisposed && run.Kills == 1
-            && run.XP == ChiselEnemies.Experience[ChiselEnemiesId.SWARMER.ToInt()],
+            && run.XP == ChiselEnemies.Experience[ChiselEnemiesIds.SWARMER],
             "A lethal projectile consumes both objects and records one authored reward");
         ResolveProjectileHits(world, run);
         Check(run.Kills == 1, "A destroyed enemy cannot award XP twice");
 
-        var survivor = world.Spawn(new EnemyPrefab(ChiselEnemiesId.SWARMER), new Vector2(100, 0));
+        var survivor = world.Spawn(new EnemyPrefab(ChiselEnemiesIds.SWARMER), new Vector2(100, 0));
         survivor.SetTarget(playerObject);
         var weakProjectile = world.Spawn(new ProjectilePrefab(Vector2.Zero, 1, 1, Vector2.Zero), new Vector2(200, 0));
         ResolveProjectileHits(world, run);
@@ -367,9 +365,9 @@ internal static class Program
     private static void Inputs()
     {
         var actions = new ChiselInput();
-        Throws<InvalidOperationException>(() => actions.IsActionPressed(ChiselInputBindingsId.FIRE));
+        Throws<InvalidOperationException>(() => actions.IsActionPressed(ChiselInputBindingsIds.FIRE));
         actions.Update(new KeyboardState(), Mouse(false));
-        Throws<ArgumentOutOfRangeException>(() => actions.IsActionPressed(ChiselInputBindingsId.Invalid));
+        Throws<ArgumentOutOfRangeException>(() => actions.IsActionPressed(ChiselInputBindingsIds.Invalid));
         var camera = new Camera2D { Position = new Vector2(300, -500) };
         var input = new PlayerInput();
         foreach (var size in new[] { new Point(1280, 720), new Point(2560, 1440), new Point(1800, 1200) })

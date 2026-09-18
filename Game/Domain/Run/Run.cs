@@ -1,6 +1,5 @@
 using Chisel.Generated;
 using Graphite.Engine.Persistence;
-using Graphite.Game.Data;
 
 namespace Graphite.Game.Domain.Run;
 
@@ -46,9 +45,9 @@ public sealed class Run
     }
 
     /// <summary>Called once per enemy death; rewards come directly from its Chisel definition.</summary>
-    public void RecordKill(ChiselEnemiesId enemyId)
+    public void RecordKill(int enemyId)
     {
-        var experience = ChiselEnemies.Experience[enemyId.ToInt()];
+        var experience = ChiselEnemies.Experience[enemyId];
         Kills++;
         XP += experience;
     }

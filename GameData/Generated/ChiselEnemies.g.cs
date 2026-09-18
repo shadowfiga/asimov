@@ -5,12 +5,10 @@ using Microsoft.Xna.Framework;
 
 namespace Chisel.Generated
 {
-    [System.Runtime.Serialization.DataContract]
-    public enum ChiselEnemiesId
+    public static class ChiselEnemiesIds
     {
-        Invalid = -1,
-        [System.Runtime.Serialization.EnumMember(Value = "SWARMER")]
-        SWARMER = 0
+        public const int Invalid = -1;
+        public const int SWARMER = 0;
     }
 
     public static class ChiselEnemies

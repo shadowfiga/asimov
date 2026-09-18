@@ -5,12 +5,10 @@ using Microsoft.Xna.Framework;
 
 namespace Chisel.Generated
 {
-    [System.Runtime.Serialization.DataContract]
-    public enum ChiselPilotId
+    public static class ChiselPilotIds
     {
-        Invalid = -1,
-        [System.Runtime.Serialization.EnumMember(Value = "STARTER_PILOT")]
-        STARTER_PILOT = 0
+        public const int Invalid = -1;
+        public const int STARTER_PILOT = 0;
     }
 
     public static class ChiselPilot

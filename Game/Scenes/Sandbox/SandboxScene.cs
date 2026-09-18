@@ -34,7 +34,7 @@ public sealed class SandboxScene : Scene
         _player = Objects.Spawn(new MechPrefab(loadout), Vector2.Zero);
         var playerObject = Objects.GetGameObjectByName(MechPrefab.PlayerObjectName);
         Objects.Spawn(new PlayerCameraPrefab()).SetTarget(playerObject);
-        Objects.Spawn(new EnemyPrefab(ChiselEnemiesId.SWARMER), new Vector2(500, 0)).SetTarget(playerObject);
+        Objects.Spawn(new EnemyPrefab(ChiselEnemiesIds.SWARMER), new Vector2(500, 0)).SetTarget(playerObject);
         _reticle = Objects.Spawn(new SandboxPresentationPrefab());
         _hud = UI.Open<SandboxUI>();
         _hud.BindHealth(playerObject.GetComponent<HealthComponent>());

@@ -2,7 +2,6 @@ using System.Globalization;
 using Chisel.Generated;
 using Graphite.Engine.UI;
 using Graphite.Engine.UI.Theming;
-using Graphite.Game.Data;
 using Graphite.Game.Domain.Combat;
 using Graphite.Game.Domain.Run;
 using Graphite.Game.Sessions;
@@ -110,7 +109,7 @@ public sealed class SandboxUI : UIScreen
         frame.Widgets.Add(portrait);
         var details = new VerticalStackPanel { Spacing = theme.Spacing.Sm, VerticalAlignment = VerticalAlignment.Center };
         var pilot = SessionManager.ActiveSession.CurrentLoadout.PilotId;
-        details.Widgets.Add(Text(ChiselPilot.DisplayName[pilot.ToInt()].ToUpperInvariant(), theme.Layout.HudTitleFontSize, theme.PrimaryText));
+        details.Widgets.Add(Text(ChiselPilot.DisplayName[pilot].ToUpperInvariant(), theme.Layout.HudTitleFontSize, theme.PrimaryText));
         var health = new VerticalStackPanel { Spacing = theme.Spacing.Xs };
         _healthValue = Text("100%", theme.ResourceHud.LabelFontSize, theme.SecondaryText);
         _healthValue.Id = "hud-hp-value";

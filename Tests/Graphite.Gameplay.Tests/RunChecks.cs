@@ -1,7 +1,6 @@
 using System.Text.Json;
 using Chisel.Generated;
 using Graphite.Engine.Persistence;
-using Graphite.Game.Data;
 using Graphite.Game.Sessions;
 using GameRun = Graphite.Game.Domain.Run.Run;
 using static Graphite.Gameplay.Tests.Program;
@@ -189,16 +188,16 @@ internal static class RunChecks
         session.StartRun();
         var run = session.CurrentRun;
         run.Ore = 80;
-        const ChiselEnemiesId enemyId = ChiselEnemiesId.SWARMER;
-        var experience = ChiselEnemies.Experience[enemyId.ToInt()];
-        Check(ChiselEnemies.TableId == "enemies" && ChiselEnemies.Slugs[enemyId.ToInt()] == "SWARMER",
+        const int enemyId = ChiselEnemiesIds.SWARMER;
+        var experience = ChiselEnemies.Experience[enemyId];
+        Check(ChiselEnemies.TableId == "enemies" && ChiselEnemies.Slugs[enemyId] == "SWARMER",
             "Enemy identity comes from the authored Chisel table");
         run.RecordKill(enemyId);
         Check(run.Kills == 1 && run.XP == experience, "Recording an enemy ID awards its Chisel experience and increments kills");
-        WithChiselValue(ChiselEnemies.Experience, enemyId.ToInt(), 45, () => run.RecordKill(enemyId));
+        WithChiselValue(ChiselEnemies.Experience, enemyId, 45, () => run.RecordKill(enemyId));
         Check(run.Kills == 2 && run.XP == experience + 45 && run.Ore == 80,
             "Kill rewards read Chisel on each call without caching a definition or creating a currency bounty");
-        WithChiselValue(ChiselEnemies.Experience, enemyId.ToInt(), 0, () => run.RecordKill(enemyId));
+        WithChiselValue(ChiselEnemies.Experience, enemyId, 0, () => run.RecordKill(enemyId));
         Check(run.Kills == 3 && run.XP == experience + 45, "Zero-XP enemies still count as kills");
         var serializer = new SaveSerializer();
         var restored = serializer.Deserialize<GameRun>(serializer.Serialize(run));
@@ -216,7 +215,7 @@ internal static class RunChecks
         run.Ore = 80;
         foreach (var invalid in new[] { -1, -2, ChiselEnemies.Count, int.MaxValue })
         {
-            Throws<IndexOutOfRangeException>(() => run.RecordKill((ChiselEnemiesId)invalid));
+            Throws<IndexOutOfRangeException>(() => run.RecordKill(invalid));
             Check(run.XP == 42 && run.Kills == 3 && run.Ore == 80,
                 "Invalid enemy IDs fail at Chisel lookup before mutating run counters or resources");
         }

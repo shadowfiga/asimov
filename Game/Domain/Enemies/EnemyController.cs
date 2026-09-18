@@ -1,6 +1,5 @@
 using Chisel.Generated;
 using Graphite.Engine.Objects;
-using Graphite.Game.Data;
 using Graphite.Game.Domain.Combat;
 using Graphite.Game.Domain.Player;
 using Microsoft.Xna.Framework;
@@ -13,7 +12,7 @@ public sealed class EnemyController : Component
     private GameObject? _target;
     private HealthComponent? _targetHealth;
     private float _targetBodyRadius;
-    public ChiselEnemiesId EnemyId
+    public int EnemyId
     {
         get;
     }
@@ -34,13 +33,12 @@ public sealed class EnemyController : Component
     }
     public Vector2 Position => Transform.WorldPosition;
 
-    public EnemyController(ChiselEnemiesId enemyId)
+    public EnemyController(int enemyId)
     {
-        var index = enemyId.ToInt();
         EnemyId = enemyId;
-        MoveSpeed = ChiselEnemies.MoveSpeed[index];
-        BodyRadius = ChiselEnemies.BodyRadius[index];
-        ContactDamage = ChiselEnemies.ContactDamage[index];
+        MoveSpeed = ChiselEnemies.MoveSpeed[enemyId];
+        BodyRadius = ChiselEnemies.BodyRadius[enemyId];
+        ContactDamage = ChiselEnemies.ContactDamage[enemyId];
     }
 
     public void SetTarget(GameObject target)

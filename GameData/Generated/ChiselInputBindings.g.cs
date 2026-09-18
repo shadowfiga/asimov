@@ -5,22 +5,15 @@ using Microsoft.Xna.Framework;
 
 namespace Chisel.Generated
 {
-    [System.Runtime.Serialization.DataContract]
-    public enum ChiselInputBindingsId
+    public static class ChiselInputBindingsIds
     {
-        Invalid = -1,
-        [System.Runtime.Serialization.EnumMember(Value = "MOVE_UP")]
-        MOVE_UP = 0,
-        [System.Runtime.Serialization.EnumMember(Value = "MOVE_DOWN")]
-        MOVE_DOWN = 1,
-        [System.Runtime.Serialization.EnumMember(Value = "MOVE_LEFT")]
-        MOVE_LEFT = 2,
-        [System.Runtime.Serialization.EnumMember(Value = "MOVE_RIGHT")]
-        MOVE_RIGHT = 3,
-        [System.Runtime.Serialization.EnumMember(Value = "FIRE")]
-        FIRE = 4,
-        [System.Runtime.Serialization.EnumMember(Value = "BACK")]
-        BACK = 5
+        public const int Invalid = -1;
+        public const int MOVE_UP = 0;
+        public const int MOVE_DOWN = 1;
+        public const int MOVE_LEFT = 2;
+        public const int MOVE_RIGHT = 3;
+        public const int FIRE = 4;
+        public const int BACK = 5;
     }
 
     public static class ChiselInputBindings

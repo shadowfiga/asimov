@@ -1,6 +1,5 @@
 using Graphite.Engine.Objects;
 using Chisel.Generated;
-using Graphite.Game.Data;
 using Graphite.Game.Domain.Combat;
 using Microsoft.Xna.Framework;
 
@@ -11,14 +10,14 @@ public sealed class MechPrefab : Prefab<PlayerController>
 {
     public const string PlayerObjectName = "Player";
     private readonly int _chassisId;
-    private readonly ChiselPilotId _pilotId;
-    private readonly ChiselWeaponsId _weaponLeftId;
-    private readonly ChiselWeaponsId _weaponRightId;
+    private readonly int _pilotId;
+    private readonly int _weaponLeftId;
+    private readonly int _weaponRightId;
     public float MaxInwardAngle { get; init; } = MathHelper.ToRadians(15);
 
     public MechPrefab(Loadout loadout) : base(PlayerObjectName)
     {
-        _chassisId = loadout.ChassisId.ToInt();
+        _chassisId = loadout.ChassisId;
         _pilotId = loadout.PilotId;
         _weaponLeftId = loadout.WeaponLeftId;
         _weaponRightId = loadout.WeaponRightId;
@@ -45,7 +44,7 @@ public sealed class MechPrefab : Prefab<PlayerController>
     }
 
     private (AimController Aim, WeaponComponent Weapon) CreateWeapon(GameObject top, string name,
-        float offset, ChiselWeaponsId weaponId, Vector2 target)
+        float offset, int weaponId, Vector2 target)
     {
         var gun = top.CreateChild(name);
         gun.Transform.LocalPosition = new Vector2(0, offset);
@@ -55,9 +54,9 @@ public sealed class MechPrefab : Prefab<PlayerController>
             MaxLocalAngle = offset < 0 ? MaxInwardAngle : MathHelper.Pi
         });
         var muzzle = gun.CreateChild("Muzzle");
-        muzzle.Transform.LocalPosition = new Vector2(ChiselWeapons.BarrelLength[weaponId.ToInt()], 0);
+        muzzle.Transform.LocalPosition = new Vector2(ChiselWeapons.BarrelLength[weaponId], 0);
         var weapon = gun.AddComponent(new WeaponComponent(weaponId, muzzle.Transform));
-        gun.AddComponent(new MechPartRenderer(MechPart.Weapon, ChiselWeapons.BarrelLength[weaponId.ToInt()]) { Layer = 20 });
+        gun.AddComponent(new MechPartRenderer(MechPart.Weapon, ChiselWeapons.BarrelLength[weaponId]) { Layer = 20 });
         return (aim, weapon);
     }
 }

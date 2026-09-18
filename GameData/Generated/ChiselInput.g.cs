@@ -49,45 +49,44 @@ namespace Chisel.Generated
             _currentMouse = mouse;
         }
 
-        public string ActionName(ChiselInputBindingsId action)
+        public string ActionName(int action)
         {
             return ActionNames[ActionIndex(action)];
         }
 
-        public float GetActionStrength(ChiselInputBindingsId action)
+        public float GetActionStrength(int action)
         {
             return IsActionPressed(action) ? 1.0f : 0.0f;
         }
 
-        public bool IsActionPressed(ChiselInputBindingsId action)
+        public bool IsActionPressed(int action)
         {
             EnsureUpdated();
             int index = ActionIndex(action);
             return HasPressedKey(KeyBindings[index]) || HasPressedMouseBinding(MouseBindings[index]);
         }
 
-        public bool IsActionJustPressed(ChiselInputBindingsId action)
+        public bool IsActionJustPressed(int action)
         {
             EnsureUpdated();
             int index = ActionIndex(action);
             return HasJustPressedKey(KeyBindings[index]) || HasJustPressedMouseBinding(MouseBindings[index]);
         }
 
-        public bool IsActionJustReleased(ChiselInputBindingsId action)
+        public bool IsActionJustReleased(int action)
         {
             EnsureUpdated();
             int index = ActionIndex(action);
             return HasJustReleasedKey(KeyBindings[index]) || HasJustReleasedMouseBinding(MouseBindings[index]);
         }
 
-        private static int ActionIndex(ChiselInputBindingsId action)
+        private static int ActionIndex(int action)
         {
-            int index = (int)action;
-            if (index < 0 || index >= ActionNames.Length)
+            if (action < 0 || action >= ActionNames.Length)
             {
                 throw new ArgumentOutOfRangeException(nameof(action), action, "Invalid Chisel input action.");
             }
-            return index;
+            return action;
         }
 
         private void EnsureUpdated()

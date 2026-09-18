@@ -17,12 +17,12 @@ The game-specific `MechPrefab` assembles the complete mech and returns its `Play
 Derive from `Prefab<T>`, supply the root name, and implement `Build(GameObject root)`. `T` is a reference-type result, normally the root or a component that callers need. The engine supplies a live root with the requested position and rotation already applied; use `root.World` for the owning world. Example game-assembly code:
 
 ```csharp
-public sealed class GunPrefab(ChiselWeaponsId weaponId) : Prefab<WeaponComponent>("Gun")
+public sealed class GunPrefab(int weaponId) : Prefab<WeaponComponent>("Gun")
 {
     protected internal override WeaponComponent Build(GameObject root)
     {
         var muzzle = root.CreateChild("Muzzle");
-        muzzle.Transform.LocalPosition = new Vector2(ChiselWeapons.BarrelLength[weaponId.ToInt()], 0);
+        muzzle.Transform.LocalPosition = new Vector2(ChiselWeapons.BarrelLength[weaponId], 0);
         return root.AddComponent(new WeaponComponent(weaponId, muzzle.Transform));
     }
 }
