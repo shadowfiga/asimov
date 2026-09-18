@@ -5,7 +5,7 @@ using Microsoft.Xna.Framework;
 
 namespace Graphite.Game.Domain.Player;
 
-public readonly record struct PlayerControls(Vector2 Movement, Vector2 AimOffset, bool Fire);
+public readonly record struct PlayerControls(Vector2 Movement, Vector2 AimPosition, bool Fire);
 
 /// <summary>Player intent only. Transforms, weapon cadence and rendering are separate components.</summary>
 public sealed class PlayerController : Component
@@ -83,7 +83,7 @@ public sealed class PlayerController : Component
             Bottom.Transform.WorldRotation = MathF.Atan2(move.Y, move.X);
             Transform.WorldPosition += move * (MoveSpeed * dt);
         }
-        AimPosition = Position + Controls.AimOffset;
+        AimPosition = Controls.AimPosition;
         foreach (var aim in _aims)
         {
             aim.Target = AimPosition;

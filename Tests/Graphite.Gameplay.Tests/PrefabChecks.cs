@@ -63,7 +63,7 @@ internal static class PrefabChecks
             && first.LeftWeapon.Muzzle != second.LeftWeapon.Muzzle,
             "Reusing a recipe creates independent roots, children, components and muzzles");
         Near(first.MoveSpeed, ChiselChassis.MoveSpeed[(int)ChiselChassisId.STARTER_MECH], "The prefab supplies only authored movement speed to the controller");
-        first.Controls = new PlayerControls(Vector2.UnitX, new Vector2(300, -100), true);
+        first.Controls = new PlayerControls(Vector2.UnitX, first.Position + new Vector2(300, -100), true);
         world.Update(.1f);
         Check(first.IsMoving && !second.IsMoving && second.Position == new Vector2(-300, 400), "Movement state is independent between prefab instances");
         Check(world.GetComponents<ProjectileComponent>().Count() == 2 && !second.LeftWeapon.TriggerHeld,

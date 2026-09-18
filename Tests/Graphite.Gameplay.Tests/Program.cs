@@ -156,8 +156,8 @@ internal static class Program
         Step(mech, .1f, new PlayerControls(Vector2.UnitX, new Vector2(0, -300), false));
         Near(mech.Position.X, 28, "Move speed comes from Chisel");
         Near(mech.LegsAngle, 0, "Legs face movement");
-        Near(mech.TorsoAngle, -MathHelper.PiOver2, "Torso aims independently of movement");
-        Near(mech.AimPosition.X, mech.Position.X, "Aim follows cursor offset during camera movement");
+        Near(mech.TorsoAngle, MathF.Atan2(-300, -28), "Torso aims independently of movement");
+        Near(mech.AimPosition.X, 0, "Aim remains at the mouse world position while the mech moves");
         foreach (var gun in new[] { mech.LeftWeapon, mech.RightWeapon })
         {
             Near(Vector2.Dot(gun.Transform.Forward, Vector2.Normalize(mech.AimPosition - gun.Transform.WorldPosition)), 1, "Each arm converges independently on the reticle");
@@ -185,18 +185,18 @@ internal static class Program
         foreach (var angle in new[] { 0f, MathHelper.PiOver2, -MathHelper.PiOver2, MathHelper.Pi - .001f, -MathHelper.Pi + .001f })
         {
             var direction = new Vector2(MathF.Cos(angle), MathF.Sin(angle));
-            Step(mech, 0, new PlayerControls(Vector2.Zero, direction, false));
+            Step(mech, 0, new PlayerControls(Vector2.Zero, mech.Position + direction, false));
             Near(MathHelper.WrapAngle(mech.TorsoAngle - angle), 0, "Torso remains unrestricted while arm aiming is limited");
             Near(mech.LeftWeapon.Transform.LocalRotation, limit, "Left arm stops at 15 degrees inward for close targets");
             Near(mech.RightWeapon.Transform.LocalRotation, -limit, "Right arm mirrors the inward stop across all torso headings");
-            Step(mech, 0, new PlayerControls(Vector2.Zero, direction * 1000, false));
+            Step(mech, 0, new PlayerControls(Vector2.Zero, mech.Position + direction * 1000, false));
             foreach (var gun in new[] { mech.LeftWeapon, mech.RightWeapon })
             {
                 Near(Vector2.Dot(gun.Transform.Forward, Vector2.Normalize(mech.AimPosition - gun.Transform.WorldPosition)), 1,
                     "Distant targets still converge exactly when within the inward limit");
             }
         }
-        Step(mech, .001f, new PlayerControls(Vector2.Zero, Vector2.Zero, true));
+        Step(mech, .001f, new PlayerControls(Vector2.Zero, mech.Position, true));
         Near(mech.LeftWeapon.Transform.LocalRotation, limit, "Cursor at mech center respects the left inward limit");
         Near(mech.RightWeapon.Transform.LocalRotation, -limit, "Cursor at mech center respects the right inward limit");
         var shots = Projectiles(mech);
@@ -383,8 +383,8 @@ internal static class Program
         var client = new Point(1280, 720);
         var controls = input.Read(new KeyboardState(Keys.D, Keys.W), Mouse(true), client, camera, true);
         Check(!controls.Fire, "Held Play click is suppressed on entry");
-        Near(controls.AimOffset.X, 200, "Client mouse coordinates map into world space at high resolution");
-        Near(controls.AimOffset.Y, 0, "Aim offset is independent of world/camera position");
+        Near(controls.AimPosition.X, 500, "Client mouse coordinates map into world space at high resolution");
+        Near(controls.AimPosition.Y, -500, "Aim is the absolute mouse world position");
         Check(controls.Movement == new Vector2(1, -1), "WASD uses exported movement actions");
         input.Read(new KeyboardState(), Mouse(false), client, camera, true);
         Check(input.Read(new KeyboardState(Keys.Right, Keys.Up), Mouse(true), client, camera, true).Fire, "Released then held left mouse fires through exported action");
@@ -410,7 +410,7 @@ internal static class Program
             "Player camera is a standalone root, not part of the mech hierarchy");
         Check(camera.ReferenceSize == new Point(1600, 900) && camera.Transform.WorldPosition == player.Position
             && camera.Camera.Position == player.Position, "Camera prefab starts on its player immediately");
-        player.Controls = new PlayerControls(Vector2.UnitX, Vector2.UnitY * 100, false);
+        player.Controls = new PlayerControls(Vector2.UnitX, player.Position + Vector2.UnitY * 100, false);
         world.Update(.1f);
         Check(camera.Camera.Position == player.Position && camera.Transform.WorldPosition == player.Position,
             "Camera follows the current frame's movement without scene callbacks");

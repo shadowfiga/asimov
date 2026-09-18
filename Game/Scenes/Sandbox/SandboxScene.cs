@@ -36,7 +36,6 @@ public sealed class SandboxScene : Scene
         Objects.Spawn(new PlayerCameraPrefab()).SetTarget(playerObject);
         Objects.Spawn(new EnemyPrefab(ChiselEnemiesId.SWARMER), new Vector2(500, 0)).SetTarget(playerObject);
         _reticle = Objects.Spawn(new SandboxPresentationPrefab());
-        _reticle.SetTarget(playerObject);
         _hud = UI.Open<SandboxUI>();
         _hud.BindHealth(playerObject.GetComponent<HealthComponent>());
         game.IsMouseVisible = false;

@@ -34,7 +34,6 @@ public sealed class PlayerInput
             _actions.GetActionStrength(ChiselInputBindingsId.MOVE_DOWN) - _actions.GetActionStrength(ChiselInputBindingsId.MOVE_UP)) : Vector2.Zero;
         var pixel = new Vector2(mouse.X * camera.ViewportSize.X / (float)clientSize.X, mouse.Y * camera.ViewportSize.Y / (float)clientSize.Y);
         var inside = mouse.X >= 0 && mouse.Y >= 0 && mouse.X < clientSize.X && mouse.Y < clientSize.Y;
-        // The play camera follows the mech; retain the cursor offset while the mech moves.
-        return new PlayerControls(movement, camera.ScreenToWorld(pixel) - camera.Position, active && inside && _fireArmed && firing);
+        return new PlayerControls(movement, camera.ScreenToWorld(pixel), active && inside && _fireArmed && firing);
     }
 }

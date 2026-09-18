@@ -40,7 +40,7 @@ public sealed class MechPrefab : Prefab<PlayerController>
         return root.AddComponent(new PlayerController(ChiselChassis.MoveSpeed[_chassisId], bodyRadius, _pilotId,
             bottom, torsoAim, left.Aim, right.Aim, left.Weapon, right.Weapon)
         {
-            Controls = new PlayerControls(Vector2.Zero, target - root.Transform.WorldPosition, false)
+            Controls = new PlayerControls(Vector2.Zero, target, false)
         });
     }
 
