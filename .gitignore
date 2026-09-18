@@ -10,6 +10,3 @@ obj/
 *.user.setj
 *.suo
 .DS_Store
-
-# Locally imported licensed audio. Recreate with Scripts/import_audio.py.
-Content/Audio/Ovani/

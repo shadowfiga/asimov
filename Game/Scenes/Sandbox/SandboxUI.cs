@@ -142,9 +142,21 @@ public sealed class SandboxUI : UIScreen
     private static Texture2D CreateMapTexture(int size)
     {
         // Fixed map sketch, not world discovery, navigation or a live radar.
-        string[] cells = ["............", "...####.....", "..######....", "..#######...",
-            "...######...", "...#######..", "..########..", ".#########..",
-            "..#######...", "...####.....", "....##......", "............"];
+        string[] cells =
+        [
+            "............",
+            "...####.....",
+            "..######....",
+            "..#######...",
+            "...######...",
+            "...#######..",
+            "..########..",
+            ".#########..",
+            "..#######...",
+            "...####.....",
+            "....##......",
+            "............"
+        ];
         var theme = GameThemes.DeepDrive;
         var pixels = new Color[size * size];
         for (var y = 0; y < size; y++)

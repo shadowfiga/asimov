@@ -37,5 +37,8 @@ say "Restoring Graphite dependencies..."
 say "Building Graphite..."
 "$DOTNET" build --no-restore
 
+say "Validating managed audio..."
+"$DOTNET" run --project Tests/Graphite.Audio.Tests -- --assets
+
 say "Done. Launching the game..."
 exec "$DOTNET" run --no-build

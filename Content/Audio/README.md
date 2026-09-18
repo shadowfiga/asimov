@@ -1,12 +1,14 @@
-# Licensed audio selection
+# Licensed Chisel audio
 
-Import from your owned archives before building/running (Python 3.9+, standard library only):
+The eight selected WAVs are managed `AUDIO` assets in `.chisel/assets/AUDIO`, stored through Git LFS, and exported by Chisel to `Content/Chisel/audio`. `GameAudio` resolves them exclusively through generated `ChiselAssetId` values and `ChiselAssets.Path`.
 
-```powershell
-python Scripts/import_audio.py "C:\Users\matic\Downloads"
+To add or replace them from the owned archives, install Bun and the sibling `../chisel` checkout's dependencies, then place `Metal Music Pack Vol. 3.zip` and `UI & Menus Sound FX Pack.zip` in one directory and run:
+
+```sh
+python Scripts/import_audio.py "/path/to/archive-directory"
 ```
 
-The importer extracts only the exact entries in `ovani-import.json`, checks existing files by SHA-256, and refuses to overwrite modified assets. `Ovani/` is Git-ignored: the originals remain in Downloads and licensed source audio is not committed. Normal builds copy imported files beside the executable. Other checkouts/build machines must import their licensed copies first. Missing files fail with an import instruction.
+The importer extracts only the entries in `ovani-import.json`, uses Chisel's validated asset import/replace API, creates a committed Chisel source snapshot, and runs the normal MonoGame export. The royalty-free license-link PDF remains in the purchased source archive and is not included in the runtime payload; retain the purchase and license records separately. Other checkouts receive the selected game assets with `git lfs pull`.
 
 ## Currently wired
 
@@ -25,7 +27,7 @@ These two decoded three-mix cues use about 226 MiB of PCM memory. The rest of th
 
 ## Supplied reserve packs
 
-Metal Vol. 1/2, Synthwave, Heavy Electronic, Electronic Vol. 1/5, Orchestral Rock, Fantasy Vol. 2, and Science Fiction FX remain in the supplied ZIPs for later selections. Metal Vol. 3 and UI & Menus retain their unused tracks/effects in the source archives. The imported music license-link PDF is preserved under `Ovani/License`; keep purchase/subscription records separately.
+Metal Vol. 1/2, Synthwave, Heavy Electronic, Electronic Vol. 1/5, Orchestral Rock, Fantasy Vol. 2, and Science Fiction FX remain in the supplied ZIPs for later selections. Metal Vol. 3 and UI & Menus retain their unused tracks/effects in the source archives.
 
 ```powershell
 dotnet run --project Tests/Graphite.Audio.Tests -- --assets

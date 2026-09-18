@@ -1,4 +1,101 @@
 {
   "schemaVersion": 1,
-  "assets": []
+  "assets": [
+    {
+      "category": "AUDIO",
+      "name": "MUSIC_FALLEN_ANGEL_LOW",
+      "note": "Ovani Metal Music Pack Vol. 3 — Fallen Angel Intensity 1",
+      "sizeBytes": 27814724,
+      "width": 0,
+      "height": 0,
+      "extension": "wav",
+      "id": "MUSIC_FALLEN_ANGEL_LOW",
+      "relativePath": ".chisel/assets/AUDIO/MUSIC_FALLEN_ANGEL_LOW.wav",
+      "formattedBytes": "26.5 MB"
+    },
+    {
+      "category": "AUDIO",
+      "name": "MUSIC_FALLEN_ANGEL_MEDIUM",
+      "note": "Ovani Metal Music Pack Vol. 3 — Fallen Angel Intensity 2",
+      "sizeBytes": 27814724,
+      "width": 0,
+      "height": 0,
+      "extension": "wav",
+      "id": "MUSIC_FALLEN_ANGEL_MEDIUM",
+      "relativePath": ".chisel/assets/AUDIO/MUSIC_FALLEN_ANGEL_MEDIUM.wav",
+      "formattedBytes": "26.5 MB"
+    },
+    {
+      "category": "AUDIO",
+      "name": "MUSIC_FALLEN_ANGEL_FULL",
+      "note": "Ovani Metal Music Pack Vol. 3 — Fallen Angel Main",
+      "sizeBytes": 27814724,
+      "width": 0,
+      "height": 0,
+      "extension": "wav",
+      "id": "MUSIC_FALLEN_ANGEL_FULL",
+      "relativePath": ".chisel/assets/AUDIO/MUSIC_FALLEN_ANGEL_FULL.wav",
+      "formattedBytes": "26.5 MB"
+    },
+    {
+      "category": "AUDIO",
+      "name": "MUSIC_CHIN_SURGERY_LOW",
+      "note": "Ovani Metal Music Pack Vol. 3 — Chin Surgery Intensity 1",
+      "sizeBytes": 31522734,
+      "width": 0,
+      "height": 0,
+      "extension": "wav",
+      "id": "MUSIC_CHIN_SURGERY_LOW",
+      "relativePath": ".chisel/assets/AUDIO/MUSIC_CHIN_SURGERY_LOW.wav",
+      "formattedBytes": "30.1 MB"
+    },
+    {
+      "category": "AUDIO",
+      "name": "MUSIC_CHIN_SURGERY_MEDIUM",
+      "note": "Ovani Metal Music Pack Vol. 3 — Chin Surgery Intensity 2",
+      "sizeBytes": 31522636,
+      "width": 0,
+      "height": 0,
+      "extension": "wav",
+      "id": "MUSIC_CHIN_SURGERY_MEDIUM",
+      "relativePath": ".chisel/assets/AUDIO/MUSIC_CHIN_SURGERY_MEDIUM.wav",
+      "formattedBytes": "30.1 MB"
+    },
+    {
+      "category": "AUDIO",
+      "name": "MUSIC_CHIN_SURGERY_FULL",
+      "note": "Ovani Metal Music Pack Vol. 3 — Chin Surgery Main",
+      "sizeBytes": 31522734,
+      "width": 0,
+      "height": 0,
+      "extension": "wav",
+      "id": "MUSIC_CHIN_SURGERY_FULL",
+      "relativePath": ".chisel/assets/AUDIO/MUSIC_CHIN_SURGERY_FULL.wav",
+      "formattedBytes": "30.1 MB"
+    },
+    {
+      "category": "AUDIO",
+      "name": "UI_HOVER",
+      "note": "Ovani UI & Menus — Mouse Hover Soft A",
+      "sizeBytes": 265336,
+      "width": 0,
+      "height": 0,
+      "extension": "wav",
+      "id": "UI_HOVER",
+      "relativePath": ".chisel/assets/AUDIO/UI_HOVER.wav",
+      "formattedBytes": "259.1 KB"
+    },
+    {
+      "category": "AUDIO",
+      "name": "UI_CLICK",
+      "note": "Ovani UI & Menus — Click Tick",
+      "sizeBytes": 265336,
+      "width": 0,
+      "height": 0,
+      "extension": "wav",
+      "id": "UI_CLICK",
+      "relativePath": ".chisel/assets/AUDIO/UI_CLICK.wav",
+      "formattedBytes": "259.1 KB"
+    }
+  ]
 }

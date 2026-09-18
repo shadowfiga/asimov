@@ -6,13 +6,13 @@ Mining-defense roguelite foundation using Graphite / MonoGame DesktopGL. Startup
 
 On macOS, double-click `Play DEEP DRIVE.command` (legacy launcher filename). Alternatively, use `./run.sh` (macOS/Linux) or `run.cmd` (Windows). For initial setup, use `./setup.sh` or `setup.cmd`.
 
-Before the first build, import the selected licensed audio from your owned ZIPs:
+Selected licensed audio is managed by Chisel and stored through Git LFS. After cloning, ensure the LFS objects are present with `git lfs pull`. To replace the selections from the owned vendor archives, place both ZIPs in one directory and run:
 
-```powershell
-python Scripts/import_audio.py "C:\Users\matic\Downloads"
+```sh
+python Scripts/import_audio.py "/path/to/archive-directory"
 ```
 
-See [audio asset selections and import details](Content/Audio/README.md). Imported WAVs stay local/Git-ignored; other machines must import their copies too.
+The importer adds or replaces the eight `AUDIO` assets through Chisel, commits a source snapshot, and runs the MonoGame export. See [audio asset selections and provenance](Content/Audio/README.md).
 
 ## Mech prototype
 
@@ -183,6 +183,7 @@ dotnet build --warnaserror
 dotnet format Graphite.csproj --verify-no-changes --severity warn
 dotnet run --project Tests/Graphite.Persistence.Tests/Graphite.Persistence.Tests.csproj -p:TreatWarningsAsErrors=true
 dotnet run --project Tests/Graphite.Gameplay.Tests -p:TreatWarningsAsErrors=true
+dotnet run --project Tests/Graphite.Audio.Tests -p:TreatWarningsAsErrors=true -- --assets
 dotnet run --project Tests/Graphite.UI.Tests -- --graphics
 ```
 

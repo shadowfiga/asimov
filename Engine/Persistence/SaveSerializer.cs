@@ -49,8 +49,17 @@ public sealed class SaveSerializer
         try
         {
             var value = JsonSerializer.Deserialize<T>(data, _options);
-            return CollectionImplementation(typeof(T)) is not null ? (T)NormalizeCollection(typeof(T), value)
-                : value is not null ? value : throw new InvalidDataException("The saved root cannot be null.");
+            if (CollectionImplementation(typeof(T)) is not null)
+            {
+                return (T)NormalizeCollection(typeof(T), value);
+            }
+
+            if (value is null && Nullable.GetUnderlyingType(typeof(T)) is null)
+            {
+                throw new InvalidDataException("The saved root cannot be null.");
+            }
+
+            return value!;
         }
         catch (TargetInvocationException exception) when (exception.InnerException is not null)
         {

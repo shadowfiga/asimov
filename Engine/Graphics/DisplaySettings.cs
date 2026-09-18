@@ -86,8 +86,17 @@ public static class DisplaySettings
         {
             return _supported;
         }
-        Point[] common = [new(800, 600), new(1024, 768), new(1280, 720), new(1366, 768),
-            new(1600, 900), new(1920, 1080), new(2560, 1440), new(3840, 2160)];
+        Point[] common =
+        [
+            new(800, 600),
+            new(1024, 768),
+            new(1280, 720),
+            new(1366, 768),
+            new(1600, 900),
+            new(1920, 1080),
+            new(2560, 1440),
+            new(3840, 2160)
+        ];
         return common.Concat(_supported).Append(Current.Resolution).Append(_defaults.Resolution)
             .Where(size => size.X >= 640 && size.Y >= 360 && size.X <= DesktopResolution.X && size.Y <= DesktopResolution.Y)
             .Distinct().OrderBy(size => size.X).ThenBy(size => size.Y).ToArray();

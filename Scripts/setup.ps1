@@ -33,5 +33,8 @@ Write-Host "Restoring Graphite dependencies..." -ForegroundColor Cyan
 Write-Host "Building Graphite..." -ForegroundColor Cyan
 & $DotnetExe build --no-restore
 
+Write-Host "Validating managed audio..." -ForegroundColor Cyan
+& $DotnetExe run --project Tests/Graphite.Audio.Tests -- --assets
+
 Write-Host "Done. Launching the game..." -ForegroundColor Green
 & $DotnetExe run --no-build

@@ -7,15 +7,31 @@ namespace Chisel.Generated
     [System.Runtime.Serialization.DataContract]
     public enum ChiselAssetId
     {
-        Invalid = -1
+        Invalid = -1,
+        [System.Runtime.Serialization.EnumMember(Value = "MUSIC_FALLEN_ANGEL_LOW")]
+        MUSIC_FALLEN_ANGEL_LOW = 0,
+        [System.Runtime.Serialization.EnumMember(Value = "MUSIC_FALLEN_ANGEL_MEDIUM")]
+        MUSIC_FALLEN_ANGEL_MEDIUM = 1,
+        [System.Runtime.Serialization.EnumMember(Value = "MUSIC_FALLEN_ANGEL_FULL")]
+        MUSIC_FALLEN_ANGEL_FULL = 2,
+        [System.Runtime.Serialization.EnumMember(Value = "MUSIC_CHIN_SURGERY_LOW")]
+        MUSIC_CHIN_SURGERY_LOW = 3,
+        [System.Runtime.Serialization.EnumMember(Value = "MUSIC_CHIN_SURGERY_MEDIUM")]
+        MUSIC_CHIN_SURGERY_MEDIUM = 4,
+        [System.Runtime.Serialization.EnumMember(Value = "MUSIC_CHIN_SURGERY_FULL")]
+        MUSIC_CHIN_SURGERY_FULL = 5,
+        [System.Runtime.Serialization.EnumMember(Value = "UI_HOVER")]
+        UI_HOVER = 6,
+        [System.Runtime.Serialization.EnumMember(Value = "UI_CLICK")]
+        UI_CLICK = 7
     }
 
     public static class ChiselAssets
     {
-        public const int Count = 0;
-        public static readonly string[] Ids = new string[] {  };
-        public static readonly string[] Paths = new string[] {  };
-        public static readonly string[] Categories = new string[] {  };
+        public const int Count = 8;
+        public static readonly string[] Ids = new string[] { "MUSIC_FALLEN_ANGEL_LOW", "MUSIC_FALLEN_ANGEL_MEDIUM", "MUSIC_FALLEN_ANGEL_FULL", "MUSIC_CHIN_SURGERY_LOW", "MUSIC_CHIN_SURGERY_MEDIUM", "MUSIC_CHIN_SURGERY_FULL", "UI_HOVER", "UI_CLICK" };
+        public static readonly string[] Paths = new string[] { "Chisel/audio/music_fallen_angel_low.wav", "Chisel/audio/music_fallen_angel_medium.wav", "Chisel/audio/music_fallen_angel_full.wav", "Chisel/audio/music_chin_surgery_low.wav", "Chisel/audio/music_chin_surgery_medium.wav", "Chisel/audio/music_chin_surgery_full.wav", "Chisel/audio/ui_hover.wav", "Chisel/audio/ui_click.wav" };
+        public static readonly string[] Categories = new string[] { "AUDIO", "AUDIO", "AUDIO", "AUDIO", "AUDIO", "AUDIO", "AUDIO", "AUDIO" };
 
         public static string Path(ChiselAssetId id)
         {

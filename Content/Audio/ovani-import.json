@@ -3,47 +3,50 @@
     {
       "archive": "Metal Music Pack Vol. 3.zip",
       "entry": "Metal Music Pack Vol. 3/Fallen Angel (RT 6.455)/Metal Vol3 Fallen Angel Intensity 1.wav",
-      "output": "Music/fallen-angel-low.wav"
+      "slug": "MUSIC_FALLEN_ANGEL_LOW",
+      "note": "Ovani Metal Music Pack Vol. 3 — Fallen Angel Intensity 1"
     },
     {
       "archive": "Metal Music Pack Vol. 3.zip",
       "entry": "Metal Music Pack Vol. 3/Fallen Angel (RT 6.455)/Metal Vol3 Fallen Angel Intensity 2.wav",
-      "output": "Music/fallen-angel-medium.wav"
+      "slug": "MUSIC_FALLEN_ANGEL_MEDIUM",
+      "note": "Ovani Metal Music Pack Vol. 3 — Fallen Angel Intensity 2"
     },
     {
       "archive": "Metal Music Pack Vol. 3.zip",
       "entry": "Metal Music Pack Vol. 3/Fallen Angel (RT 6.455)/Metal Vol3 Fallen Angel Main.wav",
-      "output": "Music/fallen-angel-full.wav"
+      "slug": "MUSIC_FALLEN_ANGEL_FULL",
+      "note": "Ovani Metal Music Pack Vol. 3 — Fallen Angel Main"
     },
     {
       "archive": "Metal Music Pack Vol. 3.zip",
       "entry": "Metal Music Pack Vol. 3/Chin Surgery (RT 6.455)/Metal Vol3 Chin Surgery Intensity 1.wav",
-      "output": "Music/chin-surgery-low.wav"
+      "slug": "MUSIC_CHIN_SURGERY_LOW",
+      "note": "Ovani Metal Music Pack Vol. 3 — Chin Surgery Intensity 1"
     },
     {
       "archive": "Metal Music Pack Vol. 3.zip",
       "entry": "Metal Music Pack Vol. 3/Chin Surgery (RT 6.455)/Metal Vol3 Chin Surgery Intensity 2.wav",
-      "output": "Music/chin-surgery-medium.wav"
+      "slug": "MUSIC_CHIN_SURGERY_MEDIUM",
+      "note": "Ovani Metal Music Pack Vol. 3 — Chin Surgery Intensity 2"
     },
     {
       "archive": "Metal Music Pack Vol. 3.zip",
       "entry": "Metal Music Pack Vol. 3/Chin Surgery (RT 6.455)/Metal Vol3 Chin Surgery Main.wav",
-      "output": "Music/chin-surgery-full.wav"
+      "slug": "MUSIC_CHIN_SURGERY_FULL",
+      "note": "Ovani Metal Music Pack Vol. 3 — Chin Surgery Main"
     },
     {
-      "archive": "UI & Menus Sound FX Pack(1).zip",
+      "archive": "UI & Menus Sound FX Pack.zip",
       "entry": "UI & Menu/Mouse/Hover-On/Mouse Hover Soft A.wav",
-      "output": "UI/hover.wav"
+      "slug": "UI_HOVER",
+      "note": "Ovani UI & Menus — Mouse Hover Soft A"
     },
     {
-      "archive": "UI & Menus Sound FX Pack(1).zip",
+      "archive": "UI & Menus Sound FX Pack.zip",
       "entry": "UI & Menu/Mouse/Clicks/Click Tick.wav",
-      "output": "UI/click.wav"
-    },
-    {
-      "archive": "Metal Music Pack Vol. 3.zip",
-      "entry": "Metal Music Pack Vol. 3/Royalty-Free License (Link).pdf",
-      "output": "License/Royalty-Free License (Link).pdf"
+      "slug": "UI_CLICK",
+      "note": "Ovani UI & Menus — Click Tick"
     }
   ]
 }

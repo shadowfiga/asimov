@@ -29,3 +29,33 @@ repos:
         language: unsupported
         pass_filenames: false
         files: ^.*\.(cs|csproj|props|targets|json)$|^\.editorconfig$
+      - id: chisel-export
+        name: Chisel MonoGame export is current
+        entry: bun Scripts/export-chisel.ts --check
+        language: unsupported
+        pass_filenames: false
+        files: ^(\.chisel/|Content/Chisel/|GameData/Generated/|Scripts/export-chisel\.ts)
+      - id: persistence-tests
+        name: persistence checks
+        entry: dotnet run --project Tests/Graphite.Persistence.Tests/Graphite.Persistence.Tests.csproj --configuration Debug -p:TreatWarningsAsErrors=true
+        language: unsupported
+        pass_filenames: false
+        files: ^.*\.(cs|csproj|props|targets|json)$|^\.editorconfig$
+      - id: gameplay-tests
+        name: gameplay checks
+        entry: dotnet run --project Tests/Graphite.Gameplay.Tests/Graphite.Gameplay.Tests.csproj --configuration Debug -p:TreatWarningsAsErrors=true
+        language: unsupported
+        pass_filenames: false
+        files: ^.*\.(cs|csproj|props|targets|json)$|^\.editorconfig$
+      - id: audio-tests
+        name: audio and managed asset checks
+        entry: dotnet run --project Tests/Graphite.Audio.Tests/Graphite.Audio.Tests.csproj --configuration Debug -p:TreatWarningsAsErrors=true -- --assets
+        language: unsupported
+        pass_filenames: false
+        files: ^.*\.(cs|csproj|props|targets|json|wav)$|^\.editorconfig$
+      - id: ui-tests
+        name: UI checks
+        entry: dotnet run --project Tests/Graphite.UI.Tests/Graphite.UI.Tests.csproj --configuration Debug -p:TreatWarningsAsErrors=true
+        language: unsupported
+        pass_filenames: false
+        files: ^.*\.(cs|csproj|props|targets|json)$|^\.editorconfig$
