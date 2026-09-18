@@ -4,11 +4,11 @@
     {
       "id": "weapons",
       "name": "Weapons",
-      "description": "Prototype arm weapon definitions.",
+      "description": "Prototype arm weapon cadence, projectile, and presentation values.",
       "kind": "user",
       "isSystemTable": false,
-      "lastChangeAt": "2026-09-17T20:00:00.000Z",
-      "version": 1,
+      "lastChangeAt": "2026-09-18T20:16:00.000Z",
+      "version": 2,
       "columns": [
         {
           "id": "weapons_rounds_per_se",
@@ -47,6 +47,15 @@
           "required": true,
           "unique": false,
           "min": 1
+        },
+        {
+          "id": "weapons_damage0000000",
+          "name": "projectile_damage",
+          "type": "integer",
+          "defaultValue": 1,
+          "required": true,
+          "unique": false,
+          "min": 1
         }
       ],
       "rows": [
@@ -73,6 +82,11 @@
               "columnId": "weapons_barrel_length",
               "type": "decimal",
               "value": 30
+            },
+            {
+              "columnId": "weapons_damage0000000",
+              "type": "integer",
+              "value": 1
             }
           ]
         }
@@ -81,11 +95,11 @@
     {
       "id": "chassis",
       "name": "Chassis",
-      "description": "Chassis definitions. Pilot and arm weapons are selected by the game loadout.",
+      "description": "Chassis movement, dimensions, and health. Pilot and arm weapons are selected by the game loadout.",
       "kind": "user",
       "isSystemTable": false,
-      "lastChangeAt": "2026-09-17T19:42:24.000Z",
-      "version": 2,
+      "lastChangeAt": "2026-09-18T20:16:00.000Z",
+      "version": 3,
       "columns": [
         {
           "id": "robots_move_speed0000",
@@ -113,6 +127,15 @@
           "required": true,
           "unique": false,
           "min": 1
+        },
+        {
+          "id": "chassis_health0000000",
+          "name": "max_health",
+          "type": "integer",
+          "defaultValue": 100,
+          "required": true,
+          "unique": false,
+          "min": 1
         }
       ],
       "rows": [
@@ -134,6 +157,11 @@
               "columnId": "robots_arm_spacing000",
               "type": "decimal",
               "value": 26
+            },
+            {
+              "columnId": "chassis_health0000000",
+              "type": "integer",
+              "value": 100
             }
           ]
         }
@@ -142,11 +170,11 @@
     {
       "id": "enemies",
       "name": "Enemies",
-      "description": "Enemy experience rewards. Swarmer XP is provisional tuning.",
+      "description": "Enemy combat and experience values. Swarmer values are provisional tuning.",
       "kind": "user",
       "isSystemTable": false,
-      "lastChangeAt": "2026-09-17T20:51:04.713Z",
-      "version": 1,
+      "lastChangeAt": "2026-09-18T20:16:00.000Z",
+      "version": 2,
       "columns": [
         {
           "id": "enemies_experience000",
@@ -156,6 +184,42 @@
           "required": true,
           "unique": false,
           "min": 0
+        },
+        {
+          "id": "enemies_health0000000",
+          "name": "max_health",
+          "type": "integer",
+          "defaultValue": 3,
+          "required": true,
+          "unique": false,
+          "min": 1
+        },
+        {
+          "id": "enemies_speed00000000",
+          "name": "move_speed",
+          "type": "decimal",
+          "defaultValue": 140,
+          "required": true,
+          "unique": false,
+          "min": 1
+        },
+        {
+          "id": "enemies_radius0000000",
+          "name": "body_radius",
+          "type": "decimal",
+          "defaultValue": 12,
+          "required": true,
+          "unique": false,
+          "min": 1
+        },
+        {
+          "id": "enemies_contact000000",
+          "name": "contact_damage",
+          "type": "integer",
+          "defaultValue": 10,
+          "required": true,
+          "unique": false,
+          "min": 1
         }
       ],
       "rows": [
@@ -165,6 +229,26 @@
           "values": [
             {
               "columnId": "enemies_experience000",
+              "type": "integer",
+              "value": 10
+            },
+            {
+              "columnId": "enemies_health0000000",
+              "type": "integer",
+              "value": 3
+            },
+            {
+              "columnId": "enemies_speed00000000",
+              "type": "decimal",
+              "value": 140
+            },
+            {
+              "columnId": "enemies_radius0000000",
+              "type": "decimal",
+              "value": 12
+            },
+            {
+              "columnId": "enemies_contact000000",
               "type": "integer",
               "value": 10
             }

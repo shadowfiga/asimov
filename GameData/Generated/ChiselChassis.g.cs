@@ -22,5 +22,6 @@ namespace Chisel.Generated
         public static readonly float[] MoveSpeed = new float[] { 280.0f };
         public static readonly float[] BodyRadius = new float[] { 20.0f };
         public static readonly float[] ArmSpacing = new float[] { 26.0f };
+        public static readonly int[] MaxHealth = new int[] { 100 };
     }
 }

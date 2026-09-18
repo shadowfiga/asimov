@@ -20,5 +20,9 @@ namespace Chisel.Generated
         public const int Count = 1;
         public static readonly string[] Slugs = new string[] { "SWARMER" };
         public static readonly int[] Experience = new int[] { 10 };
+        public static readonly int[] MaxHealth = new int[] { 3 };
+        public static readonly float[] MoveSpeed = new float[] { 140.0f };
+        public static readonly float[] BodyRadius = new float[] { 12.0f };
+        public static readonly int[] ContactDamage = new int[] { 10 };
     }
 }

@@ -25,16 +25,19 @@ public sealed class MechPrefab : Prefab<PlayerController>
 
     protected internal override PlayerController Build(GameObject root)
     {
+        var bodyRadius = ChiselChassis.BodyRadius[_chassisId];
+        var health = root.AddComponent(new HealthComponent(ChiselChassis.MaxHealth[_chassisId]));
         var target = root.Transform.TransformPoint(new Vector2(0, -100));
         var bottom = root.CreateChild("Bottom");
         bottom.Transform.LocalRotation = -MathHelper.PiOver2;
-        bottom.AddComponent(new MechPartRenderer(MechPart.Bottom, ChiselChassis.BodyRadius[_chassisId]) { Layer = 10 });
+        bottom.AddComponent(new MechPartRenderer(MechPart.Bottom, bodyRadius) { Layer = 10 });
         var top = root.CreateChild("Top");
         var torsoAim = top.AddComponent(new AimController(target));
-        top.AddComponent(new MechPartRenderer(MechPart.Top, ChiselChassis.BodyRadius[_chassisId]) { Layer = 30 });
+        top.AddComponent(new MechPartRenderer(MechPart.Top, bodyRadius) { Layer = 30 });
         var left = CreateWeapon(top, "LeftWeapon", -ChiselChassis.ArmSpacing[_chassisId], _weaponLeftId, target);
         var right = CreateWeapon(top, "RightWeapon", ChiselChassis.ArmSpacing[_chassisId], _weaponRightId, target);
-        return root.AddComponent(new PlayerController(ChiselChassis.MoveSpeed[_chassisId], _pilotId, bottom, torsoAim, left.Aim, right.Aim, left.Weapon, right.Weapon)
+        return root.AddComponent(new PlayerController(ChiselChassis.MoveSpeed[_chassisId], bodyRadius, _pilotId, health,
+            bottom, torsoAim, left.Aim, right.Aim, left.Weapon, right.Weapon)
         {
             Controls = new PlayerControls(Vector2.Zero, target - root.Transform.WorldPosition, false)
         });

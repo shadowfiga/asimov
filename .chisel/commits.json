@@ -2,6 +2,644 @@
   "schemaVersion": 3,
   "commits": [
     {
+      "id": "VVKSODO9quyMW3wabsZ8Y",
+      "committedAt": "2026-09-18T20:16:19.691Z",
+      "project": {
+        "id": "M7gzZK-ELqR9WTLlI15uz",
+        "name": "Girls & Mine",
+        "description": "A game with anime girls and mecha and incremental progression in a gritty and cool twin stick where you have to defend your operation against an enormous amount of enemies!"
+      },
+      "tables": [
+        {
+          "id": "weapons",
+          "lastChangeAt": "2026-09-18T20:16:00.000Z",
+          "version": 2,
+          "name": "Weapons",
+          "description": "Prototype arm weapon cadence, projectile, and presentation values.",
+          "columns": [
+            {
+              "id": "weapons_rounds_per_se",
+              "type": "decimal",
+              "name": "rounds_per_second",
+              "defaultValue": 8,
+              "max": 60,
+              "min": 0.1,
+              "required": true,
+              "unique": false
+            },
+            {
+              "id": "weapons_projectile_sp",
+              "type": "decimal",
+              "name": "projectile_speed",
+              "defaultValue": 1000,
+              "min": 1,
+              "required": true,
+              "unique": false
+            },
+            {
+              "id": "weapons_projectile_li",
+              "type": "decimal",
+              "name": "projectile_lifetime",
+              "defaultValue": 1.2,
+              "max": 10,
+              "min": 0.1,
+              "required": true,
+              "unique": false
+            },
+            {
+              "id": "weapons_barrel_length",
+              "type": "decimal",
+              "name": "barrel_length",
+              "defaultValue": 30,
+              "min": 1,
+              "required": true,
+              "unique": false
+            },
+            {
+              "id": "weapons_damage0000000",
+              "type": "integer",
+              "name": "projectile_damage",
+              "defaultValue": 1,
+              "min": 1,
+              "required": true,
+              "unique": false
+            }
+          ],
+          "rows": [
+            {
+              "id": "row_AUTOCANNON0000000",
+              "slug": "AUTOCANNON",
+              "values": [
+                {
+                  "columnId": "weapons_rounds_per_se",
+                  "type": "decimal",
+                  "value": 8
+                },
+                {
+                  "columnId": "weapons_projectile_sp",
+                  "type": "decimal",
+                  "value": 1000
+                },
+                {
+                  "columnId": "weapons_projectile_li",
+                  "type": "decimal",
+                  "value": 1.2
+                },
+                {
+                  "columnId": "weapons_barrel_length",
+                  "type": "decimal",
+                  "value": 30
+                },
+                {
+                  "columnId": "weapons_damage0000000",
+                  "type": "integer",
+                  "value": 1
+                }
+              ]
+            }
+          ],
+          "kind": "user",
+          "isSystemTable": false
+        },
+        {
+          "id": "chassis",
+          "lastChangeAt": "2026-09-18T20:16:00.000Z",
+          "version": 3,
+          "name": "Chassis",
+          "description": "Chassis movement, dimensions, and health. Pilot and arm weapons are selected by the game loadout.",
+          "columns": [
+            {
+              "id": "robots_move_speed0000",
+              "type": "decimal",
+              "name": "move_speed",
+              "defaultValue": 280,
+              "min": 1,
+              "required": true,
+              "unique": false
+            },
+            {
+              "id": "robots_body_radius000",
+              "type": "decimal",
+              "name": "body_radius",
+              "defaultValue": 20,
+              "min": 1,
+              "required": true,
+              "unique": false
+            },
+            {
+              "id": "robots_arm_spacing000",
+              "type": "decimal",
+              "name": "arm_spacing",
+              "defaultValue": 26,
+              "min": 1,
+              "required": true,
+              "unique": false
+            },
+            {
+              "id": "chassis_health0000000",
+              "type": "integer",
+              "name": "max_health",
+              "defaultValue": 100,
+              "min": 1,
+              "required": true,
+              "unique": false
+            }
+          ],
+          "rows": [
+            {
+              "id": "row_STARTER_MECH00000",
+              "slug": "STARTER_MECH",
+              "values": [
+                {
+                  "columnId": "robots_move_speed0000",
+                  "type": "decimal",
+                  "value": 280
+                },
+                {
+                  "columnId": "robots_body_radius000",
+                  "type": "decimal",
+                  "value": 20
+                },
+                {
+                  "columnId": "robots_arm_spacing000",
+                  "type": "decimal",
+                  "value": 26
+                },
+                {
+                  "columnId": "chassis_health0000000",
+                  "type": "integer",
+                  "value": 100
+                }
+              ]
+            }
+          ],
+          "kind": "user",
+          "isSystemTable": false
+        },
+        {
+          "id": "pilots",
+          "lastChangeAt": "2026-09-17T19:42:24.000Z",
+          "version": 1,
+          "name": "Pilot",
+          "description": "Cosmetic pilot identities. Add presentation fields here; pilots do not alter chassis stats.",
+          "columns": [
+            {
+              "id": "pilots_display_name00",
+              "type": "string",
+              "name": "display_name",
+              "defaultValue": "",
+              "required": true,
+              "unique": false
+            },
+            {
+              "id": "pilots_portrait000000",
+              "type": "assetRef",
+              "name": "portrait",
+              "defaultValue": "",
+              "assetCategory": "UI",
+              "required": false,
+              "unique": false
+            }
+          ],
+          "rows": [
+            {
+              "id": "row_STARTER_PILOT0000",
+              "slug": "STARTER_PILOT",
+              "values": [
+                {
+                  "columnId": "pilots_display_name00",
+                  "type": "string",
+                  "value": "Starter Pilot"
+                },
+                {
+                  "columnId": "pilots_portrait000000",
+                  "type": "assetRef",
+                  "value": ""
+                }
+              ]
+            }
+          ],
+          "kind": "user",
+          "isSystemTable": false
+        },
+        {
+          "id": "enemies",
+          "lastChangeAt": "2026-09-18T20:16:00.000Z",
+          "version": 2,
+          "name": "Enemies",
+          "description": "Enemy combat and experience values. Swarmer values are provisional tuning.",
+          "columns": [
+            {
+              "id": "enemies_experience000",
+              "type": "integer",
+              "name": "experience",
+              "defaultValue": 0,
+              "min": 0,
+              "required": true,
+              "unique": false
+            },
+            {
+              "id": "enemies_health0000000",
+              "type": "integer",
+              "name": "max_health",
+              "defaultValue": 3,
+              "min": 1,
+              "required": true,
+              "unique": false
+            },
+            {
+              "id": "enemies_speed00000000",
+              "type": "decimal",
+              "name": "move_speed",
+              "defaultValue": 140,
+              "min": 1,
+              "required": true,
+              "unique": false
+            },
+            {
+              "id": "enemies_radius0000000",
+              "type": "decimal",
+              "name": "body_radius",
+              "defaultValue": 12,
+              "min": 1,
+              "required": true,
+              "unique": false
+            },
+            {
+              "id": "enemies_contact000000",
+              "type": "integer",
+              "name": "contact_damage",
+              "defaultValue": 10,
+              "min": 1,
+              "required": true,
+              "unique": false
+            }
+          ],
+          "rows": [
+            {
+              "id": "row_SWARMER0000000000",
+              "slug": "SWARMER",
+              "values": [
+                {
+                  "columnId": "enemies_experience000",
+                  "type": "integer",
+                  "value": 10
+                },
+                {
+                  "columnId": "enemies_health0000000",
+                  "type": "integer",
+                  "value": 3
+                },
+                {
+                  "columnId": "enemies_speed00000000",
+                  "type": "decimal",
+                  "value": 140
+                },
+                {
+                  "columnId": "enemies_radius0000000",
+                  "type": "decimal",
+                  "value": 12
+                },
+                {
+                  "columnId": "enemies_contact000000",
+                  "type": "integer",
+                  "value": 10
+                }
+              ]
+            }
+          ],
+          "kind": "user",
+          "isSystemTable": false
+        },
+        {
+          "id": "input_bindings",
+          "lastChangeAt": "2026-09-17T20:00:00.000Z",
+          "version": 1,
+          "name": "Input Bindings",
+          "description": "Input actions and bindings exported to supported game runtimes.",
+          "columns": [
+            {
+              "id": "input_sort_order00000",
+              "type": "integer",
+              "name": "sort_order",
+              "defaultValue": 0,
+              "min": 0,
+              "required": true,
+              "unique": false
+            },
+            {
+              "id": "input_bindings0000000",
+              "type": "enumArray",
+              "name": "bindings",
+              "defaultValue": [],
+              "max": 8,
+              "possibleValues": [
+                "KEY_A",
+                "KEY_B",
+                "KEY_C",
+                "KEY_D",
+                "KEY_E",
+                "KEY_F",
+                "KEY_G",
+                "KEY_H",
+                "KEY_I",
+                "KEY_J",
+                "KEY_K",
+                "KEY_L",
+                "KEY_M",
+                "KEY_N",
+                "KEY_O",
+                "KEY_P",
+                "KEY_Q",
+                "KEY_R",
+                "KEY_S",
+                "KEY_T",
+                "KEY_U",
+                "KEY_V",
+                "KEY_W",
+                "KEY_X",
+                "KEY_Y",
+                "KEY_Z",
+                "KEY_0",
+                "KEY_1",
+                "KEY_2",
+                "KEY_3",
+                "KEY_4",
+                "KEY_5",
+                "KEY_6",
+                "KEY_7",
+                "KEY_8",
+                "KEY_9",
+                "KEY_F1",
+                "KEY_F2",
+                "KEY_F3",
+                "KEY_F4",
+                "KEY_F5",
+                "KEY_F6",
+                "KEY_F7",
+                "KEY_F8",
+                "KEY_F9",
+                "KEY_F10",
+                "KEY_F11",
+                "KEY_F12",
+                "KEY_ESCAPE",
+                "KEY_SPACE",
+                "KEY_SHIFT",
+                "KEY_CTRL",
+                "KEY_ALT",
+                "KEY_TAB",
+                "KEY_ENTER",
+                "KEY_BACKSPACE",
+                "KEY_UP",
+                "KEY_DOWN",
+                "KEY_LEFT",
+                "KEY_RIGHT",
+                "KEY_MINUS",
+                "KEY_EQUAL",
+                "KEY_KP_ADD",
+                "KEY_KP_SUBTRACT",
+                "MOUSE_BUTTON_LEFT",
+                "MOUSE_BUTTON_RIGHT",
+                "MOUSE_BUTTON_MIDDLE",
+                "MOUSE_BUTTON_WHEEL_UP",
+                "MOUSE_BUTTON_WHEEL_DOWN"
+              ],
+              "required": true,
+              "unique": false
+            }
+          ],
+          "rows": [
+            {
+              "id": "action_MOVE_UP0000000",
+              "slug": "MOVE_UP",
+              "values": [
+                {
+                  "columnId": "input_sort_order00000",
+                  "type": "integer",
+                  "value": 0
+                },
+                {
+                  "columnId": "input_bindings0000000",
+                  "type": "enumArray",
+                  "value": [
+                    "KEY_W",
+                    "KEY_UP"
+                  ]
+                }
+              ]
+            },
+            {
+              "id": "action_MOVE_DOWN00000",
+              "slug": "MOVE_DOWN",
+              "values": [
+                {
+                  "columnId": "input_sort_order00000",
+                  "type": "integer",
+                  "value": 1
+                },
+                {
+                  "columnId": "input_bindings0000000",
+                  "type": "enumArray",
+                  "value": [
+                    "KEY_S",
+                    "KEY_DOWN"
+                  ]
+                }
+              ]
+            },
+            {
+              "id": "action_MOVE_LEFT00000",
+              "slug": "MOVE_LEFT",
+              "values": [
+                {
+                  "columnId": "input_sort_order00000",
+                  "type": "integer",
+                  "value": 2
+                },
+                {
+                  "columnId": "input_bindings0000000",
+                  "type": "enumArray",
+                  "value": [
+                    "KEY_A",
+                    "KEY_LEFT"
+                  ]
+                }
+              ]
+            },
+            {
+              "id": "action_MOVE_RIGHT0000",
+              "slug": "MOVE_RIGHT",
+              "values": [
+                {
+                  "columnId": "input_sort_order00000",
+                  "type": "integer",
+                  "value": 3
+                },
+                {
+                  "columnId": "input_bindings0000000",
+                  "type": "enumArray",
+                  "value": [
+                    "KEY_D",
+                    "KEY_RIGHT"
+                  ]
+                }
+              ]
+            },
+            {
+              "id": "action_FIRE0000000000",
+              "slug": "FIRE",
+              "values": [
+                {
+                  "columnId": "input_sort_order00000",
+                  "type": "integer",
+                  "value": 4
+                },
+                {
+                  "columnId": "input_bindings0000000",
+                  "type": "enumArray",
+                  "value": [
+                    "MOUSE_BUTTON_LEFT"
+                  ]
+                }
+              ]
+            },
+            {
+              "id": "action_BACK0000000000",
+              "slug": "BACK",
+              "values": [
+                {
+                  "columnId": "input_sort_order00000",
+                  "type": "integer",
+                  "value": 5
+                },
+                {
+                  "columnId": "input_bindings0000000",
+                  "type": "enumArray",
+                  "value": [
+                    "KEY_ESCAPE"
+                  ]
+                }
+              ]
+            }
+          ],
+          "kind": "system",
+          "moduleId": "input",
+          "isSystemTable": true
+        }
+      ],
+      "assets": {
+        "schemaVersion": 1,
+        "assets": [
+          {
+            "category": "AUDIO",
+            "name": "MUSIC_FALLEN_ANGEL_LOW",
+            "note": "Ovani Metal Music Pack Vol. 3 — Fallen Angel Intensity 1",
+            "sizeBytes": 27814724,
+            "width": 0,
+            "height": 0,
+            "extension": "wav",
+            "id": "MUSIC_FALLEN_ANGEL_LOW",
+            "relativePath": ".chisel/assets/AUDIO/MUSIC_FALLEN_ANGEL_LOW.wav",
+            "formattedBytes": "26.5 MB"
+          },
+          {
+            "category": "AUDIO",
+            "name": "MUSIC_FALLEN_ANGEL_MEDIUM",
+            "note": "Ovani Metal Music Pack Vol. 3 — Fallen Angel Intensity 2",
+            "sizeBytes": 27814724,
+            "width": 0,
+            "height": 0,
+            "extension": "wav",
+            "id": "MUSIC_FALLEN_ANGEL_MEDIUM",
+            "relativePath": ".chisel/assets/AUDIO/MUSIC_FALLEN_ANGEL_MEDIUM.wav",
+            "formattedBytes": "26.5 MB"
+          },
+          {
+            "category": "AUDIO",
+            "name": "MUSIC_FALLEN_ANGEL_FULL",
+            "note": "Ovani Metal Music Pack Vol. 3 — Fallen Angel Main",
+            "sizeBytes": 27814724,
+            "width": 0,
+            "height": 0,
+            "extension": "wav",
+            "id": "MUSIC_FALLEN_ANGEL_FULL",
+            "relativePath": ".chisel/assets/AUDIO/MUSIC_FALLEN_ANGEL_FULL.wav",
+            "formattedBytes": "26.5 MB"
+          },
+          {
+            "category": "AUDIO",
+            "name": "MUSIC_CHIN_SURGERY_LOW",
+            "note": "Ovani Metal Music Pack Vol. 3 — Chin Surgery Intensity 1",
+            "sizeBytes": 31522734,
+            "width": 0,
+            "height": 0,
+            "extension": "wav",
+            "id": "MUSIC_CHIN_SURGERY_LOW",
+            "relativePath": ".chisel/assets/AUDIO/MUSIC_CHIN_SURGERY_LOW.wav",
+            "formattedBytes": "30.1 MB"
+          },
+          {
+            "category": "AUDIO",
+            "name": "MUSIC_CHIN_SURGERY_MEDIUM",
+            "note": "Ovani Metal Music Pack Vol. 3 — Chin Surgery Intensity 2",
+            "sizeBytes": 31522636,
+            "width": 0,
+            "height": 0,
+            "extension": "wav",
+            "id": "MUSIC_CHIN_SURGERY_MEDIUM",
+            "relativePath": ".chisel/assets/AUDIO/MUSIC_CHIN_SURGERY_MEDIUM.wav",
+            "formattedBytes": "30.1 MB"
+          },
+          {
+            "category": "AUDIO",
+            "name": "MUSIC_CHIN_SURGERY_FULL",
+            "note": "Ovani Metal Music Pack Vol. 3 — Chin Surgery Main",
+            "sizeBytes": 31522734,
+            "width": 0,
+            "height": 0,
+            "extension": "wav",
+            "id": "MUSIC_CHIN_SURGERY_FULL",
+            "relativePath": ".chisel/assets/AUDIO/MUSIC_CHIN_SURGERY_FULL.wav",
+            "formattedBytes": "30.1 MB"
+          },
+          {
+            "category": "AUDIO",
+            "name": "UI_HOVER",
+            "note": "Ovani UI & Menus — Mouse Hover Soft A",
+            "sizeBytes": 265336,
+            "width": 0,
+            "height": 0,
+            "extension": "wav",
+            "id": "UI_HOVER",
+            "relativePath": ".chisel/assets/AUDIO/UI_HOVER.wav",
+            "formattedBytes": "259.1 KB"
+          },
+          {
+            "category": "AUDIO",
+            "name": "UI_CLICK",
+            "note": "Ovani UI & Menus — Click Tick",
+            "sizeBytes": 265336,
+            "width": 0,
+            "height": 0,
+            "extension": "wav",
+            "id": "UI_CLICK",
+            "relativePath": ".chisel/assets/AUDIO/UI_CLICK.wav",
+            "formattedBytes": "259.1 KB"
+          }
+        ]
+      },
+      "localization": {
+        "schemaVersion": 2,
+        "defaultLocale": "en",
+        "locales": [
+          "en"
+        ],
+        "keys": [],
+        "styles": [],
+        "tooltips": []
+      }
+    },
+    {
       "id": "ZT7IlZ6mnpk31M7K8CHTS",
       "committedAt": "2026-09-18T19:59:02.136Z",
       "project": {

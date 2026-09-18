@@ -1,6 +1,10 @@
+using Chisel.Generated;
 using Graphite.Engine.Scenes;
 using Graphite.Engine.Audio;
+using Graphite.Engine.Objects;
 using Graphite.Game.Audio;
+using Graphite.Game.Domain.Combat;
+using Graphite.Game.Domain.Enemies;
 using Graphite.Game.Domain.Player;
 using Graphite.Game.Domain.Run;
 using Graphite.Game.Sessions;
@@ -29,8 +33,10 @@ public sealed class SandboxScene : Scene
         Objects.MaxDeltaTime = .1f;
         _player = Objects.Spawn(new MechPrefab(loadout), Vector2.Zero);
         Objects.Spawn(new PlayerCameraPrefab(_player));
+        Objects.Spawn(new EnemyPrefab(ChiselEnemiesId.SWARMER, _player), new Vector2(500, 0));
         _reticle = Objects.Spawn(new SandboxPresentationPrefab(_player));
         _hud = UI.Open<SandboxUI>();
+        _hud.BindHealth(_player.Health);
         game.IsMouseVisible = false;
         GameAudio.PlaySession();
     }
@@ -59,8 +65,37 @@ public sealed class SandboxScene : Scene
 
     protected internal override void LateUpdate(float dt)
     {
+        if (!Objects.Paused)
+        {
+            ResolveProjectileHits(Objects, _run);
+        }
         AudioManager.Current.Listener.Position = _player.Position;
         _hud.Refresh();
+    }
+
+    internal static void ResolveProjectileHits(GameWorld objects, Run run)
+    {
+        var projectiles = objects.GetComponents<ProjectileComponent>().ToArray();
+        var enemies = objects.GetComponents<EnemyController>().ToArray();
+        foreach (var projectile in projectiles)
+        {
+            foreach (var enemy in enemies)
+            {
+                if (enemy.IsDisposed || enemy.Health.IsDead
+                    || !projectile.IntersectsCircle(enemy.Position, enemy.BodyRadius))
+                {
+                    continue;
+                }
+                var killed = enemy.Health.ApplyDamage(projectile.Damage);
+                projectile.Owner.Destroy();
+                if (killed)
+                {
+                    run.RecordKill(enemy.EnemyId);
+                    enemy.Owner.Destroy();
+                }
+                break;
+            }
+        }
     }
 
     protected internal override void OnUnload()

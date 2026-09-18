@@ -3,6 +3,7 @@ using Chisel.Generated;
 using Graphite.Engine.UI;
 using Graphite.Engine.UI.Theming;
 using Graphite.Game.Data;
+using Graphite.Game.Domain.Combat;
 using Graphite.Game.Domain.Run;
 using Graphite.Game.Sessions;
 using Graphite.Game.UI;
@@ -24,6 +25,9 @@ public sealed class SandboxUI : UIScreen
     private Texture2D _mapTexture = null!;
     private Label _experience = null!;
     private Label _timer = null!;
+    private Label _healthValue = null!;
+    private HorizontalProgressBar _healthBar = null!;
+    private HealthComponent? _health;
     private int _shownExperience = -1;
     private int _shownSeconds = -1;
     internal ResourceHud Resources { get; private set; } = null!;
@@ -108,8 +112,11 @@ public sealed class SandboxUI : UIScreen
         var pilot = SessionManager.ActiveSession.CurrentLoadout.PilotId;
         details.Widgets.Add(Text(ChiselPilot.DisplayName[pilot.ToInt()].ToUpperInvariant(), theme.Layout.HudTitleFontSize, theme.PrimaryText));
         var health = new VerticalStackPanel { Spacing = theme.Spacing.Xs };
-        health.Widgets.Add(Readout("HP", Text("100%", theme.ResourceHud.LabelFontSize, theme.SecondaryText)));
-        health.Widgets.Add(Bar("hud-hp-bar", 1));
+        _healthValue = Text("100%", theme.ResourceHud.LabelFontSize, theme.SecondaryText);
+        _healthValue.Id = "hud-hp-value";
+        health.Widgets.Add(Readout("HP", _healthValue));
+        _healthBar = Bar("hud-hp-bar", 1);
+        health.Widgets.Add(_healthBar);
         details.Widgets.Add(health);
         Grid.SetColumn(details, 1);
         frame.Widgets.Add(details);
@@ -230,6 +237,11 @@ public sealed class SandboxUI : UIScreen
 
     public void Refresh()
     {
+        if (_health is not null)
+        {
+            _healthValue.Text = $"{MathF.Round(_health.Ratio * 100)}%";
+            _healthBar.Value = _health.Ratio;
+        }
         if (_shownExperience != _run.XP)
         {
             _shownExperience = _run.XP;
@@ -243,6 +255,12 @@ public sealed class SandboxUI : UIScreen
             _shownSeconds = seconds;
             _timer.Text = TimeSpan.FromSeconds(seconds).ToString(@"mm\:ss", CultureInfo.InvariantCulture);
         }
+    }
+
+    internal void BindHealth(HealthComponent health)
+    {
+        _health = health;
+        Refresh();
     }
 
     protected override void OnDestroy()

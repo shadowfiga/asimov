@@ -1,9 +1,13 @@
 using Chisel.Generated;
+using System.Reflection;
 using Graphite.Engine.Graphics;
 using Graphite.Engine.Objects;
 using Graphite.Game.Data;
 using Graphite.Game.Domain.Combat;
+using Graphite.Game.Domain.Enemies;
 using Graphite.Game.Domain.Player;
+using Graphite.Game.Domain.Run;
+using Graphite.Game.Scenes;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Input;
 
@@ -17,8 +21,10 @@ internal static class Program
 
     public static void Main()
     {
-        Check(ChiselChassis.MoveSpeed[ChassisId.ToInt()] == 280 && ChiselWeapons.RoundsPerSecond[WeaponId.ToInt()] == 8,
-            "Actual exported chassis and weapon columns load directly");
+        Check(ChiselChassis.MoveSpeed[ChassisId.ToInt()] == 280 && ChiselChassis.MaxHealth[ChassisId.ToInt()] == 100
+            && ChiselWeapons.RoundsPerSecond[WeaponId.ToInt()] == 8 && ChiselWeapons.ProjectileDamage[WeaponId.ToInt()] == 1
+            && ChiselEnemies.MaxHealth[ChiselEnemiesId.SWARMER.ToInt()] == 3,
+            "Actual exported chassis, weapon, and enemy columns load directly");
         ChiselIds();
         DirectChiselReferences();
         FailFast();
@@ -29,6 +35,9 @@ internal static class Program
         InwardAimLimits();
         CameraObjects();
         Shooting();
+        Health();
+        Enemies();
+        ProjectileHits();
         Inputs();
         Console.WriteLine($"Gameplay checks passed ({_assertions} assertions).");
     }
@@ -73,6 +82,9 @@ internal static class Program
             Check(mech.LeftWeapon.WeaponId == WeaponId && mech.RightWeapon.WeaponId == WeaponId,
                 "Both mounts keep the weapon IDs selected by the loadout");
             Check(mech.PilotId == ChiselPilotId.STARTER_PILOT, "The spawned player retains the selected pilot ID");
+            Check(mech.Health.Maximum == ChiselChassis.MaxHealth[ChassisId.ToInt()]
+                && mech.BodyRadius == ChiselChassis.BodyRadius[ChassisId.ToInt()],
+                "The mech receives authored health and contact dimensions");
             Check(ChiselPilot.DisplayName[mech.PilotId.ToInt()] == "Starter Pilot"
                 && ChiselPilot.Portrait[mech.PilotId.ToInt()] == ChiselAssetId.Invalid,
                 "Pilot presentation data comes directly from Chisel and the initial portrait is intentionally unassigned");
@@ -121,6 +133,8 @@ internal static class Program
                 Throws<InvalidDataException>(() => new WeaponComponent(WeaponId, muzzle.Transform)));
             Throws<ArgumentOutOfRangeException>(() => new ProjectileComponent(Vector2.UnitX, lifetime));
         }
+        Throws<ArgumentOutOfRangeException>(() => new HealthComponent(0));
+        Throws<ArgumentOutOfRangeException>(() => new ProjectileComponent(Vector2.UnitX, 1, 0));
         WithChiselValue(ChiselWeapons.RoundsPerSecond, WeaponId.ToInt(), 120f, () =>
             WithChiselValue(ChiselWeapons.ProjectileLifetime, WeaponId.ToInt(), 12f, () =>
         {
@@ -220,6 +234,9 @@ internal static class Program
         Check(Projectiles(mech).Length == 2, "Mouse-down fires bullets from both guns immediately");
         var first = Projectiles(mech)[0];
         Near(Vector2.Distance(first.Position, mech.LeftWeapon.Muzzle.WorldPosition), ChiselWeapons.ProjectileSpeed[WeaponId.ToInt()] * .01f, "First shot advances for its time inside the frame");
+        Check(first.Damage == ChiselWeapons.ProjectileDamage[WeaponId.ToInt()]
+            && first.PreviousPosition == mech.LeftWeapon.Muzzle.WorldPosition,
+            "Shots carry authored damage and preserve their swept origin");
         Step(mech, .01f, firing with
         {
             Fire = false
@@ -248,6 +265,81 @@ internal static class Program
         Check(Projectiles(mech).Length == 0, "Released shots expire and are removed");
         Step(mech, 50, firing);
         Check(Projectiles(mech).Length <= 22, "Long steps skip expired catch-up rounds");
+    }
+
+    private static void Health()
+    {
+        using var world = new GameWorld();
+        var health = world.Spawn(new ObjectPrefab("Health")).AddComponent(new HealthComponent(10));
+        Check(health.Maximum == 10 && health.Current == 10 && health.Ratio == 1 && !health.IsDead,
+            "Health starts full");
+        Check(!health.ApplyDamage(3) && health.Current == 7 && Math.Abs(health.Ratio - .7f) < .001f,
+            "Nonlethal damage reduces current health");
+        Check(health.ApplyDamage(100) && health.Current == 0 && health.IsDead && health.Ratio == 0,
+            "Overkill clamps at zero and reports the death transition");
+        Check(!health.ApplyDamage(1), "A dead health component does not report death more than once");
+        Throws<ArgumentOutOfRangeException>(() => health.ApplyDamage(0));
+
+        var player = world.Spawn(new MechPrefab(new Loadout()), new Vector2(20, 30));
+        player.Health.ApplyDamage(player.Health.Maximum);
+        Step(player, .1f, new PlayerControls(Vector2.UnitX, Vector2.UnitY * 100, true));
+        Check(player.Position == new Vector2(20, 30) && !player.IsMoving
+            && !player.LeftWeapon.TriggerHeld && !player.RightWeapon.TriggerHeld && Projectiles(player).Length == 0,
+            "A dead player stops moving and firing without ending the scene");
+    }
+
+    private static void Enemies()
+    {
+        using var world = new GameWorld();
+        var player = world.Spawn(new MechPrefab(new Loadout()), Vector2.Zero);
+        var enemy = world.Spawn(new EnemyPrefab(ChiselEnemiesId.SWARMER, player), new Vector2(200, 0));
+        Check(enemy.Health.Maximum == ChiselEnemies.MaxHealth[enemy.EnemyId.ToInt()]
+            && enemy.MoveSpeed == ChiselEnemies.MoveSpeed[enemy.EnemyId.ToInt()]
+            && enemy.BodyRadius == ChiselEnemies.BodyRadius[enemy.EnemyId.ToInt()]
+            && enemy.ContactDamage == ChiselEnemies.ContactDamage[enemy.EnemyId.ToInt()],
+            "The enemy prefab uses the authored Swarmer values");
+        world.Update(.5f);
+        Near(enemy.Position.X, 130, "The Swarmer pursues the player directly");
+
+        var contact = world.Spawn(new EnemyPrefab(ChiselEnemiesId.SWARMER, player), new Vector2(40, 0));
+        world.Update(.1f);
+        Check(contact.IsDisposed && player.Health.Current == player.Health.Maximum - ChiselEnemies.ContactDamage[0],
+            "Reaching the mech deals one contact hit and consumes the Swarmer");
+
+        var second = world.Spawn(new EnemyPrefab(ChiselEnemiesId.SWARMER, player), new Vector2(300, 0));
+        Check(!ReferenceEquals(enemy.Health, second.Health), "Enemy prefab instances own independent health components");
+        var roots = world.Roots.Count;
+        Throws<IndexOutOfRangeException>(() => world.Spawn(new EnemyPrefab(ChiselEnemiesId.Invalid, player)));
+        Check(world.Roots.Count == roots, "Invalid enemy IDs roll back without leaking a root");
+
+        using var other = new GameWorld();
+        Throws<InvalidOperationException>(() => other.Spawn(new EnemyPrefab(ChiselEnemiesId.SWARMER, player)));
+        Check(other.Roots.Count == 0 && other.ComponentCount == 0, "An enemy cannot retain a target from another world");
+    }
+
+    private static void ProjectileHits()
+    {
+        using var world = new GameWorld();
+        var player = world.Spawn(new MechPrefab(new Loadout()), new Vector2(1000, 0));
+        var enemy = world.Spawn(new EnemyPrefab(ChiselEnemiesId.SWARMER, player), new Vector2(100, 0));
+        var projectile = world.Spawn(new ProjectilePrefab(Vector2.Zero, 1, enemy.Health.Maximum, Vector2.Zero),
+            new Vector2(200, 0));
+        Check(projectile.IntersectsCircle(enemy.Position, enemy.BodyRadius)
+            && !projectile.IntersectsCircle(new Vector2(100, 100), enemy.BodyRadius),
+            "Swept projectile collision catches a crossed target without hitting an off-path target");
+        var run = new Run();
+        ResolveProjectileHits(world, run);
+        Check(projectile.IsDisposed && enemy.IsDisposed && run.Kills == 1
+            && run.XP == ChiselEnemies.Experience[ChiselEnemiesId.SWARMER.ToInt()],
+            "A lethal projectile consumes both objects and records one authored reward");
+        ResolveProjectileHits(world, run);
+        Check(run.Kills == 1, "A destroyed enemy cannot award XP twice");
+
+        var survivor = world.Spawn(new EnemyPrefab(ChiselEnemiesId.SWARMER, player), new Vector2(100, 0));
+        var weakProjectile = world.Spawn(new ProjectilePrefab(Vector2.Zero, 1, 1, Vector2.Zero), new Vector2(200, 0));
+        ResolveProjectileHits(world, run);
+        Check(weakProjectile.IsDisposed && !survivor.IsDisposed && survivor.Health.Current == survivor.Health.Maximum - 1
+            && run.Kills == 1, "A nonlethal projectile is consumed without awarding XP");
     }
 
     private static void Inputs()
@@ -333,6 +425,9 @@ internal static class Program
     }
 
     private static ProjectileComponent[] Projectiles(PlayerController player) => player.World.GetComponents<ProjectileComponent>().ToArray();
+    private static void ResolveProjectileHits(GameWorld world, Run run)
+        => typeof(SandboxScene).GetMethod("ResolveProjectileHits", BindingFlags.Static | BindingFlags.NonPublic)!
+            .Invoke(null, [world, run]);
     private static void Step(PlayerController player, float dt, PlayerControls controls)
     {
         player.Controls = controls;

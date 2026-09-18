@@ -76,8 +76,10 @@ public sealed class WeaponComponent : Component
             return;
         }
         var velocity = Muzzle.Forward * ChiselWeapons.ProjectileSpeed[WeaponId.ToInt()];
+        var origin = Muzzle.WorldPosition;
         // Scene root, deliberately not a weapon child: shots outlive and move independently of their gun.
-        World.Spawn(new ProjectilePrefab(velocity, projectileLifetime - age),
-            Muzzle.WorldPosition + velocity * age, Muzzle.WorldRotation);
+        World.Spawn(new ProjectilePrefab(velocity, projectileLifetime - age,
+                ChiselWeapons.ProjectileDamage[WeaponId.ToInt()], origin),
+            origin + velocity * age, Muzzle.WorldRotation);
     }
 }

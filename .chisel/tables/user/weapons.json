@@ -3,11 +3,11 @@
   "table": {
     "id": "weapons",
     "name": "Weapons",
-    "description": "Prototype arm weapon definitions.",
+    "description": "Prototype arm weapon cadence, projectile, and presentation values.",
     "kind": "user",
     "isSystemTable": false,
-    "lastChangeAt": "2026-09-17T20:00:00.000Z",
-    "version": 1,
+    "lastChangeAt": "2026-09-18T20:16:00.000Z",
+    "version": 2,
     "columns": [
       {
         "id": "weapons_rounds_per_se",
@@ -46,6 +46,15 @@
         "required": true,
         "unique": false,
         "min": 1
+      },
+      {
+        "id": "weapons_damage0000000",
+        "name": "projectile_damage",
+        "type": "integer",
+        "defaultValue": 1,
+        "required": true,
+        "unique": false,
+        "min": 1
       }
     ],
     "rows": [
@@ -72,6 +81,11 @@
             "columnId": "weapons_barrel_length",
             "type": "decimal",
             "value": 30
+          },
+          {
+            "columnId": "weapons_damage0000000",
+            "type": "integer",
+            "value": 1
           }
         ]
       }

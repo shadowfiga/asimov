@@ -3,11 +3,11 @@
   "table": {
     "id": "chassis",
     "name": "Chassis",
-    "description": "Chassis definitions. Pilot and arm weapons are selected by the game loadout.",
+    "description": "Chassis movement, dimensions, and health. Pilot and arm weapons are selected by the game loadout.",
     "kind": "user",
     "isSystemTable": false,
-    "lastChangeAt": "2026-09-17T19:42:24.000Z",
-    "version": 2,
+    "lastChangeAt": "2026-09-18T20:16:00.000Z",
+    "version": 3,
     "columns": [
       {
         "id": "robots_move_speed0000",
@@ -35,6 +35,15 @@
         "required": true,
         "unique": false,
         "min": 1
+      },
+      {
+        "id": "chassis_health0000000",
+        "name": "max_health",
+        "type": "integer",
+        "defaultValue": 100,
+        "required": true,
+        "unique": false,
+        "min": 1
       }
     ],
     "rows": [
@@ -56,6 +65,11 @@
             "columnId": "robots_arm_spacing000",
             "type": "decimal",
             "value": 26
+          },
+          {
+            "columnId": "chassis_health0000000",
+            "type": "integer",
+            "value": 100
           }
         ]
       }

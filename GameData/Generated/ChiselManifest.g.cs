@@ -6,7 +6,7 @@ namespace Chisel.Generated
     {
         public const string ProjectId = "M7gzZK-ELqR9WTLlI15uz";
         public const string ProjectName = "Girls & Mine";
-        public const string GeneratedAt = "2026-09-18T19:59:02.136Z";
+        public const string GeneratedAt = "2026-09-18T20:16:19.691Z";
         public const int TableCount = 5;
         public const int AssetCount = 8;
         public const int TranslationCount = 0;

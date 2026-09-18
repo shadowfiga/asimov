@@ -23,5 +23,6 @@ namespace Chisel.Generated
         public static readonly float[] ProjectileSpeed = new float[] { 1000.0f };
         public static readonly float[] ProjectileLifetime = new float[] { 1.2f };
         public static readonly float[] BarrelLength = new float[] { 30.0f };
+        public static readonly int[] ProjectileDamage = new int[] { 1 };
     }
 }

@@ -4,7 +4,9 @@ using Graphite.Engine.Persistence;
 using Graphite.Engine.Audio;
 using Graphite.Engine.Graphics;
 using Graphite.Engine.Scenes;
+using Graphite.Engine.Objects;
 using Graphite.Game.Data;
+using Graphite.Game.Domain.Combat;
 using Graphite.Game.Scenes;
 using Graphite.Game.Sessions;
 using Graphite.Game.UI;
@@ -275,7 +277,15 @@ internal static class BootstrapChecks
             var xp = widgets.OfType<HorizontalProgressBar>().Single(bar => bar.Id == "hud-xp-bar");
             var hp = widgets.OfType<HorizontalProgressBar>().Single(bar => bar.Id == "hud-hp-bar");
             Program.Check(timer.Text == "10:00" && xp.Value == 0 && hp.Value == 1,
-                "HUD starts with ten minutes, an unconfigured XP progress bar and placeholder full health");
+                "HUD starts with ten minutes, an unconfigured XP progress bar and full health before scene binding");
+            using var healthWorld = new GameWorld();
+            var health = healthWorld.Spawn(new ObjectPrefab("Health")).AddComponent(new HealthComponent(100));
+            screen.BindHealth(health);
+            health.ApplyDamage(25);
+            screen.Refresh();
+            var healthValue = widgets.OfType<Label>().Single(label => label.Id == "hud-hp-value");
+            Program.Check(hp.Value == .75f && healthValue.Text == "75%",
+                "HUD health widgets read the bound player health component");
             foreach (var (milliseconds, expected) in new[] { (1, "10:00"), (1000, "09:59"), (59_999, "09:01"),
                 (60_000, "09:00"), (599_999, "00:01"), (600_000, "00:00"), (610_000, "00:00") })
             {
