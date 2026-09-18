@@ -30,6 +30,18 @@ public sealed class CameraComponent : Component
     protected internal override void LateUpdate(float dt) => Refresh();
     protected override void OnRemoved() => FollowTarget = null;
 
+    public void SetTarget(GameObject target)
+    {
+        ArgumentNullException.ThrowIfNull(target);
+        ObjectDisposedException.ThrowIf(target.IsDestroyed, target);
+        if (target.World != World)
+        {
+            throw new InvalidOperationException("Camera follow target must belong to the same world.");
+        }
+        FollowTarget = target.Transform;
+        Refresh();
+    }
+
     // The scene backend calls this before input and drawing, even when simulation is paused.
     internal void Refresh(Point? viewportSize = null)
     {

@@ -23,10 +23,7 @@ public sealed class PlayerController : Component
     {
         get;
     }
-    public HealthComponent Health
-    {
-        get;
-    }
+    public HealthComponent Health => Owner.GetComponent<HealthComponent>();
     public GameObject Bottom
     {
         get;
@@ -53,14 +50,12 @@ public sealed class PlayerController : Component
     }
     public PlayerControls Controls { get; set; } = new(Vector2.Zero, new Vector2(0, -100), false);
 
-    internal PlayerController(float moveSpeed, float bodyRadius, ChiselPilotId pilotId, HealthComponent health,
-        GameObject bottom, AimController torsoAim,
+    internal PlayerController(float moveSpeed, float bodyRadius, ChiselPilotId pilotId, GameObject bottom, AimController torsoAim,
         AimController leftAim, AimController rightAim, WeaponComponent leftWeapon, WeaponComponent rightWeapon)
     {
         MoveSpeed = moveSpeed;
         BodyRadius = bodyRadius;
         PilotId = pilotId;
-        Health = health;
         Bottom = bottom;
         _aims = [torsoAim, leftAim, rightAim];
         LeftWeapon = leftWeapon;

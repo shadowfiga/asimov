@@ -292,36 +292,57 @@ internal static class Program
     {
         using var world = new GameWorld();
         var player = world.Spawn(new MechPrefab(new Loadout()), Vector2.Zero);
-        var enemy = world.Spawn(new EnemyPrefab(ChiselEnemiesId.SWARMER, player), new Vector2(200, 0));
+        var playerObject = world.GetGameObjectByName(MechPrefab.PlayerObjectName);
+        Check(playerObject == player.Owner, "The scene can discover the spawned player by its stable object name");
+        var enemy = world.Spawn(new EnemyPrefab(ChiselEnemiesId.SWARMER), new Vector2(200, 0));
+        Throws<InvalidOperationException>(() => world.Update(0));
+        enemy.SetTarget(playerObject);
         Check(enemy.Health.Maximum == ChiselEnemies.MaxHealth[enemy.EnemyId.ToInt()]
             && enemy.MoveSpeed == ChiselEnemies.MoveSpeed[enemy.EnemyId.ToInt()]
             && enemy.BodyRadius == ChiselEnemies.BodyRadius[enemy.EnemyId.ToInt()]
-            && enemy.ContactDamage == ChiselEnemies.ContactDamage[enemy.EnemyId.ToInt()],
-            "The enemy prefab uses the authored Swarmer values");
+            && enemy.ContactDamage == ChiselEnemies.ContactDamage[enemy.EnemyId.ToInt()]
+            && enemy.Target == playerObject,
+            "The enemy prefab uses authored values and accepts its scene-assigned target");
         world.Update(.5f);
         Near(enemy.Position.X, 130, "The Swarmer pursues the player directly");
 
-        var contact = world.Spawn(new EnemyPrefab(ChiselEnemiesId.SWARMER, player), new Vector2(40, 0));
+        var contact = world.Spawn(new EnemyPrefab(ChiselEnemiesId.SWARMER), new Vector2(40, 0));
+        contact.SetTarget(playerObject);
         world.Update(.1f);
         Check(contact.IsDisposed && player.Health.Current == player.Health.Maximum - ChiselEnemies.ContactDamage[0],
             "Reaching the mech deals one contact hit and consumes the Swarmer");
 
-        var second = world.Spawn(new EnemyPrefab(ChiselEnemiesId.SWARMER, player), new Vector2(300, 0));
+        var second = world.Spawn(new EnemyPrefab(ChiselEnemiesId.SWARMER), new Vector2(300, 0));
+        second.SetTarget(playerObject);
         Check(!ReferenceEquals(enemy.Health, second.Health), "Enemy prefab instances own independent health components");
+        var alternatePlayer = world.Spawn(new MechPrefab(new Loadout()), new Vector2(600, 0));
+        enemy.SetTarget(alternatePlayer.Owner);
+        Check(enemy.Target == alternatePlayer.Owner, "SetTarget can explicitly retarget an existing enemy");
         var roots = world.Roots.Count;
-        Throws<IndexOutOfRangeException>(() => world.Spawn(new EnemyPrefab(ChiselEnemiesId.Invalid, player)));
+        Throws<IndexOutOfRangeException>(() => world.Spawn(new EnemyPrefab(ChiselEnemiesId.Invalid)));
         Check(world.Roots.Count == roots, "Invalid enemy IDs roll back without leaking a root");
 
+        var targetless = world.Spawn(new EnemyPrefab(ChiselEnemiesId.SWARMER));
+        var missingHealth = world.Spawn(new ObjectPrefab("Missing health"));
+        Throws<InvalidOperationException>(() => targetless.SetTarget(missingHealth));
+        Throws<InvalidOperationException>(() => _ = targetless.Target);
+        var destroyedTarget = world.Spawn(new MechPrefab(new Loadout())).Owner;
+        destroyedTarget.Destroy();
+        Throws<ObjectDisposedException>(() => targetless.SetTarget(destroyedTarget));
+
         using var other = new GameWorld();
-        Throws<InvalidOperationException>(() => other.Spawn(new EnemyPrefab(ChiselEnemiesId.SWARMER, player)));
-        Check(other.Roots.Count == 0 && other.ComponentCount == 0, "An enemy cannot retain a target from another world");
+        var foreignEnemy = other.Spawn(new EnemyPrefab(ChiselEnemiesId.SWARMER));
+        Throws<InvalidOperationException>(() => foreignEnemy.SetTarget(playerObject));
+        Throws<InvalidOperationException>(() => _ = foreignEnemy.Target);
     }
 
     private static void ProjectileHits()
     {
         using var world = new GameWorld();
         var player = world.Spawn(new MechPrefab(new Loadout()), new Vector2(1000, 0));
-        var enemy = world.Spawn(new EnemyPrefab(ChiselEnemiesId.SWARMER, player), new Vector2(100, 0));
+        var playerObject = world.GetGameObjectByName(MechPrefab.PlayerObjectName);
+        var enemy = world.Spawn(new EnemyPrefab(ChiselEnemiesId.SWARMER), new Vector2(100, 0));
+        enemy.SetTarget(playerObject);
         var projectile = world.Spawn(new ProjectilePrefab(Vector2.Zero, 1, enemy.Health.Maximum, Vector2.Zero),
             new Vector2(200, 0));
         Check(projectile.IntersectsCircle(enemy.Position, enemy.BodyRadius)
@@ -335,7 +356,8 @@ internal static class Program
         ResolveProjectileHits(world, run);
         Check(run.Kills == 1, "A destroyed enemy cannot award XP twice");
 
-        var survivor = world.Spawn(new EnemyPrefab(ChiselEnemiesId.SWARMER, player), new Vector2(100, 0));
+        var survivor = world.Spawn(new EnemyPrefab(ChiselEnemiesId.SWARMER), new Vector2(100, 0));
+        survivor.SetTarget(playerObject);
         var weakProjectile = world.Spawn(new ProjectilePrefab(Vector2.Zero, 1, 1, Vector2.Zero), new Vector2(200, 0));
         ResolveProjectileHits(world, run);
         Check(weakProjectile.IsDisposed && !survivor.IsDisposed && survivor.Health.Current == survivor.Health.Maximum - 1
@@ -382,7 +404,8 @@ internal static class Program
     {
         using var world = new GameWorld();
         var player = world.Spawn(new MechPrefab(new Loadout()), new Vector2(300, -500));
-        var camera = world.Spawn(new PlayerCameraPrefab(player));
+        var camera = world.Spawn(new PlayerCameraPrefab());
+        camera.SetTarget(world.GetGameObjectByName(MechPrefab.PlayerObjectName));
         Check(camera.Owner.Parent is null && camera.Owner != player.Owner && world.Roots.Contains(camera.Owner),
             "Player camera is a standalone root, not part of the mech hierarchy");
         Check(camera.ReferenceSize == new Point(1600, 900) && camera.Transform.WorldPosition == player.Position
@@ -412,8 +435,9 @@ internal static class Program
         Throws<ArgumentOutOfRangeException>(() => new CameraComponent(Point.Zero));
         Throws<ArgumentOutOfRangeException>(() => new CameraComponent(new Point(100, -1)));
         using var other = new GameWorld();
-        Throws<InvalidOperationException>(() => other.Spawn(new PlayerCameraPrefab(player)));
-        Check(other.Roots.Count == 0 && other.ComponentCount == 0, "Cross-world follow targets fail and roll back the camera prefab");
+        var otherCamera = other.Spawn(new PlayerCameraPrefab());
+        Throws<InvalidOperationException>(() => otherCamera.SetTarget(player.Owner));
+        Check(otherCamera.FollowTarget is null, "Cross-world camera targets fail before assignment");
         var stale = world.Spawn(new ObjectPrefab("Stale target"));
         camera.FollowTarget = stale.Transform;
         stale.Destroy();

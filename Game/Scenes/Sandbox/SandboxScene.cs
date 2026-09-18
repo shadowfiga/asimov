@@ -32,11 +32,13 @@ public sealed class SandboxScene : Scene
         var loadout = session.CurrentLoadout;
         Objects.MaxDeltaTime = .1f;
         _player = Objects.Spawn(new MechPrefab(loadout), Vector2.Zero);
-        Objects.Spawn(new PlayerCameraPrefab(_player));
-        Objects.Spawn(new EnemyPrefab(ChiselEnemiesId.SWARMER, _player), new Vector2(500, 0));
-        _reticle = Objects.Spawn(new SandboxPresentationPrefab(_player));
+        var playerObject = Objects.GetGameObjectByName(MechPrefab.PlayerObjectName);
+        Objects.Spawn(new PlayerCameraPrefab()).SetTarget(playerObject);
+        Objects.Spawn(new EnemyPrefab(ChiselEnemiesId.SWARMER), new Vector2(500, 0)).SetTarget(playerObject);
+        _reticle = Objects.Spawn(new SandboxPresentationPrefab());
+        _reticle.SetTarget(playerObject);
         _hud = UI.Open<SandboxUI>();
-        _hud.BindHealth(_player.Health);
+        _hud.BindHealth(playerObject.GetComponent<HealthComponent>());
         game.IsMouseVisible = false;
         GameAudio.PlaySession();
     }

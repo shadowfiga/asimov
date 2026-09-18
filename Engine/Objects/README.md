@@ -6,7 +6,8 @@
 var player = Objects.Spawn(
     new MechPrefab(SessionManager.ActiveSession.CurrentLoadout),
     new Vector2(100, 200));
-Objects.Spawn(new PlayerCameraPrefab(player));
+var playerObject = Objects.GetGameObjectByName(MechPrefab.PlayerObjectName);
+Objects.Spawn(new PlayerCameraPrefab()).SetTarget(playerObject);
 ```
 
 The game-specific `MechPrefab` assembles the complete mech and returns its `PlayerController`. It accepts the game's `Loadout` and captures the selected chassis, pilot, and separate arm weapon IDs. It reads chassis/weapon columns directly; movement speed and pilot identity are passed to the controller. Pilot identity is cosmetic and does not modify combat stats. Other entities can attach the same game `WeaponComponent` with a Chisel weapon ID without player input: set `TriggerHeld`, and optionally add an `AimController` with a world-space `Target`. Chisel remains the definition authority; components reference Chisel IDs instead of copying export data into wrapper definitions. Runtime objects, textures and components are not save records.
@@ -33,6 +34,7 @@ An external assembly overrides `Build` as `protected override` instead. Scenes/c
 - Return a non-null result and leave the supplied root alive and unparented. Object/component results must belong to that root's hierarchy. Reference-type result bundles are also possible; their contents are the prefab's responsibility.
 - Component `OnAdded` still runs immediately on attachment, in build order. Position/rotation are already set, but the rest of the hierarchy may still be under construction. Do not tick or render the world during a build.
 - Build only new objects in the supplied world. Do not mutate pre-existing objects, create objects in other worlds, or acquire unowned resources in `Build`; those side effects are not transactional. Attach owned resource cleanup to components via `OnRemoved`.
+- Do not pass existing scene objects into prefab constructors. Spawn independent roots first, resolve stable scene objects with `GetGameObjectByName`, then connect them through component methods such as `SetTarget` before the first update. Lookup requires exactly one live exact-name match and throws for missing or duplicate names.
 - The engine tracks all objects created during the build. Failure destroys partial objects, detached children, and nested root spawns. It rethrows the original exception; if cleanup also fails, an aggregate preserves both errors. Cleanup cannot spawn more objects during rollback. Game prefabs need no defensive catch/recovery wrapper.
 - `ProjectilePrefab` creates scene-root bullets through the same API; they are deliberately not children of the firing weapon. `SandboxPresentationPrefab` groups the sandbox grid and reticle.
 
@@ -60,7 +62,7 @@ Movement currently uses order 0, frame playback 50, aiming 100, and firing 200. 
 
 ## Camera objects
 
-`CameraComponent` lives in `Graphite.Engine.Graphics`. Attach it to a prefab's root with a positive reference resolution and an optional `FollowTarget` (`Transform2D`). It owns the `Camera2D` projection and synchronizes it with the camera object's world position. With a target, it follows position in late update (`UpdateOrder = int.MaxValue`); it does not copy rotation or scale. With no target, move the camera object's transform directly. Targets must be live objects in the same world.
+`CameraComponent` lives in `Graphite.Engine.Graphics`. Attach it to a prefab's root with a positive reference resolution, then call `SetTarget(GameObject)` from scene setup or assign its optional `FollowTarget` (`Transform2D`). It owns the `Camera2D` projection and synchronizes it with the camera object's world position. With a target, it follows position in late update (`UpdateOrder = int.MaxValue`); it does not copy rotation or scale. With no target, move the camera object's transform directly. Targets must be live objects in the same world.
 
 The game `PlayerCameraPrefab` creates a separate root with 1600×900 reference framing and follows the player. The host supplies the actual backbuffer dimensions before scene input; the rendering backend refreshes again before drawing. Zoom is `min(width / referenceWidth, height / referenceHeight)`, independent of UI scale. Resizing remains reactive while simulation is paused and when a draw precedes the first update. Scenes do not poll viewport dimensions or update camera positions.
 

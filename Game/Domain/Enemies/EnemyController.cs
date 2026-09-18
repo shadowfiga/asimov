@@ -10,18 +10,16 @@ namespace Graphite.Game.Domain.Enemies;
 /// <summary>Minimal Swarmer behavior: pursue the player and deal one contact hit.</summary>
 public sealed class EnemyController : Component
 {
+    private GameObject? _target;
+    private HealthComponent? _targetHealth;
+    private float _targetBodyRadius;
     public ChiselEnemiesId EnemyId
     {
         get;
     }
-    public PlayerController Target
-    {
-        get;
-    }
-    public HealthComponent Health
-    {
-        get;
-    }
+    public GameObject Target => _target
+        ?? throw new InvalidOperationException("Enemy target has not been assigned.");
+    public HealthComponent Health => Owner.GetComponent<HealthComponent>();
     public float MoveSpeed
     {
         get;
@@ -36,34 +34,44 @@ public sealed class EnemyController : Component
     }
     public Vector2 Position => Transform.WorldPosition;
 
-    public EnemyController(ChiselEnemiesId enemyId, PlayerController target, HealthComponent health)
+    public EnemyController(ChiselEnemiesId enemyId)
     {
         var index = enemyId.ToInt();
         EnemyId = enemyId;
-        Target = target;
-        Health = health;
         MoveSpeed = ChiselEnemies.MoveSpeed[index];
         BodyRadius = ChiselEnemies.BodyRadius[index];
         ContactDamage = ChiselEnemies.ContactDamage[index];
     }
 
-    protected override void OnAdded()
+    public void SetTarget(GameObject target)
     {
-        if (Target.World != World || Health.Owner != Owner)
+        ArgumentNullException.ThrowIfNull(target);
+        ObjectDisposedException.ThrowIf(target.IsDestroyed, target);
+        if (target.World != World)
         {
-            throw new InvalidOperationException("An enemy and its target must belong to the same world, and health must belong to the enemy root.");
+            throw new InvalidOperationException("Enemy target must belong to the same world.");
         }
+        var health = target.GetComponent<HealthComponent>();
+        var player = target.GetComponent<PlayerController>();
+        _target = target;
+        _targetHealth = health;
+        _targetBodyRadius = player.BodyRadius;
     }
 
     protected internal override void Update(float dt)
     {
-        if (Target.Health.IsDead)
+        var target = Target;
+        var targetHealth = _targetHealth
+            ?? throw new InvalidOperationException("Enemy target health has not been assigned.");
+        ObjectDisposedException.ThrowIf(target.IsDestroyed, target);
+        ObjectDisposedException.ThrowIf(targetHealth.IsDisposed, targetHealth);
+        if (targetHealth.IsDead)
         {
             return;
         }
-        var offset = Target.Position - Position;
+        var offset = target.Transform.WorldPosition - Position;
         var distance = offset.Length();
-        var contactDistance = BodyRadius + Target.BodyRadius;
+        var contactDistance = BodyRadius + _targetBodyRadius;
         Transform.WorldRotation = MathF.Atan2(offset.Y, offset.X);
         if (distance <= contactDistance)
         {
@@ -84,7 +92,7 @@ public sealed class EnemyController : Component
 
     private void Contact()
     {
-        Target.Health.ApplyDamage(ContactDamage);
+        _targetHealth!.ApplyDamage(ContactDamage);
         Owner.Destroy();
     }
 }

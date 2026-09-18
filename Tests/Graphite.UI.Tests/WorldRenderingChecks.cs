@@ -88,7 +88,8 @@ internal static class WorldRenderingChecks
         var camera = new Camera2D();
         camera.SetViewport(new Point(128, 128), 1);
         var player = world.Spawn(new MechPrefab(new Loadout()), Vector2.Zero);
-        world.Spawn(new ObjectPrefab("Reticle")).AddComponent(new ReticleRenderer(player));
+        var reticle = world.Spawn(new ObjectPrefab("Reticle")).AddComponent(new ReticleRenderer());
+        reticle.SetTarget(player.Owner);
         player.Owner.Destroy();
         var rejected = false;
         try

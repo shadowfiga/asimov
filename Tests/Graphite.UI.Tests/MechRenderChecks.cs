@@ -18,7 +18,8 @@ internal static class MechRenderChecks
         using var renderer = new WorldRenderer2D(device);
         using var world = new GameWorld();
         var mech = world.Spawn(new MechPrefab(new Loadout()), Vector2.Zero);
-        world.Spawn(new SandboxPresentationPrefab(mech));
+        var presentation = world.Spawn(new SandboxPresentationPrefab());
+        presentation.SetTarget(world.GetGameObjectByName(MechPrefab.PlayerObjectName));
         mech.Controls = new PlayerControls(Vector2.UnitX, new Vector2(350, -210), true);
         for (var frame = 0; frame < 50; frame++)
         {

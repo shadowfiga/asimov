@@ -158,6 +158,33 @@ public sealed class GameWorld : IDisposable
     }
 
     public IEnumerable<T> GetComponents<T>() where T : Component => _components.OfType<T>();
+    public GameObject GetGameObjectByName(string name)
+    {
+        ObjectDisposedException.ThrowIf(_disposed, this);
+        ArgumentException.ThrowIfNullOrWhiteSpace(name);
+        GameObject? result = null;
+        foreach (var root in _roots)
+        {
+            Find(root);
+        }
+        return result ?? throw new InvalidOperationException($"The world has no game object named '{name}'.");
+
+        void Find(GameObject gameObject)
+        {
+            if (gameObject.Name == name)
+            {
+                if (result is not null)
+                {
+                    throw new InvalidOperationException($"The world has multiple game objects named '{name}'.");
+                }
+                result = gameObject;
+            }
+            foreach (var child in gameObject.Children)
+            {
+                Find(child);
+            }
+        }
+    }
     internal void AddRoot(GameObject value) => _roots.Add(value);
     internal void RemoveRoot(GameObject value) => _roots.Remove(value);
     internal void Register(Component component)

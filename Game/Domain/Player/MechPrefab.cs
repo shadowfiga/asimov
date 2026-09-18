@@ -9,13 +9,14 @@ namespace Graphite.Game.Domain.Player;
 /// <summary>Assembles the reusable mech hierarchy once; scenes do not manage its individual parts.</summary>
 public sealed class MechPrefab : Prefab<PlayerController>
 {
+    public const string PlayerObjectName = "Player";
     private readonly int _chassisId;
     private readonly ChiselPilotId _pilotId;
     private readonly ChiselWeaponsId _weaponLeftId;
     private readonly ChiselWeaponsId _weaponRightId;
     public float MaxInwardAngle { get; init; } = MathHelper.ToRadians(15);
 
-    public MechPrefab(Loadout loadout) : base(loadout.ChassisId.ToString())
+    public MechPrefab(Loadout loadout) : base(PlayerObjectName)
     {
         _chassisId = loadout.ChassisId.ToInt();
         _pilotId = loadout.PilotId;
@@ -26,7 +27,7 @@ public sealed class MechPrefab : Prefab<PlayerController>
     protected internal override PlayerController Build(GameObject root)
     {
         var bodyRadius = ChiselChassis.BodyRadius[_chassisId];
-        var health = root.AddComponent(new HealthComponent(ChiselChassis.MaxHealth[_chassisId]));
+        root.AddComponent(new HealthComponent(ChiselChassis.MaxHealth[_chassisId]));
         var target = root.Transform.TransformPoint(new Vector2(0, -100));
         var bottom = root.CreateChild("Bottom");
         bottom.Transform.LocalRotation = -MathHelper.PiOver2;
@@ -36,7 +37,7 @@ public sealed class MechPrefab : Prefab<PlayerController>
         top.AddComponent(new MechPartRenderer(MechPart.Top, bodyRadius) { Layer = 30 });
         var left = CreateWeapon(top, "LeftWeapon", -ChiselChassis.ArmSpacing[_chassisId], _weaponLeftId, target);
         var right = CreateWeapon(top, "RightWeapon", ChiselChassis.ArmSpacing[_chassisId], _weaponRightId, target);
-        return root.AddComponent(new PlayerController(ChiselChassis.MoveSpeed[_chassisId], bodyRadius, _pilotId, health,
+        return root.AddComponent(new PlayerController(ChiselChassis.MoveSpeed[_chassisId], bodyRadius, _pilotId,
             bottom, torsoAim, left.Aim, right.Aim, left.Weapon, right.Weapon)
         {
             Controls = new PlayerControls(Vector2.Zero, target - root.Transform.WorldPosition, false)

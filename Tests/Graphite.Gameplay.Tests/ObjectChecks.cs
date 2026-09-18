@@ -13,9 +13,32 @@ internal static class ObjectChecks
     internal static void Run()
     {
         Transforms();
+        NameLookup();
         Lifecycle();
         Mutation();
         Weapons();
+    }
+
+    private static void NameLookup()
+    {
+        using var world = new GameWorld();
+        var player = world.Spawn(new ObjectPrefab("Player"));
+        var child = player.CreateChild("Target child");
+        child.Active = false;
+        Check(world.GetGameObjectByName("Player") == player
+            && world.GetGameObjectByName("Target child") == child,
+            "World name lookup finds exact live roots and inactive children");
+        Throws<ArgumentException>(() => world.GetGameObjectByName(""));
+        Throws<InvalidOperationException>(() => world.GetGameObjectByName("player"));
+        var duplicate = child.CreateChild("Player");
+        Throws<InvalidOperationException>(() => world.GetGameObjectByName("Player"));
+        duplicate.Destroy();
+        Check(world.GetGameObjectByName("Player") == player,
+            "Destroyed duplicates leave the remaining exact match discoverable");
+        player.Destroy();
+        Throws<InvalidOperationException>(() => world.GetGameObjectByName("Player"));
+        world.Dispose();
+        Throws<ObjectDisposedException>(() => world.GetGameObjectByName("Target child"));
     }
 
     private static void Transforms()
